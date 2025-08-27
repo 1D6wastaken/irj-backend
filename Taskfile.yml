@@ -1,0 +1,112 @@
+version: 3
+
+vars:
+  # https://github.com/golangci/golangci-lint/releases
+  GOLANGCILINT_VERSION: 2.3.0
+  # https://github.com/gotestyourself/gotestsum/releases
+  GOTESTSUM_VERSION: 1.12.2
+  # https://github.com/psampaz/go-mod-outdated/releases
+  GO_MOD_OUTDATED_VERSION: 0.9.0
+  # https://github.com/oligot/go-mod-upgrade/releases
+  GO_MOD_UPGRADE_VERSION: 0.11.0
+  # https://github.com/go-swagger/go-swagger/releases
+  GOSWAGGER_VERSION: 0.32.3
+  # https://github.com/sqlc-dev/sqlc/releases
+  SQLC_VERSION: 1.29.0
+
+  GOLANGCILINT: .bin/golangci-lint-{{.GOLANGCILINT_VERSION}}
+
+tasks:
+  directories:
+    desc: "Create internal directories"
+    internal: true
+    cmds:
+      - mkdir -p .bin
+      - mkdir -p .reports
+    status:
+      - ls .bin
+      - ls .reports
+
+  dl-golangci-lint:
+    desc: "Download golangci-lint"
+    deps: [ directories ]
+    internal: true
+    cmds:
+      - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b .bin v{{.GOLANGCILINT_VERSION}}
+      - mv .bin/golangci-lint {{.GOLANGCILINT}}
+    status:
+      - ls {{.GOLANGCILINT}}
+
+  lint:
+    desc: "Run linters"
+    deps: [ dl-golangci-lint ]
+    cmds:
+      - ./{{.GOLANGCILINT}} run --color=always --timeout=2m0s ./...
+
+  ci-lint:
+    desc: "Run linters (CI version)"
+    deps: [ dl-golangci-lint ]
+    cmds:
+      - ./{{.GOLANGCILINT}} run --timeout 5m0s --output.junit-xml.path .reports/junit-lint-report.xml
+
+  cover:
+    desc: "Run test coverage"
+    deps: [ directories ]
+    cmds:
+      - go run gotest.tools/gotestsum@v{{.GOTESTSUM_VERSION}} --junitfile .reports/junit-tests-report.xml -- -mod=readonly -race -vet=off -coverprofile=.reports/test-coverage ./... || exit 1
+      - go tool cover -func=.reports/test-coverage
+
+  deps-check:
+    desc: "Check golang dependencies"
+    cmds:
+      - go list -u -m -mod=readonly -json all | go run github.com/psampaz/go-mod-outdated@v{{.GO_MOD_OUTDATED_VERSION}} -update -direct -ci
+
+  deps-upgrade:
+    desc: "Interactively upgrade go dependencies if needed"
+    interactive: true
+    cmds:
+      - go run github.com/oligot/go-mod-upgrade@v{{.GO_MOD_UPGRADE_VERSION}}
+
+  test:
+    desc: "Run tests"
+    cmds:
+      - go test -race -failfast -mod=readonly ./...
+
+  deps:
+    desc: "Download and consolidate go dependencies"
+    cmds:
+      - go get -t ./...
+      - go mod tidy
+
+  audit:
+    desc: "Look for golang vulnerabilities"
+    cmds:
+      - go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+
+  generate_sqlc:
+    desc: "Generate code from sqlc"
+    cmds:
+      - rm -rf ./internal/postgres/_generated/*.go
+      - go run github.com/sqlc-dev/sqlc/cmd/sqlc@v{{.SQLC_VERSION}} -f ./api/sqlc.yaml generate
+      - echo "Done"
+
+  generate:
+    desc: "Generate source code from specs"
+    deps: [ generate_sqlc ]
+    cmds:
+      - rm -f pkg/dto/generated_*.go
+      - go run github.com/go-swagger/go-swagger/cmd/swagger@v{{.GOSWAGGER_VERSION}} generate model --keep-spec-order -f api/common.yaml -t pkg -m dto --with-flatten=full -C api/template.yaml
+      - rm -f pkg/api/generated_*.go
+      - go run github.com/go-swagger/go-swagger/cmd/swagger@v{{.GOSWAGGER_VERSION}} generate model --keep-spec-order -f api/swagger.yaml -t pkg -m api --with-flatten=full -C api/template.yaml
+
+  clean:
+    desc: "Clean projects (go cache, reports and binaries (task included))"
+    cmds:
+      - go clean ./...
+      - rm -f .reports/* .bin/*
+
+  self:
+    desc: "Just a reminder about how to install task locally"
+    internal: true
+    cmds:
+      - sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b .bin

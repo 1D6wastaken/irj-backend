@@ -1,0 +1,2695 @@
+swagger: "2.0"
+info:
+  version: "1.0.0"
+  title: "Swagger IRJ"
+  description: |
+    Ce document fait office de contrat d'interface et regroupe l'ensemble des API disponibles pour l'application IRJ.
+    Il sert aussi au backend de l'application pour générer les structures Go nécessaires à son fonctionnement.
+tags:
+  - name: "public"
+    description: "Public APIs"
+  - name: "private"
+    description: "APIs for authenticated users"
+  - name: "admin"
+    description: "APIs for authenticated admin users"
+schemes:
+  - "http"
+  - "https"
+
+basePath: /api/v1
+
+paths:
+  ## FILTERS ##
+  /countries:
+    get:
+      tags:
+        - "public"
+      summary: "Retrieve all countries"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/basicFilter"
+  /regions:
+    get:
+      tags:
+        - "public"
+      summary: "Retrieve all region"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/RegionFilter"
+  /departments:
+    get:
+      tags:
+        - "public"
+      summary: "Retrieve all departments"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/DepartmentFilter"
+  /cities:
+    get:
+      tags:
+        - "public"
+      summary: "Retrieve all cities that match the parameters"
+      parameters:
+        - name: q
+          type: string
+          description: The prefix of the city name
+          required: true
+          in: query
+        - name: limit
+          type: integer
+          description: The maximum size of the returned array
+          required: false
+          default: 10
+          in: query
+        - name: offset
+          type: integer
+          description: The offset
+          required: false
+          default: 0
+          in: query
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/CommuneFilter"
+  /centuries:
+    get:
+      tags:
+        - "public"
+      summary: "Retrieve all centuries filter"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/basicFilter"
+  /conservation_states:
+    get:
+      tags:
+        - "public"
+      summary: "Retrieve all conservation states"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/basicFilter"
+  /building_natures:
+    get:
+      tags:
+        - "public"
+      summary: "Retrieve all monuments types"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/basicFilter"
+  /materials:
+    get:
+      tags:
+        - "public"
+      summary: "Retrieve all materials"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/basicFilter"
+  /furnitures_natures:
+    get:
+      tags:
+        - "public"
+      summary: "Retrieve all furniture types"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/basicFilter"
+  /furnitures_techniques:
+    get:
+      tags:
+        - "public"
+      summary: "Retrieve all furniture techniques"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/basicFilter"
+  /legal_entity_natures:
+    get:
+      tags:
+        - "public"
+      summary: "Retrieve all types of legal entity"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/basicFilter"
+  /professions:
+    get:
+      tags:
+        - "public"
+      summary: "Retrieve all professions"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/basicFilter"
+  /travels:
+    get:
+      tags:
+        - "public"
+      summary: "Retrieve all deplacements"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/basicFilter"
+  /historical_periods:
+    get:
+      tags:
+        - "public"
+      summary: "Retrieve all historical periods"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/basicFilter"
+  /themes:
+    get:
+      tags:
+        - "public"
+      summary: "Retrieve all themes"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/basicFilter"
+
+  ## BUSINESS ##
+  /medias:
+    post:
+      tags:
+        - private
+      summary: "Create a media"
+      security:
+        - Bearer: [ ]
+      consumes:
+        - multipart/form-data
+      produces:
+        - application/json
+      parameters:
+        - name: image
+          in: formData
+          type: file
+          required: true
+        - name: title
+          in: formData
+          type: string
+          description: titre de l'image
+      responses:
+        "201":
+          description: Image uploadée
+          schema:
+            $ref: "#/definitions/media"
+  /monuments_lieux:
+    get:
+      tags:
+        - admin
+      summary: "Get pending monuments lieux"
+      security:
+        - Bearer: [ ]
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/PendingDocuments"
+    post:
+      tags:
+        - private
+      summary: "Create a monument or place"
+      security:
+        - Bearer: [ ]
+      parameters:
+        - in: body
+          name: body
+          schema:
+            $ref: "#/definitions/MonumentsLieuxCreationBody"
+      produces:
+        - "application/json"
+      responses:
+        "201":
+          description: "Created"
+        "400":
+          description: "Invalid field"
+          schema:
+            $ref: "#/definitions/error"
+  /monuments_lieux/{id}:
+    get:
+      tags:
+        - public
+      summary: "Retrieve the monument or image"
+      parameters:
+        - name: id
+          in: path
+          type: integer
+          format: int32
+          description: ID of the monument
+          required: true
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/MonumentLieu"
+    patch:
+      tags:
+        - admin
+      summary: "Approve or reject a document"
+      security:
+        - Bearer: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          type: string
+          format: uuid
+          description: "user id"
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/PatchUsersBody"
+      produces:
+        - "application/json"
+      responses:
+        "204":
+          description: "OK"
+        "400":
+          description: "Invalid field"
+          schema:
+            $ref: "#/definitions/error"
+        "401":
+          description: "No authorization"
+          schema:
+            $ref: "#/definitions/error"
+        "403":
+          description: "Not allowed"
+          schema:
+            $ref: "#/definitions/error"
+        "404":
+          description: "Not Found or already active"
+          schema:
+            $ref: "#/definitions/error"
+    put:
+      tags:
+        - private
+      summary: "Update a monument or place"
+      security:
+        - Bearer: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          type: string
+          format: uuid
+          description: "user id"
+        - in: body
+          name: body
+          schema:
+            $ref: "#/definitions/MonumentsLieuxCreationBody"
+      produces:
+        - "application/json"
+      responses:
+        "204":
+          description: "No Content"
+        "400":
+          description: "Invalid field"
+          schema:
+            $ref: "#/definitions/error"
+  /mobiliers_images:
+    get:
+      tags:
+        - admin
+      summary: "Get pending mobiliers images"
+      security:
+        - Bearer: [ ]
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/PendingDocuments"
+    post:
+      tags:
+        - private
+      summary: "Create furniture or image"
+      security:
+        - Bearer: [ ]
+      parameters:
+        - in: body
+          name: body
+          schema:
+            $ref: "#/definitions/MobilierImageCreationBody"
+      produces:
+        - "application/json"
+      responses:
+        "201":
+          description: "Created"
+        "400":
+          description: "Invalid field"
+          schema:
+            $ref: "#/definitions/error"
+  /mobiliers_images/{id}:
+    get:
+      tags:
+        - public
+      summary: "Retrieve the furniture or image"
+      parameters:
+        - name: id
+          in: path
+          type: integer
+          format: int32
+          description: ID of the monument
+          required: true
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/MobilierImage"
+    patch:
+      tags:
+        - admin
+      summary: "Approve or reject a document"
+      security:
+        - Bearer: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          type: string
+          format: uuid
+          description: "user id"
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/PatchUsersBody"
+      produces:
+        - "application/json"
+      responses:
+        "204":
+          description: "OK"
+        "400":
+          description: "Invalid field"
+          schema:
+            $ref: "#/definitions/error"
+        "401":
+          description: "No authorization"
+          schema:
+            $ref: "#/definitions/error"
+        "403":
+          description: "Not allowed"
+          schema:
+            $ref: "#/definitions/error"
+        "404":
+          description: "Not Found or already active"
+          schema:
+            $ref: "#/definitions/error"
+    put:
+      tags:
+        - private
+      summary: "Update a furniture or image"
+      security:
+        - Bearer: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          type: string
+          format: uuid
+          description: "user id"
+        - in: body
+          name: body
+          schema:
+            $ref: "#/definitions/MobilierImageCreationBody"
+      produces:
+        - "application/json"
+      responses:
+        "204":
+          description: "No Content"
+        "400":
+          description: "Invalid field"
+          schema:
+            $ref: "#/definitions/error"
+  /personnes_morales:
+    get:
+      tags:
+        - admin
+      summary: "Get pending personnes morales"
+      security:
+        - Bearer: [ ]
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/PendingDocuments"
+    post:
+      tags:
+        - private
+      summary: "Create legal entity"
+      security:
+        - Bearer: [ ]
+      parameters:
+        - in: body
+          name: body
+          schema:
+            $ref: "#/definitions/PersonneMoraleCreationBody"
+      produces:
+        - "application/json"
+      responses:
+        "201":
+          description: "Created"
+        "400":
+          description: "Invalid field"
+          schema:
+            $ref: "#/definitions/error"
+  /personnes_morales/{id}:
+    get:
+      tags:
+        - public
+      summary: "Retrieve the legal person"
+      parameters:
+        - name: id
+          in: path
+          type: integer
+          format: int32
+          description: ID of the monument
+          required: true
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/PersonneMorale"
+    patch:
+      tags:
+        - admin
+      summary: "Approve or reject a document"
+      security:
+        - Bearer: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          type: string
+          format: uuid
+          description: "user id"
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/PatchUsersBody"
+      produces:
+        - "application/json"
+      responses:
+        "204":
+          description: "OK"
+        "400":
+          description: "Invalid field"
+          schema:
+            $ref: "#/definitions/error"
+        "401":
+          description: "No authorization"
+          schema:
+            $ref: "#/definitions/error"
+        "403":
+          description: "Not allowed"
+          schema:
+            $ref: "#/definitions/error"
+        "404":
+          description: "Not Found or already active"
+          schema:
+            $ref: "#/definitions/error"
+    put:
+      tags:
+        - private
+      summary: "Update a legal entity"
+      security:
+        - Bearer: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          type: string
+          format: uuid
+          description: "user id"
+        - in: body
+          name: body
+          schema:
+            $ref: "#/definitions/PersonneMoraleCreationBody"
+      produces:
+        - "application/json"
+      responses:
+        "204":
+          description: "No Content"
+        "400":
+          description: "Invalid field"
+          schema:
+            $ref: "#/definitions/error"
+  /personnes_physiques:
+    get:
+      tags:
+        - admin
+      summary: "Get pending personnes physiques"
+      security:
+        - Bearer: [ ]
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/PendingDocuments"
+    post:
+      tags:
+        - private
+      summary: "Create physical people"
+      security:
+        - Bearer: [ ]
+      parameters:
+        - in: body
+          name: body
+          schema:
+            $ref: "#/definitions/PersonnePhysiqueCreationBody"
+      produces:
+        - "application/json"
+      responses:
+        "201":
+          description: "Created"
+        "400":
+          description: "Invalid field"
+          schema:
+            $ref: "#/definitions/error"
+  /personnes_physiques/{id}:
+    get:
+      tags:
+        - public
+      summary: "Retrieve the physical person"
+      parameters:
+        - name: id
+          in: path
+          type: integer
+          format: int32
+          description: ID of the people
+          required: true
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/PersonnePhysique"
+    patch:
+      tags:
+        - admin
+      summary: "Approve or reject a document"
+      security:
+        - Bearer: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          type: string
+          format: uuid
+          description: "user id"
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/PatchUsersBody"
+      produces:
+        - "application/json"
+      responses:
+        "204":
+          description: "OK"
+        "400":
+          description: "Invalid field"
+          schema:
+            $ref: "#/definitions/error"
+        "401":
+          description: "No authorization"
+          schema:
+            $ref: "#/definitions/error"
+        "403":
+          description: "Not allowed"
+          schema:
+            $ref: "#/definitions/error"
+        "404":
+          description: "Not Found or already active"
+          schema:
+            $ref: "#/definitions/error"
+    put:
+      tags:
+        - private
+      summary: "Update a physical person"
+      security:
+        - Bearer: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          type: string
+          format: uuid
+          description: "user id"
+        - in: body
+          name: body
+          schema:
+            $ref: "#/definitions/PersonnePhysiqueCreationBody"
+      produces:
+        - "application/json"
+      responses:
+        "204":
+          description: "No Content"
+        "400":
+          description: "Invalid field"
+          schema:
+            $ref: "#/definitions/error"
+  /search:
+    post:
+      tags:
+        - public
+      summary: "Retrieve the list of legal persons that match the filters"
+      parameters:
+        - name: q
+          type: string
+          description: search for text
+          required: false
+          in: query
+        - name: limit
+          type: integer
+          description: The maximum size of the returned array
+          required: false
+          default: 10
+          in: query
+        - name: page
+          type: integer
+          description: The page
+          required: false
+          default: 1
+          in: query
+        - in: body
+          name: body
+          schema:
+            $ref: "#/definitions/SearchFilters"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/SearchResult"
+
+  ## USERS ##
+  /users:
+    post:
+      tags:
+        - public
+      summary: "User registration"
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/PostUsersBody"
+      produces:
+        - "application/json"
+      responses:
+        "201":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/UserID"
+        "400":
+          description: "Invalid field"
+          schema:
+            $ref: "#/definitions/error"
+        "409":
+          description: "User already exists"
+          schema:
+            $ref: "#/definitions/error"
+    get:
+      tags:
+        - admin
+      summary: "Get pending users info"
+      security:
+        - Bearer: [ ]
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/GetUsersInfo"
+        "401":
+          description: "No authorization"
+          schema:
+            $ref: "#/definitions/error"
+        "403":
+          description: "Not allowed"
+          schema:
+            $ref: "#/definitions/error"
+        "404":
+          description: "Not Found"
+          schema:
+            $ref: "#/definitions/error"
+  /users/{id}:
+    get:
+      tags:
+        - admin
+        - private
+      summary: "Get user info"
+      security:
+        - Bearer: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          type: string
+          format: uuid
+          description: "user id"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/GetUserInfo"
+        "401":
+          description: "No authorization"
+          schema:
+            $ref: "#/definitions/error"
+        "403":
+          description: "Not allowed"
+          schema:
+            $ref: "#/definitions/error"
+        "404":
+          description: "Not Found"
+          schema:
+            $ref: "#/definitions/error"
+    put:
+      tags:
+        - private
+      summary: "Update user profile"
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          type: string
+          format: uuid
+          description: "user id"
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/PutUsersBody"
+      produces:
+        - "application/json"
+      responses:
+        "204":
+          description: "OK"
+        "400":
+          description: "Invalid field"
+          schema:
+            $ref: "#/definitions/error"
+        "401":
+          description: "No authorization"
+          schema:
+            $ref: "#/definitions/error"
+        "403":
+          description: "Not allowed"
+          schema:
+            $ref: "#/definitions/error"
+        "404":
+          description: "Not Found"
+          schema:
+            $ref: "#/definitions/error"
+        "409":
+          description: "Email already exist"
+          schema:
+            $ref: "#/definitions/error"
+    patch:
+      tags:
+        - admin
+      summary: "Approve or reject a new contributor"
+      security:
+        - Bearer: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          type: string
+          format: uuid
+          description: "user id"
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/PatchUsersBody"
+      produces:
+        - "application/json"
+      responses:
+        "204":
+          description: "OK"
+        "400":
+          description: "Invalid field"
+          schema:
+            $ref: "#/definitions/error"
+        "401":
+          description: "No authorization"
+          schema:
+            $ref: "#/definitions/error"
+        "403":
+          description: "Not allowed"
+          schema:
+            $ref: "#/definitions/error"
+        "404":
+          description: "Not Found or already active"
+          schema:
+            $ref: "#/definitions/error"
+    delete:
+      tags:
+        - private
+      summary: "Delete account"
+      security:
+        - Bearer: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          type: string
+          format: uuid
+          description: "user id"
+      produces:
+        - "application/json"
+      responses:
+        "204":
+          description: "OK"
+        "401":
+          description: "No authorization"
+          schema:
+            $ref: "#/definitions/error"
+        "403":
+          description: "Not allowed"
+          schema:
+            $ref: "#/definitions/error"
+        "404":
+          description: "Not Found"
+          schema:
+            $ref: "#/definitions/error"
+  /email/{token}/validate:
+    get:
+      tags:
+        - public
+      summary: "Confirm email address"
+      parameters:
+        - in: path
+          name: token
+          required: true
+          type: string
+          format: uuid
+          description: "user token"
+      produces:
+        - "application/json"
+      responses:
+        "204":
+          description: "OK"
+        "404":
+          description: "Not Found"
+          schema:
+            $ref: "#/definitions/error"
+        "409":
+          description: "Already confirmed"
+          schema:
+            $ref: "#/definitions/error"
+      
+      
+
+  ## LOGIN ##
+  /login:
+    post:
+      tags:
+        - public
+      summary: "User login"
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/PostLogin"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/UserLogin"
+        "400":
+          description: "Bad request"
+          schema:
+            $ref: "#/definitions/error"
+        "403":
+          description: "Not allowed"
+          schema:
+            $ref: "#/definitions/error"
+        "404":
+          description: "Not Found"
+          schema:
+            $ref: "#/definitions/error"
+
+  ## PASSWORD ##
+  /password-reset:
+    post:
+      tags:
+        - public
+      summary: "Request a password reset"
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/PostResetPwd"
+      produces:
+        - "application/json"
+      responses:
+        "204":
+          description: "OK"
+        "400":
+          description: "Bad request"
+          schema:
+            $ref: "#/definitions/error"
+  /password-reset/{token}:
+    get:
+      tags:
+        - public
+      summary: "check reset user password token"
+      parameters:
+        - in: path
+          name: token
+          required: true
+          type: string
+          format: uuid
+          description: "user token"
+      produces:
+        - "application/json"
+      responses:
+        "204":
+          description: "OK"
+        "404":
+          description: "Not valid"
+          schema:
+            $ref: "#/definitions/error"
+    post:
+      tags:
+        - public
+      summary: "Reset user password"
+      parameters:
+        - in: path
+          name: token
+          required: true
+          type: string
+          format: uuid
+          description: "user token"
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: "#/definitions/PostNewPwd"
+      produces:
+        - "application/json"
+      responses:
+        "204":
+          description: "Password reset"
+        "400":
+          description: "Invalid request"
+          schema:
+            $ref: "#/definitions/error"
+        "404":
+          description: "token not valid"
+          schema:
+            $ref: "#/definitions/error"
+
+securityDefinitions:
+  Bearer:
+    type: apiKey
+    name: Authorization
+    in: header
+    description: |
+      JWT token
+      Example: **Bearer eyJhbGci....**
+
+
+definitions:
+  error:
+    type: object
+    required:
+      - code
+      - message
+    properties:
+        code:
+          type: integer
+        message:
+          type: string
+        description:
+          type: string
+
+  media:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int32
+      title:
+        type: string
+    required:
+      - id
+      - title
+
+  PostNewPwd:
+    type: object
+    required:
+      - password
+    properties:
+      password:
+        type: string
+        description: |
+          Password of the user.
+          Must be at least 8 characters long and contain at least one number, one uppercase letter, one lowercase letter and one special character (!@#$%^&*()_+-=[]{};':"|,./?).
+          It should not be longer than 30 characters or 72 bytes (one character can be 1 to 4 bytes).
+        minLength: 8
+        maxLength: 30
+  PostResetPwd:
+    type: object
+    properties:
+      email:
+        type: string
+        format: email
+        description: "email of the contributor"
+        minLength: 1
+        maxLength: 255
+    required:
+      - email
+
+  PostLogin:
+    type: object
+    properties:
+      email:
+        type: string
+        format: email
+        description: "email of the contributor"
+        minLength: 1
+        maxLength: 255
+      password:
+        type: string
+        description: "Password"
+        minLength: 1
+        maxLength: 30
+    required:
+      - email
+      - password
+  UserLogin:
+    type: object
+    properties: 
+      token:
+        type: string
+        format: jwt
+      token_type:
+        type: string
+        enum:
+          - Bearer
+      expires_in:
+        type: number
+        description: Expiration time in hours
+      firstname:
+        type: string
+        description: First name
+    required: 
+      - token
+      - token_type
+      - expires_in
+      - firstname
+
+  UserID:
+    type: object
+    properties:
+      token:
+        type: string
+        format: uuid
+    required:
+      - token
+
+  GetUsersInfo:
+    type: array
+    items:
+      $ref: "#/definitions/GetUserInfo"
+  GetUserInfo:
+    type: object
+    required:
+      - id
+      - firstname
+      - lastname
+      - mail
+      - domain
+      - motivation
+    properties:
+      id:
+        type: string
+        format: uuid
+      firstname:
+        type: string
+        description: First name
+      lastname:
+        type: string
+        description: Last name
+      mail:
+        type: string
+        format: email
+        description: Email of contributor
+      phone:
+        type: string
+        maxLength: 20
+      organization:
+        type: string
+      domain:
+        type: string
+        enum:
+          - ART
+          - ARCHITECTURE
+          - MEDIEVAL
+          - ARCHEOLOGIE
+          - PATRIMOINE
+          - THEOLOGIE
+          - PELERINAGE
+          - AUTRE
+      motivation:
+        type: string
+      creation_date:
+        type: string
+        format: date
+        description: creation date of the entry
+  PostUsersBody:
+    type: object
+    required:
+      - firstname
+      - lastname
+      - mail
+      - password
+      - domain
+      - motivation
+    properties:
+      firstname:
+        type: string
+        description: First name
+      lastname:
+        type: string
+        description: Last name
+      mail:
+        type: string
+        format: email
+        description: Email of contributor
+      password:
+        type: string
+        description: Password
+        minLength: 8
+      phone:
+        type: string
+        maxLength: 20
+      organization:
+        type: string
+      domain:
+        type: string
+        enum:
+          - ART
+          - ARCHITECTURE
+          - MEDIEVAL
+          - ARCHEOLOGIE
+          - PATRIMOINE
+          - THEOLOGIE
+          - PELERINAGE
+          - AUTRE
+      motivation:
+        type: string
+
+  PutUsersBody:
+    type: object
+    required:
+      - firstname
+      - lastname
+      - mail
+      - domain
+    properties:
+      firstname:
+        type: string
+        description: First name
+      lastname:
+        type: string
+        description: Last name
+      mail:
+        type: string
+        format: email
+        description: Email of contributor
+      password:
+        type: string
+        description: Password
+      old_password:
+        type: string
+        description: Old password
+      phone:
+        type: string
+        maxLength: 20
+      organization:
+        type: string
+      domain:
+        type: string
+        enum:
+          - ART
+          - ARCHITECTURE
+          - MEDIEVAL
+          - ARCHEOLOGIE
+          - PATRIMOINE
+          - THEOLOGIE
+          - PELERINAGE
+          - AUTRE
+  PatchUsersBody:
+    type: object
+    required:
+      - action
+    properties:
+      action:
+        type: string
+        enum:
+          - activate
+          - reject
+
+  SearchResult:
+    type: object
+    required:
+      - total
+      - items
+    properties:
+      total:
+        type: integer
+        format: int64
+      items:
+        type: array
+        items:
+          $ref: "#/definitions/ListItem"
+  SearchFilters:
+    type: object
+    properties:
+      centuries:
+        type: array
+        items:
+          type: integer
+          format: int32
+      countries:
+        type: array
+        items:
+          type: integer
+          format: int32
+      regions:
+        type: array
+        items:
+          type: integer
+          format: int32
+      departments:
+        type: array
+        items:
+          type: integer
+          format: int32
+      cities:
+        type: array
+        items:
+          type: integer
+          format: int32
+      mobiliers_images:
+        type: object
+        properties:
+          natures:
+            type: array
+            items:
+              type: integer
+              format: int32
+          techniques:
+            type: array
+            items:
+              type: integer
+              format: int32
+          states:
+            type: array
+            items:
+              type: integer
+              format: int32
+            
+          materials:
+            type: array
+            items:
+              type: integer
+              format: int32
+      monuments_lieux:
+        type: object
+        properties:
+          natures:
+            type: array
+            items:
+              type: integer
+              format: int32
+          states:
+            type: array
+            items:
+              type: integer
+              format: int32
+          materials:
+            type: array
+            items:
+              type: integer
+              format: int32
+      pers_morales:
+        type: object
+        properties:
+          natures:
+            type: array
+            items:
+              type: integer
+              format: int32
+      pers_physiques:
+        type: object
+        properties:
+          professions:
+            type: array
+            items:
+              type: integer
+              format: int32
+          travels:
+            type: array
+            items:
+              type: integer
+              format: int32
+  ListItem:
+    type: object
+    required:
+      - source
+      - id
+      - title
+      - medias
+    properties:
+      source:
+        type: string
+        description: source of the entry
+      id:
+        type: integer
+        format: int32
+      title:
+        type: string
+        description: "Title of the monument / place"
+      medias:
+        type: array
+        items:
+          $ref: "#/definitions/media"
+      natures:
+        type: array
+        items:
+          type: string
+      centuries:
+        type: array
+        items:
+          type: string
+      professions:
+        type: array
+        items:
+          type: string
+
+  PersonnePhysique:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int32
+        description: ID of the individual
+      firstname:
+        type: string
+        description: First name of the individual
+      birthdate:
+        type: string
+        description: Date of birth or approx
+      death:
+        type: string
+        description: Date of death
+      attestation:
+        type: string
+      historical_period:
+        type: array
+        items:
+          type: string
+      bibliography:
+        type: string
+        description: bibliography of the individual
+      biographical_elements:
+        type: string
+      pilgrimage_element:
+        type: string
+      commutation:
+        type: string
+        description: vow commutation
+      sources:
+        type: string
+        description: sources of the legal entity
+      creation_date:
+        type: string
+        format: date
+        description: creation date of the entry
+      update_date:
+        type: string
+        format: date
+        description: update date of the entry
+      published:
+        type: boolean
+        description: is entry published
+      contributors:
+        type: string
+        description: name of the contributors
+      comment:
+        type: string
+        description: Comment
+      authors:
+        type: array
+        items:
+          type: string
+        description: entry authors
+      city:
+        type: string
+        description: city of the individual
+      department:
+        type: string
+        description: department of the individual
+      region:
+        type: string
+        description: region of the individual
+      country:
+        type: string
+        description: country of the individual
+      travels:
+        type: array
+        items:
+          type: string
+      professions:
+        type: array
+        items:
+          type: string
+      event_nature:
+        type: string
+      medias:
+        type: array
+        items:
+          $ref: "#/definitions/media"
+        description: images ID of the monument lieu
+      centuries:
+        type: array
+        items:
+          type: string
+        description: time period of the monument lieu
+      linked_monuments_places:
+        type: array
+        items:
+          type: integer
+          format: int32
+      linked_legal_entities:
+        type: array
+        items:
+          type: integer
+          format: int32
+      linked_furniture_images:
+        type: array
+        items:
+          type: integer
+          format: int32
+      themes:
+        type: array
+        items:
+          type: string
+  PersonnePhysiqueCreationBody:
+    type: object
+    required:
+      - title
+    properties:
+      title:
+        type: string
+        description: Title of the monument lieu
+      centuries:
+        type: array
+        items:
+          type: integer
+          format: int32
+      medias:
+        type: array
+        items:
+          type: integer
+          format: int32
+      city:
+        type: integer
+        format: int32
+      department:
+        type: integer
+        format: int32
+      region:
+        type: integer
+        format: int32
+      country:
+        type: integer
+        format: int32
+      themes:
+        type: array
+        items:
+          type: integer
+          format: int32
+      contributors:
+        type: array
+        items:
+          type: string
+      source:
+        type: string
+      birthday:
+        type: string
+      death:
+        type: string
+      attestation:
+        type: string
+      historical_periods:
+        type: array
+        items:
+          type: integer
+          format: int32
+      professions:
+        type: array
+        items:
+          type: integer
+          format: int32
+      biographical_elements:
+        type: string
+      pilgrimage_elements:
+        type: string
+      travels:
+        type: array
+        items:
+          type: integer
+          format: int32
+      nature:
+        type: string
+      commutation:
+        type: string
+      bibliography:
+        type: string
+      comment:
+        type: string
+      linkedMonumentsLieux:
+        type: array
+        items:
+          type: integer
+          format: int32
+      linkedMobiliersImages:
+        type: array
+        items:
+          type: integer
+          format: int32
+      linkedPersMorales:
+        type: array
+        items:
+          type: integer
+          format: int32
+  PersonnesPhysiquesListFilters:
+    type: object
+    properties:
+      countries:
+        type: array
+        items:
+          type: integer
+          format: int32
+      regions:
+        type: array
+        items:
+          type: integer
+          format: int32
+      departments:
+        type: array
+        items:
+          type: integer
+          format: int32
+      cities:
+        type: array
+        items:
+          type: integer
+          format: int32
+      centuries:
+        type: array
+        items:
+          type: integer
+          format: int32
+      professions:
+        type: array
+        items:
+          type: integer
+          format: int32
+      authors:
+        type: array
+        items:
+          type: integer
+          format: int32
+      travels:
+        type: array
+        items:
+          type: integer
+          format: int32
+      furniture:
+        type: array
+        items:
+          type: integer
+          format: int32
+      legal_entities:
+        type: array
+        items:
+          type: integer
+          format: int32
+      places:
+        type: array
+        items:
+          type: integer
+          format: int32
+  PersonnesPhysiquesListItems:
+    type: object
+    required:
+      - id
+      - firstname
+    properties:
+      id:
+        type: integer
+        format: int32
+      firstname:
+        type: string
+        description: "Title of the monument / place"
+      medias:
+        type: array
+        items:
+          $ref: "#/definitions/media"
+      professions:
+        type: array
+        items:
+          type: string
+      centuries:
+        type: array
+        items:
+          type: string
+
+  PersonneMorale:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int32
+        description: ID of the legal entity
+      title:
+        type: string
+        description: Title of the legal entity
+      foundation_deed:
+        type: boolean
+        description: Has foundation deed
+      history:
+        type: string
+        description: History of the legal entity
+      bibliography:
+        type: string
+        description: bibliography of the legal entity
+      simple_mention:
+        type: boolean
+        description: Is simple mention
+      status_text:
+        type: boolean
+      process:
+        type: string
+        description: How it worked
+      social_involvement:
+        type: string
+        description: How it impacted the social life
+      objects:
+        type: string
+        description: Linked objects
+      sources:
+        type: string
+        description: sources of the legal entity
+      creation_date:
+        type: string
+        format: date
+        description: creation date of the entry
+      update_date:
+        type: string
+        format: date
+        description: update date of the entry
+      published:
+        type: boolean
+        description: is entry published
+      contributors:
+        type: string
+        description: name of the contributors
+      comment:
+        type: string
+        description: comment
+      authors:
+        type: array
+        items:
+          type: string
+        description: entry authors
+      city:
+        type: string
+        description: city of the legal entity
+      department:
+        type: string
+        description: department of the legal entity
+      region:
+        type: string
+        description: region of the legal entity
+      country:
+        type: string
+        description: country of the legal entity
+      natures:
+        type: array
+        items:
+          type: string
+        description: natures of the monument lieu
+      medias:
+        type: array
+        items:
+          $ref: "#/definitions/media"
+        description: images ID of the monument lieu
+      centuries:
+        type: array
+        items:
+          type: string
+        description: time period of the monument lieu
+      linked_monuments_places:
+        type: array
+        items:
+          type: integer
+          format: int32
+      linked_individuals:
+        type: array
+        items:
+          type: integer
+          format: int32
+      linked_furniture_images:
+        type: array
+        items:
+          type: integer
+          format: int32
+      themes:
+        type: array
+        items:
+          type: string
+  PersonneMoraleCreationBody:
+    type: object
+    required:
+      - title
+    properties:
+      title:
+        type: string
+        description: Title of the monument lieu
+      centuries:
+        type: array
+        items:
+          type: integer
+          format: int32
+      medias:
+        type: array
+        items:
+          type: integer
+          format: int32
+      city:
+        type: integer
+        format: int32
+      department:
+        type: integer
+        format: int32
+      region:
+        type: integer
+        format: int32
+      country:
+        type: integer
+        format: int32
+      themes:
+        type: array
+        items:
+          type: integer
+          format: int32
+      contributors:
+        type: array
+        items:
+          type: string
+      source:
+        type: string
+      simple_mention:
+        type: boolean
+      foundation_deed:
+        type: boolean
+      status_text:
+        type: boolean
+      functioning:
+        type: string
+      history:
+        type: string
+      social_involvement:
+        type: string
+      linked_objects:
+        type: string
+      bibliography:
+        type: string
+      natures:
+        type: array
+        items:
+          type: integer
+          format: int32
+      comment:
+        type: string
+      linkedMonumentsLieux:
+        type: array
+        items:
+          type: integer
+          format: int32
+      linkedMobiliersImages:
+        type: array
+        items:
+          type: integer
+          format: int32
+      linkedPersPhysiques:
+        type: array
+        items:
+          type: integer
+          format: int32
+  PersonnesMoralesListFilters:
+    type: object
+    properties:
+      countries:
+        type: array
+        items:
+          type: integer
+          format: int32
+      regions:
+        type: array
+        items:
+          type: integer
+          format: int32
+      departments:
+        type: array
+        items:
+          type: integer
+          format: int32
+      cities:
+        type: array
+        items:
+          type: integer
+          format: int32
+      centuries:
+        type: array
+        items:
+          type: integer
+          format: int32
+      natures:
+        type: array
+        items:
+          type: integer
+          format: int32
+      authors:
+        type: array
+        items:
+          type: integer
+          format: int32
+      furniture:
+        type: array
+        items:
+          type: integer
+          format: int32
+      individuals:
+        type: array
+        items:
+          type: integer
+          format: int32
+      places:
+        type: array
+        items:
+          type: integer
+          format: int32
+  PersonnesMoralesListItems:
+    type: object
+    required:
+      - id
+      - title
+    properties:
+      id:
+        type: integer
+        format: int32
+      title:
+        type: string
+        description: "Title of the legal entity"
+      medias:
+        type: array
+        items:
+          $ref: "#/definitions/media"
+      natures:
+        type: array
+        items:
+          type: string
+      centuries:
+        type: array
+        items:
+          type: string
+
+  MobilierImage:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int32
+        description: ID of the mobilier image
+      title:
+        type: string
+        description: Title of the mobilier image
+      description:
+        type: string
+        description: Description of the mobilier image
+      history:
+        type: string
+        description: History of the mobilier image
+      bibliography:
+        type: string
+        description: bibliography of the mobilier image
+      inscriptions:
+        type: string
+        description: The inscriptions on the object
+      creation_date:
+        type: string
+        format: date
+        description: creation date of the entry
+      update_date:
+        type: string
+        format: date
+        description: update date of the entry
+      published:
+        type: boolean
+        description: is entry published
+      contributors:
+        type: string
+        description: name of the contributors
+      protected:
+        type: boolean
+        description: is it protected
+      protection_comment:
+        type: string
+        description: protection comment
+      conservation_place:
+        type: string
+        description: conservation place
+      origin_place:
+        type: string
+        description: place of origin
+      authors:
+        type: array
+        items:
+          type: string
+        description: entry authors
+      city:
+        type: string
+        description: city of the mobilier image
+      department:
+        type: string
+        description: department of the mobilier image
+      region:
+        type: string
+        description: region of the mobilier image
+      country:
+        type: string
+        description: country of the mobilier image
+      conservation:
+        type: array
+        items:
+          type: string
+        description: conservation states
+      materials:
+        type: array
+        items:
+          type: string
+        description: materials used for the monument lieu
+      natures:
+        type: array
+        items:
+          type: string
+        description: natures of the monument lieu
+      medias:
+        type: array
+        items:
+          $ref: "#/definitions/media"
+        description: images ID of the monument lieu
+      sources:
+        type: string
+      centuries:
+        type: array
+        items:
+          type: string
+        description: time period of the monument lieu
+      techniques:
+        type: array
+        items:
+          type: string
+      linked_monuments_places:
+        type: array
+        items:
+          type: integer
+          format: int32
+      linked_individuals:
+        type: array
+        items:
+          type: integer
+          format: int32
+      linked_legal_entities:
+        type: array
+        items:
+          type: integer
+          format: int32
+      themes:
+        type: array
+        items:
+          type: string
+  MobilierImageCreationBody:
+    type: object
+    required:
+      - title
+      - description
+    properties:
+      title:
+        type: string
+        description: Title of the monument lieu
+      centuries:
+        type: array
+        items:
+          type: integer
+          format: int32
+      medias:
+        type: array
+        items:
+          type: integer
+          format: int32
+      city:
+        type: integer
+        format: int32
+      department:
+        type: integer
+        format: int32
+      region:
+        type: integer
+        format: int32
+      country:
+        type: integer
+        format: int32
+      themes:
+        type: array
+        items:
+          type: integer
+          format: int32
+      contributors:
+        type: array
+        items:
+          type: string
+      source:
+        type: string
+      description:
+        type: string
+      inscription:
+        type: string
+      history:
+        type: string
+      bibliography:
+        type: string
+      conservationStates:
+        type: array
+        items:
+          type: integer
+          format: int32
+      isProtected:
+        type: boolean
+      protectionComment:
+        type: string
+      materials:
+        type: array
+        items:
+          type: integer
+          format: int32
+      techniques:
+        type: array
+        items:
+          type: integer
+          format: int32
+      natures:
+        type: array
+        items:
+          type: integer
+          format: int32
+      originPlace:
+        type: string
+      presentPlace:
+        type: string
+      linkedMonumentsLieux:
+        type: array
+        items:
+          type: integer
+          format: int32
+      linkedPersMorales:
+        type: array
+        items:
+          type: integer
+          format: int32
+      linkedPersPhysiques:
+        type: array
+        items:
+          type: integer
+          format: int32
+  MobiliersImagesListFilters:
+    type: object
+    properties:
+      countries:
+        type: array
+        items:
+          type: integer
+          format: int32
+      regions:
+        type: array
+        items:
+          type: integer
+          format: int32
+      departments:
+        type: array
+        items:
+          type: integer
+          format: int32
+      cities:
+        type: array
+        items:
+          type: integer
+          format: int32
+      centuries:
+        type: array
+        items:
+          type: integer
+          format: int32
+      natures:
+        type: array
+        items:
+          type: integer
+          format: int32
+      techniques:
+        type: array
+        items:
+          type: integer
+          format: int32
+      states:
+        type: array
+        items:
+          type: integer
+          format: int32
+      creators:
+        type: array
+        items:
+          type: integer
+          format: int32
+      authors:
+        type: array
+        items:
+          type: integer
+          format: int32
+      materials:
+        type: array
+        items:
+          type: integer
+          format: int32
+      legal_entities:
+        type: array
+        items:
+          type: integer
+          format: int32
+      individuals:
+        type: array
+        items:
+          type: integer
+          format: int32
+      places:
+        type: array
+        items:
+          type: integer
+          format: int32
+  MobiliersImagesListItems:
+    type: object
+    required:
+      - id
+      - title
+    properties:
+      id:
+        type: integer
+        format: int32
+      title:
+        type: string
+        description: "Title of the mobilier image"
+      medias:
+        type: array
+        items:
+          $ref: "#/definitions/media"
+      natures:
+        type: array
+        items:
+          type: string
+      centuries:
+        type: array
+        items:
+          type: string
+
+  MonumentLieu:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int32
+        description: ID of the monument lieu
+      title:
+        type: string
+        description: Title of the monument lieu
+      description:
+        type: string
+        description: Description of the monument lieu
+      history:
+        type: string
+        description: History of the monument lieu
+      geolocation:
+        type: string
+        description: geolocation of the monument lieu
+      bibliography:
+        type: string
+        description: bibliography of the monument lieu
+      creation_date:
+        type: string
+        format: date
+        description: creation date of the entry
+      update_date:
+        type: string
+        format: date
+        description: update date of the entry
+      published:
+        type: boolean
+        description: is entry published
+      contributors:
+        type: string
+        description: name of the contributors
+      protected:
+        type: boolean
+        description: is it protected
+      protection_comment:
+        type: string
+        description: protection comment
+      authors:
+        type: array
+        items:
+          type: string
+        description: entry authors
+      sources:
+        type: string
+        description: Sources of the information
+      city:
+        type: string
+        description: city of the monument lieu
+      department:
+        type: string
+        description: department of the monument lieu
+      region:
+        type: string
+        description: region of the monument lieu
+      country:
+        type: string
+        description: country of the monument lieu
+      conservation:
+        type: array
+        items:
+          type: string
+        description: conservation states
+      materials:
+        type: array
+        items:
+          type: string
+        description: materials used for the monument lieu
+      natures:
+        type: array
+        items:
+          type: string
+        description: natures of the monument lieu
+      medias:
+        type: array
+        items:
+          $ref: "#/definitions/media"
+        description: images ID of the monument lieu
+      centuries:
+        type: array
+        items:
+          type: string
+        description: time period of the monument lieu
+      linked_furniture_images:
+        type: array
+        items:
+          type: integer
+          format: int32
+      linked_individuals:
+        type: array
+        items:
+          type: integer
+          format: int32
+      linked_legal_entities:
+        type: array
+        items:
+          type: integer
+          format: int32
+      themes:
+        type: array
+        items:
+          type: string
+  PendingDocuments:
+    type: object
+    required:
+      - id
+      - title
+      - creation_date
+      - authors
+    properties:
+      id:
+        type: integer
+        format: int32
+      title:
+        type: string
+      creation_date:
+        type: string
+        format: date
+        description: creation date of the entry
+      authors:
+        type: array
+        items:
+          type: string
+        description: entry authors
+      city:
+        type: string
+      department:
+        type: string
+      region:
+        type: string
+      country:
+        type: string
+      natures:
+        type: array
+        items:
+          type: string
+      professions:
+        type: array
+        items:
+          type: string
+      medias:
+        type: array
+        items:
+          $ref: "#/definitions/media"
+        description: images ID of the monument lieu
+      centuries:
+        type: array
+        items:
+          type: string
+        description: time period of the monument lieu
+  MonumentsLieuxCreationBody:
+    type: object
+    required:
+      - title
+      - description
+    properties:
+      title:
+        type: string
+        description: Title of the monument lieu
+      centuries:
+        type: array
+        items:
+          type: integer
+          format: int32
+      medias:
+        type: array
+        items:
+          type: integer
+          format: int32
+      city:
+        type: integer
+        format: int32
+      department:
+        type: integer
+        format: int32
+      region:
+        type: integer
+        format: int32
+      country:
+        type: integer
+        format: int32
+      themes:
+        type: array
+        items:
+          type: integer
+          format: int32
+      contributors:
+        type: array
+        items:
+          type: string
+      source:
+        type: string
+      description:
+        type: string
+      history:
+        type: string
+      bibliography:
+        type: string
+      conservationStates:
+        type: array
+        items:
+          type: integer
+          format: int32
+      isProtected:
+        type: boolean
+      protectionComment:
+        type: string
+      materials:
+        type: array
+        items:
+          type: integer
+          format: int32
+      natures:
+        type: array
+        items:
+          type: integer
+          format: int32
+      latitude:
+        type: string
+      longitude:
+        type: string
+      linkedMobiliersImages:
+        type: array
+        items:
+          type: integer
+          format: int32
+      linkedPersMorales:
+        type: array
+        items:
+          type: integer
+          format: int32
+      linkedPersPhysiques:
+        type: array
+        items:
+          type: integer
+          format: int32
+  MonumentsLieuxListFilters:
+    type: object
+    properties:
+      countries:
+        type: array
+        items:
+          type: integer
+          format: int32
+      regions:
+        type: array
+        items:
+          type: integer
+          format: int32
+      departments:
+        type: array
+        items:
+          type: integer
+          format: int32
+      cities:
+        type: array
+        items:
+          type: integer
+          format: int32
+      centuries:
+        type: array
+        items:
+          type: integer
+          format: int32
+      natures:
+        type: array
+        items:
+          type: integer
+          format: int32
+      states:
+        type: array
+        items:
+          type: integer
+          format: int32
+      creators:
+        type: array
+        items:
+          type: integer
+          format: int32
+      authors:
+        type: array
+        items:
+          type: integer
+          format: int32
+      materials:
+        type: array
+        items:
+          type: integer
+          format: int32
+      legal_entities:
+        type: array
+        items:
+          type: integer
+          format: int32
+      individuals:
+        type: array
+        items:
+          type: integer
+          format: int32
+      furniture:
+        type: array
+        items:
+          type: integer
+          format: int32
+  MonumentsLieuxListItems:
+    type: object
+    required:
+      - id
+      - title
+    properties:
+      id:
+        type: integer
+        format: int32
+      title:
+        type: string
+        description: "Title of the monument / place"
+      medias:
+        type: array
+        items:
+          $ref: "#/definitions/media"
+      natures:
+        type: array
+        items:
+          type: string
+      centuries:
+        type: array
+        items:
+          type: string
+
+  basicFilter:
+    type: object
+    required:
+      - id
+      - name
+    properties:
+      id:
+        type: integer
+        description: ID of the element (≠ ID database)
+      name:
+        type: string
+        description: Name of the filter
+  RegionFilter:
+    type: object
+    allOf:
+      - $ref: "#/definitions/basicFilter"
+    properties:
+      pays:
+        $ref: "#/definitions/basicFilter"
+  DepartmentFilter:
+    type: object
+    allOf:
+      - $ref: "#/definitions/basicFilter"
+    properties:
+      region:
+        $ref: "#/definitions/RegionFilter"
+  CommuneFilter:
+    type: object
+    allOf:
+      - $ref: "#/definitions/basicFilter"
+    properties:
+      department:
+        $ref: "#/definitions/DepartmentFilter"

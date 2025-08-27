@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15.4
+    container_name: my_postgres_dev
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: stjacq
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: dbtest
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./initdb:/docker-entrypoint-initdb.d
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

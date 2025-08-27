@@ -1,0 +1,15 @@
+logs:
+  level: "info"
+  file: ".logs/tmp.log"
+database:
+  dsn: "postgres://stjacq:root@localhost:5432/dbtest?sslmode=disable"
+  maxConns: 15
+smtp:
+  host: "https://api.brevo.com/v3/smtp/email"
+  apikey: "brevoapikey"
+  from:
+    name: "IRJ"
+    email: "toto@irj.com"
+session:
+    duration: 1h
+    jwtSecret: "0c2c51fc6a4471b82aaa2c30ae8af43a0c2c51fc6a4471b82aaa2c30ae8af43a"

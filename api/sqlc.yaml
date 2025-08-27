@@ -1,0 +1,19 @@
+# configuration for sqlc tool (https://docs.sqlc.dev/en/latest/index.html).
+# sqlc generates go code from SQL schema and queries.
+version: "2"
+
+sql:
+  - engine: "postgresql"
+    queries: "./queries/"
+    schema: "./migrations/"
+    gen:
+      go:
+        package: "queries"
+        out: "../internal/postgres/_generated"
+        sql_package: "pgx/v5"
+        overrides:
+          - db_type: "uuid"
+            go_type:
+              import: "github.com/google/uuid"
+              type: "UUID"
+        omit_unused_structs: true
