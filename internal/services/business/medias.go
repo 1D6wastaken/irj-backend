@@ -105,7 +105,7 @@ func (b *BusinessService) GetMediaByID(w http.ResponseWriter, r *http.Request) {
 
 	filename := filepath.Base(media.Path)
 
-	logger.Info().Msgf("media: %s", filename)
+	logger.Info().Msgf("media: %s", filepath.Join(b.config.FileSystem.UploadDir, filename))
 
 	w.Header().Set("Content-Type", media.Mimetype)
 
