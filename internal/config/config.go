@@ -40,8 +40,9 @@ type (
 	}
 
 	FileSystem struct {
-		UploadDir string `yaml:"uploadDir"`
-		MaxSize   int64  `yaml:"maxSize"`
+		UploadDir      string `yaml:"uploadDir"`
+		UploadDirForDB string `yaml:"uploadDirForDb"`
+		MaxSize        int64  `yaml:"maxSize"`
 	}
 
 	SMTP struct {
@@ -124,6 +125,10 @@ func (cfg *Config) checkDatabase() error {
 func (cfg *Config) checkFileSystem() {
 	if cfg.FileSystem.UploadDir == "" {
 		cfg.FileSystem.UploadDir = defaultUploadDir
+	}
+
+	if cfg.FileSystem.UploadDirForDB == "" {
+		cfg.FileSystem.UploadDirForDB = defaultUploadDir
 	}
 
 	if cfg.FileSystem.MaxSize == 0 {

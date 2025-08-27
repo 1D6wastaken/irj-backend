@@ -100,9 +100,11 @@ func (b *BusinessService) GetMediaByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	filename := filepath.Base(media.Path)
+
 	w.Header().Set("Content-Type", media.Mimetype)
 
-	http.ServeFile(w, r, media.Path)
+	http.ServeFile(w, r, filepath.Join(b.config.FileSystem.UploadDir, filename))
 }
 
 func (b *BusinessService) UploadImage(w http.ResponseWriter, r *http.Request) *_http.APIError {
@@ -133,9 +135,10 @@ func (b *BusinessService) UploadImage(w http.ResponseWriter, r *http.Request) *_
 
 	// Générer un nom unique
 	filename := uuid.New().String() + filepath.Ext(fileHeader.Filename)
-	savePath := filepath.Join(b.config.FileSystem.UploadDir, filename)
+	savePath := filepath.Join(b.config.FileSystem.UploadDirForDB, filename)
+	realPath := filepath.Join(b.config.FileSystem.UploadDir, filename)
 
-	dst, err := os.Create(savePath)
+	dst, err := os.Create(realPath)
 	if err != nil {
 		return _http.ErrInternalError.Msg("Erreur écriture fichier").Err(err)
 	}
