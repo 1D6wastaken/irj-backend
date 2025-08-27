@@ -23,6 +23,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/julienschmidt/httprouter"
+	"github.com/rs/zerolog"
 )
 
 const MaxFileSize = 5 << 20 // 5 MB
@@ -71,6 +72,8 @@ func (b *BusinessService) GetMediaByID(w http.ResponseWriter, r *http.Request) {
 	subCtx, cancel := context.WithTimeout(r.Context(), defaultTimeOut)
 	defer cancel()
 
+	logger := zerolog.Ctx(subCtx)
+
 	params := httprouter.ParamsFromContext(subCtx)
 
 	id, err := strconv.ParseInt(params.ByName("id"), 10, 32)
@@ -102,12 +105,16 @@ func (b *BusinessService) GetMediaByID(w http.ResponseWriter, r *http.Request) {
 
 	filename := filepath.Base(media.Path)
 
+	logger.Info().Msgf("media: %s", filename)
+
 	w.Header().Set("Content-Type", media.Mimetype)
 
 	http.ServeFile(w, r, filepath.Join(b.config.FileSystem.UploadDir, filename))
 }
 
 func (b *BusinessService) UploadImage(w http.ResponseWriter, r *http.Request) *_http.APIError {
+	logger := zerolog.Ctx(r.Context())
+
 	_, ok := r.Context().Value(catalogs.AccessToken).(jwt.SessionInfo)
 	if !ok {
 		return _http.ErrUnauthorized.Msg("invalid token")
@@ -137,6 +144,8 @@ func (b *BusinessService) UploadImage(w http.ResponseWriter, r *http.Request) *_
 	filename := uuid.New().String() + filepath.Ext(fileHeader.Filename)
 	savePath := filepath.Join(b.config.FileSystem.UploadDirForDB, filename)
 	realPath := filepath.Join(b.config.FileSystem.UploadDir, filename)
+
+	logger.Info().Str("db_path", savePath).Str("path", realPath).Msg("Uploading image")
 
 	dst, err := os.Create(realPath)
 	if err != nil {
