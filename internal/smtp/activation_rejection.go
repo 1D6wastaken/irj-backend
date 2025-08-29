@@ -22,7 +22,7 @@ func (s *SMTPService) SendActivationMail(ctx context.Context, to []EmailPerson, 
   <table width="100%%" cellpadding="0" cellspacing="0" style="background-color:#802331;">
     <tr>
       <td align="center" style="padding:20px;">
-        <a href="https://saintjacquesinfo.eu/#/" target="_blank" style="color:#ffffff; font-size:20px; font-weight:bold; text-decoration:none;">
+        <a href="https://test.saintjacquesinfo.eu/#/" target="_blank" style="color:#ffffff; font-size:20px; font-weight:bold; text-decoration:none;">
           Le site du Patrimoine Saint-Jacques
         </a>
       </td>
@@ -43,7 +43,7 @@ func (s *SMTPService) SendActivationMail(ctx context.Context, to []EmailPerson, 
           </tr>
           <tr>
             <td align="center" style="padding-top:20px;">
-              <a href="https://saintjacquesinfo.eu/email/%s/validate"
+              <a href="https://test.saintjacquesinfo.eu/email/%s/validate"
                  style="background-color:#802331; color:#ffffff; padding:12px 24px; border-radius:5px; text-decoration:none; font-weight:bold;">
                 Confirmer mon email
               </a>
@@ -52,7 +52,7 @@ func (s *SMTPService) SendActivationMail(ctx context.Context, to []EmailPerson, 
           <tr>
             <td style="padding-top:20px; font-size:14px; color:#555555;">
               Si le bouton ne fonctionne pas, vous pouvez copier-coller ce lien dans votre navigateur :
-              <br><a href="https://saintjacquesinfo.eu/email/%s/validate" style="color:#802331;">https://saintjacquesinfo.eu/email/%s/validate</a>
+              <br><a href="https://test.saintjacquesinfo.eu/email/%s/validate" style="color:#802331;">https://test.saintjacquesinfo.eu/email/%s/validate</a>
             </td>
           </tr>
           <tr>
@@ -73,7 +73,7 @@ func (s *SMTPService) SendActivationMail(ctx context.Context, to []EmailPerson, 
 Bonne nouvelle 🎉 ! Votre candidature pour devenir contributeur sur "Le site du Patrimoine Saint-Jacques" a été acceptée.
 
 Il ne vous reste plus qu'à confirmer votre adresse email en cliquant sur le lien suivant :
-https://saintjacquesinfo.eu/email/%s/validate
+https://test.saintjacquesinfo.eu/email/%s/validate
 
 Cet email est généré automatiquement. Merci de ne pas y répondre directement.
 `, id)
@@ -98,7 +98,7 @@ func (s *SMTPService) SendRejectionMail(ctx context.Context, to []EmailPerson) e
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#802331;">
     <tr>
       <td align="center" style="padding:20px;">
-        <a href="https://saintjacquesinfo.eu/#/" target="_blank" style="color:#ffffff; font-size:20px; font-weight:bold; text-decoration:none;">
+        <a href="https://test.saintjacquesinfo.eu/#/" target="_blank" style="color:#ffffff; font-size:20px; font-weight:bold; text-decoration:none;">
           Le site du Patrimoine Saint-Jacques
         </a>
       </td>

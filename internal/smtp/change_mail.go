@@ -22,7 +22,7 @@ func (s *SMTPService) SendEmailConfirmationMail(ctx context.Context, to []EmailP
   <table width="100%%" cellpadding="0" cellspacing="0" style="background-color:#802331;">
     <tr>
       <td align="center" style="padding:20px;">
-        <a href="https://saintjacquesinfo.eu/#/" target="_blank" style="color:#ffffff; font-size:20px; font-weight:bold; text-decoration:none;">
+        <a href="https://test.saintjacquesinfo.eu/#/" target="_blank" style="color:#ffffff; font-size:20px; font-weight:bold; text-decoration:none;">
           Le site du Patrimoine Saint-Jacques
         </a>
       </td>
@@ -43,7 +43,7 @@ func (s *SMTPService) SendEmailConfirmationMail(ctx context.Context, to []EmailP
           </tr>
           <tr>
             <td style="padding-top:20px; text-align:center;">
-              <a href="https://saintjacquesinfo.eu/email/%s/validate" 
+              <a href="https://test.saintjacquesinfo.eu/email/%s/validate" 
                  style="background-color:#802331; color:#ffffff; padding:12px 24px; border-radius:5px; text-decoration:none; font-weight:bold;">
                 Confirmer mon adresse email
               </a>
@@ -53,7 +53,7 @@ func (s *SMTPService) SendEmailConfirmationMail(ctx context.Context, to []EmailP
             <td style="padding-top:20px; font-size:14px; color:#666666;">
               Si le bouton ne fonctionne pas, copiez et collez ce lien dans votre navigateur :
               <br>
-              <a href="https://saintjacquesinfo.eu/email/%s/validate" style="color:#802331;">https://saintjacquesinfo.eu/email/%s/validate</a>
+              <a href="https://test.saintjacquesinfo.eu/email/%s/validate" style="color:#802331;">https://test.saintjacquesinfo.eu/email/%s/validate</a>
             </td>
           </tr>
           <tr>
@@ -74,7 +74,7 @@ func (s *SMTPService) SendEmailConfirmationMail(ctx context.Context, to []EmailP
 Vous avez récemment modifié l'adresse email associée à votre compte sur "Le site du Patrimoine Saint-Jacques".
 
 Pour valider cette modification, merci de confirmer votre nouvelle adresse en cliquant sur ce lien :
-https://saintjacquesinfo.eu/email/%s/validate
+https://test.saintjacquesinfo.eu/email/%s/validate
 
 Si vous n'êtes pas à l'origine de cette modification, veuillez nous contacter immédiatement.
 

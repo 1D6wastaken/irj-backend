@@ -20,7 +20,7 @@ func (s *SMTPService) SendNewUserEmail(ctx context.Context, to []EmailPerson) er
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#802331;">
     <tr>
       <td align="center" style="padding:20px;">
-        <a href="https://saintjacquesinfo.eu/#/" target="_blank" style="color:#ffffff; font-size:20px; font-weight:bold; text-decoration:none;">
+        <a href="https://test.saintjacquesinfo.eu/#/" target="_blank" style="color:#ffffff; font-size:20px; font-weight:bold; text-decoration:none;">
           Le site du Patrimoine Saint-Jacques
         </a>
       </td>
@@ -41,7 +41,7 @@ func (s *SMTPService) SendNewUserEmail(ctx context.Context, to []EmailPerson) er
           </tr>
           <tr>
             <td align="center" style="padding-top:20px;">
-              <a href="https://saintjacquesinfo.eu/#" 
+              <a href="https://test.saintjacquesinfo.eu/#" 
                  style="background-color:#802331; color:#ffffff; padding:12px 24px; border-radius:5px; text-decoration:none; font-weight:bold;">
                 Voir la candidature
               </a>
@@ -67,7 +67,7 @@ Un nouvel utilisateur vient de soumettre sa candidature pour devenir contributeu
 
 Veuillez vous connecter à votre espace d'administration pour examiner sa demande.
 
-Lien vers l'admin : https://saintjacquesinfo.eu/#
+Lien vers l'admin : https://test.saintjacquesinfo.eu/#
 `
 
 	return s.send(ctx, to, subject, htmlEmail, textContent)
