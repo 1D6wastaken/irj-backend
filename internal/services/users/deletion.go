@@ -127,6 +127,22 @@ func deleteUser(ctx context.Context, s *UserService, exData *deleteUserExchangeD
 		return nil
 	}
 
+	return storeAccountDeletionEvent
+}
+
+func storeAccountDeletionEvent(_ context.Context, s *UserService, exData *deleteUserExchangeData) deleteUserState {
+	s.stopper.Hold(1)
+
+	//nolint:contextcheck
+	go func(logger *zerolog.Logger, id string) {
+		defer s.stopper.Release()
+
+		err := s.postgresService.Queries.AccountDeletionEvent(context.Background(), id)
+		if err != nil {
+			logger.Error().Err(err).Msg("failed to store deletion event")
+		}
+	}(exData.logger, exData.token.ID)
+
 	return sendUserDeletionMail
 }
 

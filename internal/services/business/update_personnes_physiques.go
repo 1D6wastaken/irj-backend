@@ -259,5 +259,32 @@ func addAuteurToUpdatedPersonnePhysique(ctx context.Context, s *BusinessService,
 		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to attach author to personne physique")
 	}
 
+	return storePersPhyDocumentUpdateEvent
+}
+
+//nolint:lll
+func storePersPhyDocumentUpdateEvent(_ context.Context, s *BusinessService, exData *updatePersonnePhysiqueExchangeData) updatePersonnePhysiqueState {
+	s.stopper.Hold(1)
+
+	//nolint:contextcheck
+	go func(logger *zerolog.Logger, userID string, documentID int32) {
+		defer s.stopper.Release()
+
+		err := s.postgresService.Queries.DocumentUpdateEvent(context.Background(), queries.DocumentUpdateEventParams{
+			UserID: userID,
+			DocumentID: pgtype.Int4{
+				Int32: documentID,
+				Valid: true,
+			},
+			Comment: pgtype.Text{
+				String: "personnes_physiques",
+				Valid:  true,
+			},
+		})
+		if err != nil {
+			logger.Error().Err(err).Msg("failed to store document update event")
+		}
+	}(exData.logger, exData.token.ID, exData.id)
+
 	return nil
 }

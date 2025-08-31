@@ -1,0 +1,8 @@
+BEGIN;
+
+
+DROP TABLE IF EXISTS t_app_events;
+
+DROP TYPE IF EXISTS event_type;
+
+COMMIT;

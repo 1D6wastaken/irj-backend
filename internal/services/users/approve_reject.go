@@ -13,6 +13,7 @@ import (
 	"irj/pkg/api"
 	_http "irj/pkg/http"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/zerolog"
 )
@@ -141,24 +142,29 @@ func approveOrRejectActivateUser(ctx context.Context, s *UserService, exData *ap
 
 	exData.logger.Info().Str("userID", exData.id).Str("adminID", exData.token.ID).Msg("user approved")
 
-	return sendUserActivationMail
+	return storeUserActivationEvent
 }
 
-func approveOrRejectDeleteUser(ctx context.Context, s *UserService, exData *approveRejectExchangeData) approveRejectState {
-	if err := s.postgresService.Queries.DeleteUserByID(ctx, exData.id); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil
+func storeUserActivationEvent(_ context.Context, s *UserService, exData *approveRejectExchangeData) approveRejectState {
+	s.stopper.Hold(1)
+
+	//nolint:contextcheck
+	go func(logger *zerolog.Logger, userID, adminID string) {
+		defer s.stopper.Release()
+
+		err := s.postgresService.Queries.ContributorValidationEvent(context.Background(), queries.ContributorValidationEventParams{
+			UserID: userID,
+			AdminID: pgtype.Text{
+				String: adminID,
+				Valid:  true,
+			},
+		})
+		if err != nil {
+			logger.Error().Err(err).Msg("failed to store activation event")
 		}
+	}(exData.logger, exData.id, exData.token.ID)
 
-		exData.logger.Error().Err(err).Msg("failed to delete user")
-		exData.result = catalogs.ErrUnexpectedError
-
-		return nil
-	}
-
-	exData.logger.Info().Str("userID", exData.id).Str("adminID", exData.token.ID).Msg("user rejected")
-
-	return sendUserRejectionMail
+	return sendUserActivationMail
 }
 
 func sendUserActivationMail(_ context.Context, s *UserService, exData *approveRejectExchangeData) approveRejectState {
@@ -180,6 +186,45 @@ func sendUserActivationMail(_ context.Context, s *UserService, exData *approveRe
 	}(s, exData.id, *exData.user)
 
 	return nil
+}
+
+func approveOrRejectDeleteUser(ctx context.Context, s *UserService, exData *approveRejectExchangeData) approveRejectState {
+	if err := s.postgresService.Queries.DeleteUserByID(ctx, exData.id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+
+		exData.logger.Error().Err(err).Msg("failed to delete user")
+		exData.result = catalogs.ErrUnexpectedError
+
+		return nil
+	}
+
+	exData.logger.Info().Str("userID", exData.id).Str("adminID", exData.token.ID).Msg("user rejected")
+
+	return storeUserRejectionEvent
+}
+
+func storeUserRejectionEvent(_ context.Context, s *UserService, exData *approveRejectExchangeData) approveRejectState {
+	s.stopper.Hold(1)
+
+	//nolint:contextcheck
+	go func(logger *zerolog.Logger, userID, adminID string) {
+		defer s.stopper.Release()
+
+		err := s.postgresService.Queries.ContributorRejectionEvent(context.Background(), queries.ContributorRejectionEventParams{
+			UserID: userID,
+			AdminID: pgtype.Text{
+				String: adminID,
+				Valid:  true,
+			},
+		})
+		if err != nil {
+			logger.Error().Err(err).Msg("failed to store rejection event")
+		}
+	}(exData.logger, exData.id, exData.token.ID)
+
+	return sendUserRejectionMail
 }
 
 func sendUserRejectionMail(_ context.Context, s *UserService, exData *approveRejectExchangeData) approveRejectState {

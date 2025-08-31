@@ -126,6 +126,33 @@ func createMonumentLieu(ctx context.Context, s *BusinessService, exData *createM
 
 	exData.id = id
 
+	return storeMonuLieuDocumentSubmissionEvent
+}
+
+//nolint:lll
+func storeMonuLieuDocumentSubmissionEvent(_ context.Context, s *BusinessService, exData *createMonumentLieuExchangeData) createMonumentLieuState {
+	s.stopper.Hold(1)
+
+	//nolint:contextcheck
+	go func(logger *zerolog.Logger, userID string, documentID int32) {
+		defer s.stopper.Release()
+
+		err := s.postgresService.Queries.DocumentSubmissionEvent(context.Background(), queries.DocumentSubmissionEventParams{
+			UserID: userID,
+			DocumentID: pgtype.Int4{
+				Int32: documentID,
+				Valid: true,
+			},
+			Comment: pgtype.Text{
+				String: "monuments_lieux",
+				Valid:  true,
+			},
+		})
+		if err != nil {
+			logger.Error().Err(err).Msg("failed to store document submission event")
+		}
+	}(exData.logger, exData.token.ID, exData.id)
+
 	return linkMonumentLieu
 }
 

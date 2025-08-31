@@ -196,6 +196,22 @@ func createUserRegistration(ctx context.Context, s *UserService, exData *registr
 
 	exData.result.token = uuid
 
+	return storeUserRegistrationEvent
+}
+
+func storeUserRegistrationEvent(_ context.Context, s *UserService, exData *registrationExchangeData) registrationState {
+	s.stopper.Hold(1)
+
+	//nolint:contextcheck
+	go func(logger *zerolog.Logger, id string) {
+		defer s.stopper.Release()
+
+		err := s.postgresService.Queries.ContributorRegistrationEvent(context.Background(), id)
+		if err != nil {
+			logger.Error().Err(err).Msg("failed to store registration event")
+		}
+	}(exData.logger, exData.result.token)
+
 	return sendUserRegistrationEmail
 }
 

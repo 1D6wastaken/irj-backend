@@ -13,6 +13,7 @@ import (
 	"irj/pkg/api"
 	_http "irj/pkg/http"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/zerolog"
 )
@@ -152,6 +153,36 @@ func approveMobilierImage(ctx context.Context, s *BusinessService, exData *appro
 		return rejectMobilierImage
 	}
 
+	return storeMobImgDocumentValidationEvent
+}
+
+//nolint:lll
+func storeMobImgDocumentValidationEvent(_ context.Context, s *BusinessService, exData *approveRejectMobilierImageExchangeData) approveRejectMobilierImageState {
+	s.stopper.Hold(1)
+
+	//nolint:contextcheck
+	go func(logger *zerolog.Logger, adminID string, documentID int32) {
+		defer s.stopper.Release()
+
+		err := s.postgresService.Queries.DocumentValidationEvent(context.Background(), queries.DocumentValidationEventParams{
+			AdminID: pgtype.Text{
+				String: adminID,
+				Valid:  true,
+			},
+			DocumentID: pgtype.Int4{
+				Int32: documentID,
+				Valid: true,
+			},
+			Comment: pgtype.Text{
+				String: "mobiliers_images",
+				Valid:  true,
+			},
+		})
+		if err != nil {
+			logger.Error().Err(err).Msg("failed to store document validation event")
+		}
+	}(exData.logger, exData.token.ID, exData.id)
+
 	return nil
 }
 
@@ -222,6 +253,36 @@ func rejectMobilierImage(ctx context.Context, s *BusinessService, exData *approv
 		exData.logger.Error().Err(err).Msg("failed to reject document")
 		exData.err = catalogs.ErrUnexpectedError
 	}
+
+	return storeMobImgDocumentRejectionEvent
+}
+
+//nolint:lll
+func storeMobImgDocumentRejectionEvent(_ context.Context, s *BusinessService, exData *approveRejectMobilierImageExchangeData) approveRejectMobilierImageState {
+	s.stopper.Hold(1)
+
+	//nolint:contextcheck
+	go func(logger *zerolog.Logger, adminID string, documentID int32) {
+		defer s.stopper.Release()
+
+		err := s.postgresService.Queries.DocumentRejectionEvent(context.Background(), queries.DocumentRejectionEventParams{
+			AdminID: pgtype.Text{
+				String: adminID,
+				Valid:  true,
+			},
+			DocumentID: pgtype.Int4{
+				Int32: documentID,
+				Valid: true,
+			},
+			Comment: pgtype.Text{
+				String: "mobiliers_images",
+				Valid:  true,
+			},
+		})
+		if err != nil {
+			logger.Error().Err(err).Msg("failed to store document rejection event")
+		}
+	}(exData.logger, exData.token.ID, exData.id)
 
 	return nil
 }

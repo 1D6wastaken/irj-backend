@@ -133,6 +133,33 @@ func createPersonneMorale(ctx context.Context, s *BusinessService, exData *creat
 
 	exData.id = id
 
+	return storePersMoDocumentSubmissionEvent
+}
+
+//nolint:lll
+func storePersMoDocumentSubmissionEvent(_ context.Context, s *BusinessService, exData *createPersonneMoraleExchangeData) createPersonneMoraleState {
+	s.stopper.Hold(1)
+
+	//nolint:contextcheck
+	go func(logger *zerolog.Logger, userID string, documentID int32) {
+		defer s.stopper.Release()
+
+		err := s.postgresService.Queries.DocumentSubmissionEvent(context.Background(), queries.DocumentSubmissionEventParams{
+			UserID: userID,
+			DocumentID: pgtype.Int4{
+				Int32: documentID,
+				Valid: true,
+			},
+			Comment: pgtype.Text{
+				String: "personnes_morales",
+				Valid:  true,
+			},
+		})
+		if err != nil {
+			logger.Error().Err(err).Msg("failed to store document submission event")
+		}
+	}(exData.logger, exData.token.ID, exData.id)
+
 	return linkPersonneMorale
 }
 

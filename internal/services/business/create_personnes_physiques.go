@@ -125,6 +125,33 @@ func createPersonnePhysique(ctx context.Context, s *BusinessService, exData *cre
 
 	exData.id = id
 
+	return storePersPhyDocumentSubmissionEvent
+}
+
+//nolint:lll
+func storePersPhyDocumentSubmissionEvent(_ context.Context, s *BusinessService, exData *createPersonnePhysiqueExchangeData) createPersonnePhysiqueState {
+	s.stopper.Hold(1)
+
+	//nolint:contextcheck
+	go func(logger *zerolog.Logger, userID string, documentID int32) {
+		defer s.stopper.Release()
+
+		err := s.postgresService.Queries.DocumentSubmissionEvent(context.Background(), queries.DocumentSubmissionEventParams{
+			UserID: userID,
+			DocumentID: pgtype.Int4{
+				Int32: documentID,
+				Valid: true,
+			},
+			Comment: pgtype.Text{
+				String: "personnes_physiques",
+				Valid:  true,
+			},
+		})
+		if err != nil {
+			logger.Error().Err(err).Msg("failed to store document submission event")
+		}
+	}(exData.logger, exData.token.ID, exData.id)
+
 	return linkPersonnePhysique
 }
 

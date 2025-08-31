@@ -13,6 +13,7 @@ import (
 	"irj/pkg/api"
 	_http "irj/pkg/http"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/zerolog"
 )
@@ -152,6 +153,36 @@ func approveMonumentLieu(ctx context.Context, s *BusinessService, exData *approv
 		return rejectMonumentLieu
 	}
 
+	return storeMonuLieuxDocumentValidationEvent
+}
+
+//nolint:lll
+func storeMonuLieuxDocumentValidationEvent(_ context.Context, s *BusinessService, exData *approveRejectMonumentLieuExchangeData) approveRejectMonumentLieuState {
+	s.stopper.Hold(1)
+
+	//nolint:contextcheck
+	go func(logger *zerolog.Logger, adminID string, documentID int32) {
+		defer s.stopper.Release()
+
+		err := s.postgresService.Queries.DocumentValidationEvent(context.Background(), queries.DocumentValidationEventParams{
+			AdminID: pgtype.Text{
+				String: adminID,
+				Valid:  true,
+			},
+			DocumentID: pgtype.Int4{
+				Int32: documentID,
+				Valid: true,
+			},
+			Comment: pgtype.Text{
+				String: "monuments_lieux",
+				Valid:  true,
+			},
+		})
+		if err != nil {
+			logger.Error().Err(err).Msg("failed to store document validation event")
+		}
+	}(exData.logger, exData.token.ID, exData.id)
+
 	return nil
 }
 
@@ -217,6 +248,36 @@ func rejectMonumentLieu(ctx context.Context, s *BusinessService, exData *approve
 		exData.logger.Error().Err(err).Msg("failed to approve document")
 		exData.err = catalogs.ErrUnexpectedError
 	}
+
+	return storeMonuLieuxDocumentRejectionEvent
+}
+
+//nolint:lll
+func storeMonuLieuxDocumentRejectionEvent(_ context.Context, s *BusinessService, exData *approveRejectMonumentLieuExchangeData) approveRejectMonumentLieuState {
+	s.stopper.Hold(1)
+
+	//nolint:contextcheck
+	go func(logger *zerolog.Logger, adminID string, documentID int32) {
+		defer s.stopper.Release()
+
+		err := s.postgresService.Queries.DocumentRejectionEvent(context.Background(), queries.DocumentRejectionEventParams{
+			AdminID: pgtype.Text{
+				String: adminID,
+				Valid:  true,
+			},
+			DocumentID: pgtype.Int4{
+				Int32: documentID,
+				Valid: true,
+			},
+			Comment: pgtype.Text{
+				String: "monuments_lieux",
+				Valid:  true,
+			},
+		})
+		if err != nil {
+			logger.Error().Err(err).Msg("failed to store document rejection event")
+		}
+	}(exData.logger, exData.token.ID, exData.id)
 
 	return nil
 }
