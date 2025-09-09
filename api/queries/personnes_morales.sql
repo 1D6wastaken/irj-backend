@@ -111,10 +111,10 @@ FROM t_pers_morales p
          LEFT JOIN loc_communes c ON p.id_commune = c.id_commune
          LEFT JOIN loc_departements d ON c.id_departement = d.id_departement
          LEFT JOIN loc_regions r ON d.id_region = r.id_region
-         LEFT JOIN loc_pays pa ON r.id_pays = p.id_pays
-         LEFT JOIN cor_medias_pers_mo cmp ON p.id_pers_morale = cmp.pers_morale_id
+         LEFT JOIN loc_pays pa ON r.id_pays = pa.id_pays
          LEFT JOIN cor_natures_pers_mo cnp ON p.id_pers_morale = cnp.pers_morale_id
          LEFT JOIN bib_pers_mo_natures bpn ON cnp.pers_mo_nature_id = bpn.id_pers_mo_nature
+         LEFT JOIN cor_medias_pers_mo cmp ON p.id_pers_morale = cmp.pers_morale_id
          LEFT JOIN t_medias tm ON cmp.media_pers_mo_id = tm.id_media
          LEFT JOIN cor_monu_lieu_pers_mo cml ON p.id_pers_morale = cml.pers_morale_id
          LEFT JOIN cor_mob_img_pers_mo cpm ON p.id_pers_morale = cpm.pers_morale_id

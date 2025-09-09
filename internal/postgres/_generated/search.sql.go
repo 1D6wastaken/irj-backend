@@ -188,8 +188,8 @@ FROM (
                   LEFT JOIN bib_siecle bs ON bs.id_siecle = csp.siecle_pers_mo_id
                   LEFT JOIN cor_natures_pers_mo cnp ON cnp.pers_morale_id = pm.id_pers_morale
                   LEFT JOIN bib_pers_mo_natures bpn ON bpn.id_pers_mo_nature = cnp.pers_mo_nature_id
-                  LEFT JOIN cor_medias_mob_img cme ON pm.id_pers_morale = cme.mobilier_image_id
-                  LEFT JOIN t_medias tm ON tm.id_media = cme.media_mob_img_id
+                  LEFT JOIN cor_medias_pers_mo cme ON pm.id_pers_morale = cme.pers_morale_id
+                  LEFT JOIN t_medias tm ON tm.id_media = cme.media_pers_mo_id
          WHERE $16 = true
            AND ($1 IS NULL OR pm.titre_pers_mo ILIKE '%' || $1 || '%')
            AND (($3::int[]) IS NULL OR cardinality($3::int[]) = 0 OR
@@ -539,8 +539,8 @@ FROM (
                   LEFT JOIN bib_siecle bs ON bs.id_siecle = csp.siecle_pers_mo_id
                   LEFT JOIN cor_natures_pers_mo cnp ON cnp.pers_morale_id = pm.id_pers_morale
                   LEFT JOIN bib_pers_mo_natures bpn ON bpn.id_pers_mo_nature = cnp.pers_mo_nature_id
-                  LEFT JOIN cor_medias_mob_img cme ON pm.id_pers_morale = cme.mobilier_image_id
-                  LEFT JOIN t_medias tm ON tm.id_media = cme.media_mob_img_id
+                  LEFT JOIN cor_medias_pers_mo cme ON pm.id_pers_morale = cme.pers_morale_id
+                  LEFT JOIN t_medias tm ON tm.id_media = cme.media_pers_mo_id
          WHERE $15 = true
            AND (($2::int[]) IS NULL OR cardinality($2::int[]) = 0 OR
                 csp.siecle_pers_mo_id = ANY ($2::int[]))

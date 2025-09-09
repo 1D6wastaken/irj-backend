@@ -122,9 +122,9 @@ FROM t_monuments_lieux m
          LEFT JOIN bib_etats_conservation bec ON cec.etat_cons_monu_lieu_id = bec.id_etat_conservation
          LEFT JOIN cor_materiaux_monu_lieu cm ON m.id_monument_lieu = cm.monument_lieu_id
          LEFT JOIN bib_materiaux bm ON cm.materiau_monu_lieu_id = bm.id_materiau
-         LEFT JOIN cor_medias_monu_lieu cmm ON m.id_monument_lieu = cmm.monument_lieu_id
          LEFT JOIN cor_natures_monu_lieu cnm ON m.id_monument_lieu = cnm.monument_lieu_id
          LEFT JOIN bib_monu_lieu_natures bmn ON cnm.monu_lieu_nature_id = bmn.id_monu_lieu_nature
+         LEFT JOIN cor_medias_monu_lieu cmm ON m.id_monument_lieu = cmm.monument_lieu_id
          LEFT JOIN t_medias tm ON cmm.media_monu_lieu_id = tm.id_media
          LEFT JOIN cor_monu_lieu_mob_img cmi ON m.id_monument_lieu = cmi.monument_lieu_id
          LEFT JOIN cor_monu_lieu_pers_mo cpm ON m.id_monument_lieu = cpm.monument_lieu_id
