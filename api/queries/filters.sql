@@ -23,7 +23,7 @@ WHERE r.nom_region != '' AND r.nom_region IS NOT NULL;
 SELECT id_pays AS id, nom_pays AS name FROM loc_pays WHERE nom_pays != '' AND nom_pays IS NOT NULL;
 
 -- name: GetSiecles :many
-SELECT id_siecle AS id, siecle_list AS name FROM bib_siecle WHERE siecle_list != '' AND siecle_list IS NOT NULL;
+SELECT id_siecle AS id, siecle_list AS name FROM bib_siecle WHERE siecle_list != '' AND siecle_list IS NOT NULL ORDER BY id_siecle ASC;
 
 -- name: GetEtatsConservation :many
 SELECT id_etat_conservation AS id, etat_conservation_type AS name FROM bib_etats_conservation WHERE etat_conservation_type != '' AND etat_conservation_type IS NOT NULL;

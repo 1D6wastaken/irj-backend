@@ -364,7 +364,7 @@ func (q *Queries) GetRegions(ctx context.Context) ([]GetRegionsRow, error) {
 }
 
 const getSiecles = `-- name: GetSiecles :many
-SELECT id_siecle AS id, siecle_list AS name FROM bib_siecle WHERE siecle_list != '' AND siecle_list IS NOT NULL
+SELECT id_siecle AS id, siecle_list AS name FROM bib_siecle WHERE siecle_list != '' AND siecle_list IS NOT NULL ORDER BY id_siecle ASC
 `
 
 type GetSieclesRow struct {
