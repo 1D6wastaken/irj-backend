@@ -1,7 +1,7 @@
 -- name: CreateUser :exec
-INSERT INTO t_app_users (id, prenom, nom, email, mot_de_passe, telephone, organisation, domaine, motivation)
+INSERT INTO t_app_users (id, prenom, nom, email, mot_de_passe, telephone, organisation, domaine, motivation, last_login)
 VALUES (sqlc.arg(id), sqlc.arg(firstname), sqlc.arg(name), sqlc.arg(email), sqlc.arg(password), sqlc.arg(phone),
-        sqlc.arg(organization), sqlc.arg(domain), sqlc.arg(motivation));
+        sqlc.arg(organization), sqlc.arg(domain), sqlc.arg(motivation), now());
 
 -- name: GetUserByID :one
 SELECT prenom,

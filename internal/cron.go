@@ -32,13 +32,15 @@ func (e *Env) DeleteInactiveUsers(ctx context.Context) error {
 		}
 
 		for _, u := range users {
-			if u.LastLogin.Time.Before(time.Now().Add(24 * 365 * -3 * time.Hour)) {
+			if u.LastLogin.Valid && u.LastLogin.Time.Before(time.Now().Add(24*365*-3*time.Hour)) {
 				err := e.PostgresService.Queries.DeleteUserByID(ctx, u.ID)
 				if err != nil && !errors.Is(err, sql.ErrNoRows) {
 					logger.Error().Err(err).Str("id", u.ID).Msg("failed to delete inactive user")
 
 					continue
 				}
+
+				logger.Info().Str("id", u.ID).Time("lastLogin", u.LastLogin.Time).Msg("delete inactive user")
 
 				_ = e.SMTPService.SendDeletionMail(ctx, []smtp.EmailPerson{
 					{

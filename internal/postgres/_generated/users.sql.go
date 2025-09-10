@@ -34,9 +34,9 @@ func (q *Queries) ConfirmEmailUserByID(ctx context.Context, id string) error {
 }
 
 const createUser = `-- name: CreateUser :exec
-INSERT INTO t_app_users (id, prenom, nom, email, mot_de_passe, telephone, organisation, domaine, motivation)
+INSERT INTO t_app_users (id, prenom, nom, email, mot_de_passe, telephone, organisation, domaine, motivation, last_login)
 VALUES ($1, $2, $3, $4, $5, $6,
-        $7, $8, $9)
+        $7, $8, $9, now())
 `
 
 type CreateUserParams struct {
