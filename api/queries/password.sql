@@ -16,3 +16,8 @@ WHERE user_id = $1;
 DELETE
 FROM t_password_resets
 WHERE token = $1;
+
+-- name: DeleteExpiredPasswordReset :exec
+DELETE
+FROM t_password_resets
+WHERE created_at < NOW() - INTERVAL '30 minutes';

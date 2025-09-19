@@ -57,7 +57,7 @@ func (s *SMTPService) SendPasswordResetMail(ctx context.Context, to []EmailPerso
           </tr>
           <tr>
             <td style="padding-top:20px; font-size:14px; color:#666666;">
-              Pour des raisons de sécurité, ce lien expirera dans 1 heure.
+              Pour des raisons de sécurité, ce lien expirera dans 30 minutes.
             </td>
           </tr>
           <tr>
@@ -82,7 +82,7 @@ https://test.saintjacquesinfo.eu/reset/%s
 
 Si le lien ne fonctionne pas, copiez-le et collez-le dans votre navigateur.
 
-Ce lien expirera dans 1 heure.
+Ce lien expirera dans 30 minutes.
 
 Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.
 

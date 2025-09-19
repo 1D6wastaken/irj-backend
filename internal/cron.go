@@ -15,6 +15,10 @@ func (e *Env) Cron(ctx context.Context) error {
 		return err
 	}
 
+	if err := e.DeleteExpiredPasswordReset(ctx); err != nil {
+		return err
+	}
+
 	e.Scheduler.StartAsync()
 
 	return nil
@@ -49,6 +53,19 @@ func (e *Env) DeleteInactiveUsers(ctx context.Context) error {
 					},
 				}, true)
 			}
+		}
+	}))
+}
+
+func (e *Env) DeleteExpiredPasswordReset(ctx context.Context) error {
+	logger := e.Logger.With().Str("task", "delete_reset_password").Logger()
+
+	return utils.KeepError(e.Scheduler.Every(1).Minute().Name("deleteExpiredResetPassword").Do(func() {
+		err := e.PostgresService.Queries.DeleteExpiredPasswordReset(ctx)
+		if err != nil {
+			logger.Error().Err(err).Msg("failed to delete expired password resets")
+
+			return
 		}
 	}))
 }

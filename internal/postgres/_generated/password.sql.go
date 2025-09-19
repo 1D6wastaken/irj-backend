@@ -24,6 +24,17 @@ func (q *Queries) CreateResetToken(ctx context.Context, arg CreateResetTokenPara
 	return err
 }
 
+const deleteExpiredPasswordReset = `-- name: DeleteExpiredPasswordReset :exec
+DELETE
+FROM t_password_resets
+WHERE created_at < NOW() - INTERVAL '30 minutes'
+`
+
+func (q *Queries) DeleteExpiredPasswordReset(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, deleteExpiredPasswordReset)
+	return err
+}
+
 const deletePasswordResetByID = `-- name: DeletePasswordResetByID :exec
 DELETE
 FROM t_password_resets

@@ -6,25 +6,16 @@ sort-order:
 linters:
   default: all
   disable:
-    - asciicheck
-    - bodyclose
     - dupl
     - err113
     - exhaustruct
     - forcetypeassert
     - gochecknoglobals
-    - gocognit
-    - godot
-    - godox
-    - gomoddirectives
-    - gosmopolitan
     - ireturn
     - misspell
     - mnd
     - nestif
     - noinlineerr
-    - prealloc
-    - testpackage
     - varnamelen
     - wrapcheck
     - wsl
