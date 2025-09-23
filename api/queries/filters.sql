@@ -20,40 +20,40 @@ FROM loc_regions r
 WHERE r.nom_region != '' AND r.nom_region IS NOT NULL;
 
 -- name: GetPays :many
-SELECT id_pays AS id, nom_pays AS name FROM loc_pays WHERE nom_pays != '' AND nom_pays IS NOT NULL;
+SELECT id_pays AS id, nom_pays AS name FROM loc_pays WHERE nom_pays != '' AND nom_pays IS NOT NULL ORDER BY nom_pays ASC;
 
 -- name: GetSiecles :many
 SELECT id_siecle AS id, siecle_list AS name FROM bib_siecle WHERE siecle_list != '' AND siecle_list IS NOT NULL ORDER BY id_siecle ASC;
 
 -- name: GetEtatsConservation :many
-SELECT id_etat_conservation AS id, etat_conservation_type AS name FROM bib_etats_conservation WHERE etat_conservation_type != '' AND etat_conservation_type IS NOT NULL;
+SELECT id_etat_conservation AS id, etat_conservation_type AS name FROM bib_etats_conservation WHERE etat_conservation_type != '' AND etat_conservation_type IS NOT NULL ORDER BY etat_conservation_type ASC;
 
 -- name: GetNaturesMonu :many
-SELECT id_monu_lieu_nature AS id, monu_lieu_nature_type AS name FROM bib_monu_lieu_natures WHERE monu_lieu_nature_type != '' AND monu_lieu_nature_type IS NOT NULL;
+SELECT id_monu_lieu_nature AS id, monu_lieu_nature_type AS name FROM bib_monu_lieu_natures WHERE monu_lieu_nature_type != '' AND monu_lieu_nature_type IS NOT NULL ORDER BY monu_lieu_nature_type ASC;
 
 -- name: GetMateriaux :many
-SELECT id_materiau AS id, materiau_type AS name FROM bib_materiaux WHERE materiau_type != '' AND materiau_type IS NOT NULL;
+SELECT id_materiau AS id, materiau_type AS name FROM bib_materiaux WHERE materiau_type != '' AND materiau_type IS NOT NULL ORDER BY materiau_type ASC;
 
 -- name: GetNaturesMob :many
-SELECT id_nature AS id, nature_type AS name FROM bib_mob_img_natures WHERE nature_type != '' AND nature_type IS NOT NULL;
+SELECT id_nature AS id, nature_type AS name FROM bib_mob_img_natures WHERE nature_type != '' AND nature_type IS NOT NULL ORDER BY nature_type ASC;
 
 -- name: GetTechniquesMob :many
-SELECT id_technique AS id, technique_type AS name FROM bib_mob_img_techniques WHERE technique_type != '' AND technique_type IS NOT NULL;
+SELECT id_technique AS id, technique_type AS name FROM bib_mob_img_techniques WHERE technique_type != '' AND technique_type IS NOT NULL ORDER BY technique_type ASC;
 
 -- name: GetNaturesPersonnesMorales :many
-SELECT id_pers_mo_nature AS id, pers_mo_nature_type AS name FROM bib_pers_mo_natures WHERE pers_mo_nature_type != '' AND pers_mo_nature_type IS NOT NULL;
+SELECT id_pers_mo_nature AS id, pers_mo_nature_type AS name FROM bib_pers_mo_natures WHERE pers_mo_nature_type != '' AND pers_mo_nature_type IS NOT NULL ORDER BY pers_mo_nature_type ASC;
 
 -- name: GetProfessions :many
-SELECT id_profession AS id, profession_type AS name FROM bib_pers_phy_professions WHERE profession_type != '' AND profession_type IS NOT NULL;
+SELECT id_profession AS id, profession_type AS name FROM bib_pers_phy_professions WHERE profession_type != '' AND profession_type IS NOT NULL ORDER BY profession_type ASC;
 
 -- name: GetDeplacements :many
-SELECT id_mode_deplacement AS id, mode_deplacement_type AS name FROM bib_pers_phy_modes_deplacements WHERE mode_deplacement_type != '' AND mode_deplacement_type IS NOT NULL;
+SELECT id_mode_deplacement AS id, mode_deplacement_type AS name FROM bib_pers_phy_modes_deplacements WHERE mode_deplacement_type != '' AND mode_deplacement_type IS NOT NULL ORDER BY mode_deplacement_type ASC;
 
 -- name: GetHistoricalPeriods :many
-SELECT id_periode_historique AS id, periode_historique_type AS name FROM bib_pers_phy_periodes_historiques WHERE periode_historique_type != '' AND periode_historique_type IS NOT NULL;
+SELECT id_periode_historique AS id, periode_historique_type AS name FROM bib_pers_phy_periodes_historiques WHERE periode_historique_type != '' AND periode_historique_type IS NOT NULL ORDER BY periode_historique_type ASC;
 
 -- name: GetThemes :many
-SELECT id_theme AS id, theme_type AS name FROM t_themes WHERE theme_type != '' AND theme_type IS NOT NULL;
+SELECT id_theme AS id, theme_type AS name FROM t_themes WHERE theme_type != '' AND theme_type IS NOT NULL ORDER BY theme_type ASC;
 
 -- name: SearchCommunesPaginated :many
 SELECT
