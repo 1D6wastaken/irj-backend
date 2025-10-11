@@ -61,22 +61,31 @@ FROM (
            AND ($1 IS NULL OR m.titre_monu_lieu ILIKE '%' || $1 || '%')
            AND ($3::int[] IS NULL OR cardinality($3::int[]) = 0 OR
                 csm.siecle_monu_lieu_id = ANY ($3::int[]))
-           AND ($4::int[] IS NULL OR cardinality($4::int[]) = 0 OR
-                m.id_pays = ANY ($4::int[]))
-
            AND (
-             ($5::int[] IS NOT NULL AND cardinality($5::int[]) > 0 AND
-              mc.id_commune = ANY ($5::int[]))
-                 OR ($6::int[] IS NOT NULL AND cardinality($6::int[]) > 0
-                 AND m.id_commune IN (SELECT id_commune
-                                      FROM loc_communes
-                                      WHERE id_departement = ANY ($6::int[]))
+             -- CAS A: aucun filtre géographique fourni => on accepte tout
+             (COALESCE(cardinality($4::int[]), 0) = 0
+                 AND COALESCE(cardinality($5::int[]), 0) = 0
+                 AND COALESCE(cardinality($6::int[]), 0) = 0
+                 AND COALESCE(cardinality($7::int[]), 0) = 0)
+                 OR
+                 -- CAS B: au moins un filtre fourni => il faut qu'une des conditions actives soit vraie
+             (
+                 (COALESCE(cardinality($4::int[]), 0)  > 0 AND m.id_pays = ANY($4::int[]))
+                     OR (COALESCE(cardinality($5::int[]), 0) > 0 AND m.id_commune = ANY($5::int[]))
+                     OR (COALESCE(cardinality($6::int[]), 0) > 0
+                     AND m.id_commune IN (
+                         SELECT id_commune
+                         FROM loc_communes
+                         WHERE id_departement = ANY($6::int[])
+                     ))
+                     OR (COALESCE(cardinality($7::int[]), 0) > 0
+                     AND m.id_commune IN (
+                         SELECT c.id_commune
+                         FROM loc_communes c
+                                  JOIN loc_departements d ON c.id_departement = d.id_departement
+                         WHERE d.id_region = ANY($7::int[])
+                     ))
                  )
-                 OR ($7::int[] IS NOT NULL AND cardinality($7::int[]) > 0
-                 AND m.id_commune IN (SELECT c.id_commune
-                                      FROM loc_communes c
-                                               JOIN loc_departements d ON c.id_departement = d.id_departement
-                                      WHERE d.id_region = ANY ($7::int[])))
              )
            AND ($8::int[] IS NULL OR cardinality($8::int[]) = 0 OR
                 cnm.monu_lieu_nature_id = ANY ($8::int[]))
@@ -138,22 +147,31 @@ FROM (
            AND ($1 IS NULL OR mob.titre_mob_img ILIKE '%' || $1 || '%')
            AND ($3::int[] IS NULL OR cardinality($3::int[]) = 0 OR
                 csm.siecle_mob_img_id = ANY ($3::int[]))
-           AND ($4::int[] IS NULL OR cardinality($4::int[]) = 0 OR
-                mob.id_pays = ANY ($4::int[]))
-
            AND (
-             ($5::int[] IS NOT NULL AND cardinality($5::int[]) > 0 AND
-              mob.id_commune = ANY ($5::int[]))
-                 OR ($6::int[] IS NOT NULL AND cardinality($6::int[]) > 0
-                 AND mob.id_commune IN (SELECT id_commune
-                                        FROM loc_communes
-                                        WHERE id_departement = ANY ($6::int[]))
+             -- CAS A: aucun filtre géographique fourni => on accepte tout
+             (COALESCE(cardinality($4::int[]), 0) = 0
+                 AND COALESCE(cardinality($5::int[]), 0) = 0
+                 AND COALESCE(cardinality($6::int[]), 0) = 0
+                 AND COALESCE(cardinality($7::int[]), 0) = 0)
+                 OR
+                 -- CAS B: au moins un filtre fourni => il faut qu'une des conditions actives soit vraie
+             (
+                 (COALESCE(cardinality($4::int[]), 0)  > 0 AND mob.id_pays = ANY($4::int[]))
+                     OR (COALESCE(cardinality($5::int[]), 0) > 0 AND mob.id_commune = ANY($5::int[]))
+                     OR (COALESCE(cardinality($6::int[]), 0) > 0
+                     AND mob.id_commune IN (
+                         SELECT id_commune
+                         FROM loc_communes
+                         WHERE id_departement = ANY($6::int[])
+                     ))
+                     OR (COALESCE(cardinality($7::int[]), 0) > 0
+                     AND mob.id_commune IN (
+                         SELECT c.id_commune
+                         FROM loc_communes c
+                                  JOIN loc_departements d ON c.id_departement = d.id_departement
+                         WHERE d.id_region = ANY($7::int[])
+                     ))
                  )
-                 OR ($7::int[] IS NOT NULL AND cardinality($7::int[]) > 0
-                 AND mob.id_commune IN (SELECT c.id_commune
-                                        FROM loc_communes c
-                                                 JOIN loc_departements d ON c.id_departement = d.id_departement
-                                        WHERE d.id_region = ANY ($7::int[])))
              )
            AND ($12::int[] IS NULL OR cardinality($12::int[]) = 0 OR
                 cnm.nature_id = ANY ($12::int[]))
@@ -214,22 +232,31 @@ FROM (
            AND ($1 IS NULL OR pm.titre_pers_mo ILIKE '%' || $1 || '%')
            AND ($3::int[] IS NULL OR cardinality($3::int[]) = 0 OR
                 csp.siecle_pers_mo_id = ANY ($3::int[]))
-           AND ($4::int[] IS NULL OR cardinality($4::int[]) = 0 OR
-                pm.id_pays = ANY ($4::int[]))
-
            AND (
-             ($5::int[] IS NOT NULL AND cardinality($5::int[]) > 0 AND
-              pm.id_commune = ANY ($5::int[]))
-                 OR ($6::int[] IS NOT NULL AND cardinality($6::int[]) > 0
-                 AND pm.id_commune IN (SELECT id_commune
-                                       FROM loc_communes
-                                       WHERE id_departement = ANY ($6::int[]))
+             -- CAS A: aucun filtre géographique fourni => on accepte tout
+             (COALESCE(cardinality($4::int[]), 0) = 0
+                 AND COALESCE(cardinality($5::int[]), 0) = 0
+                 AND COALESCE(cardinality($6::int[]), 0) = 0
+                 AND COALESCE(cardinality($7::int[]), 0) = 0)
+                 OR
+                 -- CAS B: au moins un filtre fourni => il faut qu'une des conditions actives soit vraie
+             (
+                 (COALESCE(cardinality($4::int[]), 0)  > 0 AND pm.id_pays = ANY($4::int[]))
+                     OR (COALESCE(cardinality($5::int[]), 0) > 0 AND pm.id_commune = ANY($5::int[]))
+                     OR (COALESCE(cardinality($6::int[]), 0) > 0
+                     AND pm.id_commune IN (
+                         SELECT id_commune
+                         FROM loc_communes
+                         WHERE id_departement = ANY($6::int[])
+                     ))
+                     OR (COALESCE(cardinality($7::int[]), 0) > 0
+                     AND pm.id_commune IN (
+                         SELECT c.id_commune
+                         FROM loc_communes c
+                                  JOIN loc_departements d ON c.id_departement = d.id_departement
+                         WHERE d.id_region = ANY($7::int[])
+                     ))
                  )
-                 OR ($7::int[] IS NOT NULL AND cardinality($7::int[]) > 0
-                 AND pm.id_commune IN (SELECT c.id_commune
-                                       FROM loc_communes c
-                                                JOIN loc_departements d ON c.id_departement = d.id_departement
-                                       WHERE d.id_region = ANY ($7::int[])))
              )
            AND ($17::int[] IS NULL OR cardinality($17::int[]) = 0 OR
                 cnp.pers_mo_nature_id = ANY ($17::int[]))
@@ -285,22 +312,31 @@ FROM (
            AND ($1 IS NULL OR pp.prenom_nom_pers_phy ILIKE '%' || $1 || '%')
            AND ($3::int[] IS NULL OR cardinality($3::int[]) = 0 OR
                 csp.siecle_pers_phy_id = ANY ($3::int[]))
-           AND ($4::int[] IS NULL OR cardinality($4::int[]) = 0 OR
-                pp.id_pays = ANY ($4::int[]))
-
            AND (
-             ($5::int[] IS NOT NULL AND cardinality($5::int[]) > 0 AND
-              pp.id_commune = ANY ($5::int[]))
-                 OR ($6::int[] IS NOT NULL AND cardinality($6::int[]) > 0
-                 AND pp.id_commune IN (SELECT id_commune
-                                       FROM loc_communes
-                                       WHERE id_departement = ANY ($6::int[]))
+             -- CAS A: aucun filtre géographique fourni => on accepte tout
+             (COALESCE(cardinality($4::int[]), 0) = 0
+                 AND COALESCE(cardinality($5::int[]), 0) = 0
+                 AND COALESCE(cardinality($6::int[]), 0) = 0
+                 AND COALESCE(cardinality($7::int[]), 0) = 0)
+                 OR
+                 -- CAS B: au moins un filtre fourni => il faut qu'une des conditions actives soit vraie
+             (
+                 (COALESCE(cardinality($4::int[]), 0)  > 0 AND pp.id_pays = ANY($4::int[]))
+                     OR (COALESCE(cardinality($5::int[]), 0) > 0 AND pp.id_commune = ANY($5::int[]))
+                     OR (COALESCE(cardinality($6::int[]), 0) > 0
+                     AND pp.id_commune IN (
+                         SELECT id_commune
+                         FROM loc_communes
+                         WHERE id_departement = ANY($6::int[])
+                     ))
+                     OR (COALESCE(cardinality($7::int[]), 0) > 0
+                     AND pp.id_commune IN (
+                         SELECT c.id_commune
+                         FROM loc_communes c
+                                  JOIN loc_departements d ON c.id_departement = d.id_departement
+                         WHERE d.id_region = ANY($7::int[])
+                     ))
                  )
-                 OR ($7::int[] IS NOT NULL AND cardinality($7::int[]) > 0
-                 AND pp.id_commune IN (SELECT c.id_commune
-                                       FROM loc_communes c
-                                                JOIN loc_departements d ON c.id_departement = d.id_departement
-                                       WHERE d.id_region = ANY ($7::int[])))
              )
            AND ($19::int[] IS NULL OR cardinality($19::int[]) = 0 OR
                 cpp.profession_id = ANY ($19::int[]))
@@ -321,9 +357,9 @@ type SearchGlobalParams struct {
 	IncludeMonumentsLieux  interface{}
 	Siecles                []int32
 	Pays                   []int32
-	Commune                []int32
-	Departement            []int32
-	Region                 []int32
+	Communes               []int32
+	Departements           []int32
+	Regions                []int32
 	NaturesMonu            []int32
 	EtatsMonu              []int32
 	MateriauxMonu          []int32
@@ -359,9 +395,9 @@ func (q *Queries) SearchGlobal(ctx context.Context, arg SearchGlobalParams) ([]S
 		arg.IncludeMonumentsLieux,
 		arg.Siecles,
 		arg.Pays,
-		arg.Commune,
-		arg.Departement,
-		arg.Region,
+		arg.Communes,
+		arg.Departements,
+		arg.Regions,
 		arg.NaturesMonu,
 		arg.EtatsMonu,
 		arg.MateriauxMonu,
@@ -455,22 +491,31 @@ FROM (
          WHERE $1 = true
            AND ($2::int[] IS NULL OR cardinality($2::int[]) = 0 OR
                 csm.siecle_monu_lieu_id = ANY ($2::int[]))
-           AND ($3::int[] IS NULL OR cardinality($3::int[]) = 0 OR
-                m.id_pays = ANY ($3::int[]))
-
            AND (
-             ($4::int[] IS NOT NULL AND cardinality($4::int[]) > 0 AND
-              m.id_commune = ANY ($4::int[]))
-                 OR ($5::int[] IS NOT NULL AND cardinality($5::int[]) > 0
-                 AND m.id_commune IN (SELECT id_commune
-                                      FROM loc_communes
-                                      WHERE id_departement = ANY ($5::int[]))
+             -- CAS A: aucun filtre géographique fourni => on accepte tout
+             (COALESCE(cardinality($3::int[]), 0) = 0
+                 AND COALESCE(cardinality($4::int[]), 0) = 0
+                 AND COALESCE(cardinality($5::int[]), 0) = 0
+                 AND COALESCE(cardinality($6::int[]), 0) = 0)
+                 OR
+                 -- CAS B: au moins un filtre fourni => il faut qu'une des conditions actives soit vraie
+             (
+                 (COALESCE(cardinality($3::int[]), 0)  > 0 AND m.id_pays = ANY($3::int[]))
+                     OR (COALESCE(cardinality($4::int[]), 0) > 0 AND m.id_commune = ANY($4::int[]))
+                     OR (COALESCE(cardinality($5::int[]), 0) > 0
+                     AND m.id_commune IN (
+                         SELECT id_commune
+                         FROM loc_communes
+                         WHERE id_departement = ANY($5::int[])
+                     ))
+                     OR (COALESCE(cardinality($6::int[]), 0) > 0
+                     AND m.id_commune IN (
+                         SELECT c.id_commune
+                         FROM loc_communes c
+                                  JOIN loc_departements d ON c.id_departement = d.id_departement
+                         WHERE d.id_region = ANY($6::int[])
+                     ))
                  )
-                 OR ($6::int[] IS NOT NULL AND cardinality($6::int[]) > 0
-                 AND m.id_commune IN (SELECT c.id_commune
-                                      FROM loc_communes c
-                                               JOIN loc_departements d ON c.id_departement = d.id_departement
-                                      WHERE d.id_region = ANY ($6::int[])))
              )
            AND ($7::int[] IS NULL OR cardinality($7::int[]) = 0 OR
                 cnm.monu_lieu_nature_id = ANY ($7::int[]))
@@ -530,22 +575,31 @@ FROM (
          WHERE $10 = true
            AND ($2::int[] IS NULL OR cardinality($2::int[]) = 0 OR
                 csm.siecle_mob_img_id = ANY ($2::int[]))
-           AND ($3::int[] IS NULL OR cardinality($3::int[]) = 0 OR
-                mob.id_pays = ANY ($3::int[]))
-
            AND (
-             ($4::int[] IS NOT NULL AND cardinality($4::int[]) > 0 AND
-              mob.id_commune = ANY ($4::int[]))
-                 OR ($5::int[] IS NOT NULL AND cardinality($5::int[]) > 0
-                 AND mob.id_commune IN (SELECT id_commune
-                                        FROM loc_communes
-                                        WHERE id_departement = ANY ($5::int[]))
+             -- CAS A: aucun filtre géographique fourni => on accepte tout
+             (COALESCE(cardinality($3::int[]), 0) = 0
+                 AND COALESCE(cardinality($4::int[]), 0) = 0
+                 AND COALESCE(cardinality($5::int[]), 0) = 0
+                 AND COALESCE(cardinality($6::int[]), 0) = 0)
+                 OR
+                 -- CAS B: au moins un filtre fourni => il faut qu'une des conditions actives soit vraie
+             (
+                 (COALESCE(cardinality($3::int[]), 0)  > 0 AND mob.id_pays = ANY($3::int[]))
+                     OR (COALESCE(cardinality($4::int[]), 0) > 0 AND mob.id_commune = ANY($4::int[]))
+                     OR (COALESCE(cardinality($5::int[]), 0) > 0
+                     AND mob.id_commune IN (
+                         SELECT id_commune
+                         FROM loc_communes
+                         WHERE id_departement = ANY($5::int[])
+                     ))
+                     OR (COALESCE(cardinality($6::int[]), 0) > 0
+                     AND mob.id_commune IN (
+                         SELECT c.id_commune
+                         FROM loc_communes c
+                                  JOIN loc_departements d ON c.id_departement = d.id_departement
+                         WHERE d.id_region = ANY($6::int[])
+                     ))
                  )
-                 OR ($6::int[] IS NOT NULL AND cardinality($6::int[]) > 0
-                 AND mob.id_commune IN (SELECT c.id_commune
-                                        FROM loc_communes c
-                                                 JOIN loc_departements d ON c.id_departement = d.id_departement
-                                        WHERE d.id_region = ANY ($6::int[])))
              )
            AND ($11::int[] IS NULL OR cardinality($11::int[]) = 0 OR
                 cnm.nature_id = ANY ($11::int[]))
@@ -604,22 +658,31 @@ FROM (
          WHERE $15 = true
            AND ($2::int[] IS NULL OR cardinality($2::int[]) = 0 OR
                 csp.siecle_pers_mo_id = ANY ($2::int[]))
-           AND ($3::int[] IS NULL OR cardinality($3::int[]) = 0 OR
-                pm.id_pays = ANY ($3::int[]))
-
            AND (
-             ($4::int[] IS NOT NULL AND cardinality($4::int[]) > 0 AND
-              pm.id_commune = ANY ($4::int[]))
-                 OR ($5::int[] IS NOT NULL AND cardinality($5::int[]) > 0
-                 AND pm.id_commune IN (SELECT id_commune
-                                       FROM loc_communes
-                                       WHERE id_departement = ANY ($5::int[]))
+             -- CAS A: aucun filtre géographique fourni => on accepte tout
+             (COALESCE(cardinality($3::int[]), 0) = 0
+                 AND COALESCE(cardinality($4::int[]), 0) = 0
+                 AND COALESCE(cardinality($5::int[]), 0) = 0
+                 AND COALESCE(cardinality($6::int[]), 0) = 0)
+                 OR
+                 -- CAS B: au moins un filtre fourni => il faut qu'une des conditions actives soit vraie
+             (
+                 (COALESCE(cardinality($3::int[]), 0)  > 0 AND pm.id_pays = ANY($3::int[]))
+                     OR (COALESCE(cardinality($4::int[]), 0) > 0 AND pm.id_commune = ANY($4::int[]))
+                     OR (COALESCE(cardinality($5::int[]), 0) > 0
+                     AND pm.id_commune IN (
+                         SELECT id_commune
+                         FROM loc_communes
+                         WHERE id_departement = ANY($5::int[])
+                     ))
+                     OR (COALESCE(cardinality($6::int[]), 0) > 0
+                     AND pm.id_commune IN (
+                         SELECT c.id_commune
+                         FROM loc_communes c
+                                  JOIN loc_departements d ON c.id_departement = d.id_departement
+                         WHERE d.id_region = ANY($6::int[])
+                     ))
                  )
-                 OR ($6::int[] IS NOT NULL AND cardinality($6::int[]) > 0
-                 AND pm.id_commune IN (SELECT c.id_commune
-                                       FROM loc_communes c
-                                                JOIN loc_departements d ON c.id_departement = d.id_departement
-                                       WHERE d.id_region = ANY ($6::int[])))
              )
            AND ($16::int[] IS NULL OR cardinality($16::int[]) = 0 OR
                 cnp.pers_mo_nature_id = ANY ($16::int[]))
@@ -673,22 +736,31 @@ FROM (
          WHERE $17 = true
            AND ($2::int[] IS NULL OR cardinality($2::int[]) = 0 OR
                 csp.siecle_pers_phy_id = ANY ($2::int[]))
-           AND ($3::int[] IS NULL OR cardinality($3::int[]) = 0 OR
-                pp.id_pays = ANY ($3::int[]))
-
            AND (
-             ($4::int[] IS NOT NULL AND cardinality($4::int[]) > 0 AND
-              pp.id_commune = ANY ($4::int[]))
-                 OR ($5::int[] IS NOT NULL AND cardinality($5::int[]) > 0
-                 AND pp.id_commune IN (SELECT id_commune
-                                       FROM loc_communes
-                                       WHERE id_departement = ANY ($5::int[]))
+             -- CAS A: aucun filtre géographique fourni => on accepte tout
+             (COALESCE(cardinality($3::int[]), 0) = 0
+                 AND COALESCE(cardinality($4::int[]), 0) = 0
+                 AND COALESCE(cardinality($5::int[]), 0) = 0
+                 AND COALESCE(cardinality($6::int[]), 0) = 0)
+                 OR
+                 -- CAS B: au moins un filtre fourni => il faut qu'une des conditions actives soit vraie
+             (
+                 (COALESCE(cardinality($3::int[]), 0)  > 0 AND pp.id_pays = ANY($3::int[]))
+                     OR (COALESCE(cardinality($4::int[]), 0) > 0 AND pp.id_commune = ANY($4::int[]))
+                     OR (COALESCE(cardinality($5::int[]), 0) > 0
+                     AND pp.id_commune IN (
+                         SELECT id_commune
+                         FROM loc_communes
+                         WHERE id_departement = ANY($5::int[])
+                     ))
+                     OR (COALESCE(cardinality($6::int[]), 0) > 0
+                     AND pp.id_commune IN (
+                         SELECT c.id_commune
+                         FROM loc_communes c
+                                  JOIN loc_departements d ON c.id_departement = d.id_departement
+                         WHERE d.id_region = ANY($6::int[])
+                     ))
                  )
-                 OR ($6::int[] IS NOT NULL AND cardinality($6::int[]) > 0
-                 AND pp.id_commune IN (SELECT c.id_commune
-                                       FROM loc_communes c
-                                                JOIN loc_departements d ON c.id_departement = d.id_departement
-                                       WHERE d.id_region = ANY ($6::int[])))
              )
            AND ($18::int[] IS NULL OR cardinality($18::int[]) = 0 OR
                 cpp.profession_id = ANY ($18::int[]))
@@ -708,9 +780,9 @@ type SearchGlobalNoTextParams struct {
 	IncludeMonumentsLieux  interface{}
 	Siecles                []int32
 	Pays                   []int32
-	Commune                []int32
-	Departement            []int32
-	Region                 []int32
+	Communes               []int32
+	Departements           []int32
+	Regions                []int32
 	NaturesMonu            []int32
 	EtatsMonu              []int32
 	MateriauxMonu          []int32
@@ -744,9 +816,9 @@ func (q *Queries) SearchGlobalNoText(ctx context.Context, arg SearchGlobalNoText
 		arg.IncludeMonumentsLieux,
 		arg.Siecles,
 		arg.Pays,
-		arg.Commune,
-		arg.Departement,
-		arg.Region,
+		arg.Communes,
+		arg.Departements,
+		arg.Regions,
 		arg.NaturesMonu,
 		arg.EtatsMonu,
 		arg.MateriauxMonu,

@@ -12,6 +12,14 @@ func OrEmptySlice[T any](slice []T) []T {
 	return slice
 }
 
+func OrNil[T any](slice []T) []T {
+	if len(slice) == 0 {
+		return nil
+	}
+
+	return slice
+}
+
 func Map[T, U any](data []T, mapFn func(T) U) []U {
 	out := make([]U, 0, len(data))
 

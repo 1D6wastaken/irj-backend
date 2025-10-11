@@ -52,11 +52,11 @@ func parseQueryWithText(r *http.Request) (*queries.SearchGlobalParams, *_http.AP
 	params := queries.SearchGlobalParams{
 		Q:                      q,
 		IncludeMonumentsLieux:  false,
-		Siecles:                req.Centuries,
-		Pays:                   req.Countries,
-		Region:                 req.Regions,
-		Departement:            req.Departments,
-		Commune:                req.Cities,
+		Siecles:                collections.OrNil(req.Centuries),
+		Pays:                   collections.OrNil(req.Countries),
+		Regions:                collections.OrNil(req.Regions),
+		Departements:           collections.OrNil(req.Departments),
+		Communes:               collections.OrNil(req.Cities),
 		NaturesMonu:            nil,
 		EtatsMonu:              nil,
 		MateriauxMonu:          nil,
@@ -79,31 +79,31 @@ func parseQueryWithText(r *http.Request) (*queries.SearchGlobalParams, *_http.AP
 	if req.MonumentsLieux != nil {
 		allSources = false
 		params.IncludeMonumentsLieux = true
-		params.NaturesMonu = req.MonumentsLieux.Natures
-		params.EtatsMonu = req.MonumentsLieux.States
-		params.MateriauxMonu = req.MonumentsLieux.Materials
+		params.NaturesMonu = collections.OrNil(req.MonumentsLieux.Natures)
+		params.EtatsMonu = collections.OrNil(req.MonumentsLieux.States)
+		params.MateriauxMonu = collections.OrNil(req.MonumentsLieux.Materials)
 	}
 
 	if req.MobiliersImages != nil {
 		allSources = false
 		params.IncludeMobiliersImages = true
-		params.NaturesMob = req.MobiliersImages.Natures
-		params.EtatsMob = req.MobiliersImages.States
-		params.MateriauxMob = req.MobiliersImages.Materials
-		params.TechniquesMob = req.MobiliersImages.Techniques
+		params.NaturesMob = collections.OrNil(req.MobiliersImages.Natures)
+		params.EtatsMob = collections.OrNil(req.MobiliersImages.States)
+		params.MateriauxMob = collections.OrNil(req.MobiliersImages.Materials)
+		params.TechniquesMob = collections.OrNil(req.MobiliersImages.Techniques)
 	}
 
 	if req.PersMorales != nil {
 		allSources = false
 		params.IncludePersMorales = true
-		params.NaturesPersMo = req.PersMorales.Natures
+		params.NaturesPersMo = collections.OrNil(req.PersMorales.Natures)
 	}
 
 	if req.PersPhysiques != nil {
 		allSources = false
 		params.IncludePersPhysiques = true
-		params.Professions = req.PersPhysiques.Professions
-		params.ModesDeplacements = req.PersPhysiques.Travels
+		params.Professions = collections.OrNil(req.PersPhysiques.Professions)
+		params.ModesDeplacements = collections.OrNil(req.PersPhysiques.Travels)
 	}
 
 	if allSources {
@@ -126,11 +126,11 @@ func parseQueryWithoutText(r *http.Request) (*queries.SearchGlobalNoTextParams, 
 
 	params := queries.SearchGlobalNoTextParams{
 		IncludeMonumentsLieux:  false,
-		Siecles:                req.Centuries,
-		Pays:                   req.Countries,
-		Region:                 req.Regions,
-		Departement:            req.Departments,
-		Commune:                req.Cities,
+		Siecles:                collections.OrNil(req.Centuries),
+		Pays:                   collections.OrNil(req.Countries),
+		Regions:                collections.OrNil(req.Regions),
+		Departements:           collections.OrNil(req.Departments),
+		Communes:               collections.OrNil(req.Cities),
 		NaturesMonu:            nil,
 		EtatsMonu:              nil,
 		MateriauxMonu:          nil,
@@ -153,31 +153,31 @@ func parseQueryWithoutText(r *http.Request) (*queries.SearchGlobalNoTextParams, 
 	if req.MonumentsLieux != nil {
 		allSources = false
 		params.IncludeMonumentsLieux = true
-		params.NaturesMonu = req.MonumentsLieux.Natures
-		params.EtatsMonu = req.MonumentsLieux.States
-		params.MateriauxMonu = req.MonumentsLieux.Materials
+		params.NaturesMonu = collections.OrNil(req.MonumentsLieux.Natures)
+		params.EtatsMonu = collections.OrNil(req.MonumentsLieux.States)
+		params.MateriauxMonu = collections.OrNil(req.MonumentsLieux.Materials)
 	}
 
 	if req.MobiliersImages != nil {
 		allSources = false
 		params.IncludeMobiliersImages = true
-		params.NaturesMob = req.MobiliersImages.Natures
-		params.EtatsMob = req.MobiliersImages.States
-		params.MateriauxMob = req.MobiliersImages.Materials
-		params.TechniquesMob = req.MobiliersImages.Techniques
+		params.NaturesMob = collections.OrNil(req.MobiliersImages.Natures)
+		params.EtatsMob = collections.OrNil(req.MobiliersImages.States)
+		params.MateriauxMob = collections.OrNil(req.MobiliersImages.Materials)
+		params.TechniquesMob = collections.OrNil(req.MobiliersImages.Techniques)
 	}
 
 	if req.PersMorales != nil {
 		allSources = false
 		params.IncludePersMorales = true
-		params.NaturesPersMo = req.PersMorales.Natures
+		params.NaturesPersMo = collections.OrNil(req.PersMorales.Natures)
 	}
 
 	if req.PersPhysiques != nil {
 		allSources = false
 		params.IncludePersPhysiques = true
-		params.Professions = req.PersPhysiques.Professions
-		params.ModesDeplacements = req.PersPhysiques.Travels
+		params.Professions = collections.OrNil(req.PersPhysiques.Professions)
+		params.ModesDeplacements = collections.OrNil(req.PersPhysiques.Travels)
 	}
 
 	if allSources {
