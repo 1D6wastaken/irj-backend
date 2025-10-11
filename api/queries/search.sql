@@ -34,10 +34,10 @@ FROM (
                 'monuments_lieux'                            AS source,
                 similarity(m.titre_monu_lieu, sqlc.arg('q')) AS score
          FROM t_monuments_lieux m
-                  LEFT JOIN loc_communes c ON c.id_commune = m.id_commune
-                  LEFT JOIN loc_departements d ON d.id_departement = c.id_departement
-                  LEFT JOIN loc_regions r ON r.id_region = d.id_region
-                  LEFT JOIN loc_pays p ON p.id_pays = r.id_pays
+                  LEFT JOIN loc_communes mc ON mc.id_commune = m.id_commune
+                  LEFT JOIN loc_departements md ON md.id_departement = mc.id_departement
+                  LEFT JOIN loc_regions mr ON mr.id_region = md.id_region
+                  LEFT JOIN loc_pays mp ON mp.id_pays = m.id_pays
                   LEFT JOIN cor_siecles_monu_lieu csm ON csm.monument_lieu_id = m.id_monument_lieu
                   LEFT JOIN bib_siecle bs ON bs.id_siecle = csm.siecle_monu_lieu_id
                   LEFT JOIN cor_natures_monu_lieu cnm ON cnm.monument_lieu_id = m.id_monument_lieu
@@ -48,23 +48,33 @@ FROM (
                   LEFT JOIN t_medias tm ON tm.id_media = cme.media_monu_lieu_id
          WHERE sqlc.arg('include_monuments_lieux') = true
            AND (sqlc.arg('q') IS NULL OR m.titre_monu_lieu ILIKE '%' || sqlc.arg('q') || '%')
-           AND ((sqlc.arg('siecles')::int[]) IS NULL OR cardinality(sqlc.arg('siecles')::int[]) = 0 OR
+           AND (sqlc.arg('siecles')::int[] IS NULL OR cardinality(sqlc.arg('siecles')::int[]) = 0 OR
                 csm.siecle_monu_lieu_id = ANY (sqlc.arg('siecles')::int[]))
-           AND ((sqlc.arg('pays')::int[]) IS NULL OR cardinality(sqlc.arg('pays')::int[]) = 0 OR
-                p.id_pays = ANY (sqlc.arg('pays')::int[]))
-           AND ((sqlc.arg('region')::int[]) IS NULL OR cardinality(sqlc.arg('region')::int[]) = 0 OR
-                r.id_region = ANY (sqlc.arg('region')::int[]))
-           AND ((sqlc.arg('departement')::int[]) IS NULL OR cardinality(sqlc.arg('departement')::int[]) = 0 OR
-                d.id_departement = ANY (sqlc.arg('departement')::int[]))
-           AND ((sqlc.arg('commune')::int[]) IS NULL OR cardinality(sqlc.arg('commune')::int[]) = 0 OR
-                c.id_commune = ANY (sqlc.arg('commune')::int[]))
-           AND ((sqlc.arg('natures_monu')::int[]) IS NULL OR cardinality(sqlc.arg('natures_monu')::int[]) = 0 OR
+           AND (sqlc.arg('pays')::int[] IS NULL OR cardinality(sqlc.arg('pays')::int[]) = 0 OR
+                m.id_pays = ANY (sqlc.arg('pays')::int[]))
+
+           AND (
+             (sqlc.arg('commune')::int[] IS NOT NULL AND cardinality(sqlc.arg('commune')::int[]) > 0 AND
+              mc.id_commune = ANY (sqlc.arg('commune')::int[]))
+                 OR (sqlc.arg('departement')::int[] IS NOT NULL AND cardinality(sqlc.arg('departement')::int[]) > 0
+                 AND m.id_commune IN (SELECT id_commune
+                                      FROM loc_communes
+                                      WHERE id_departement = ANY (sqlc.arg('departement')::int[]))
+                 )
+                 OR (sqlc.arg('region')::int[] IS NOT NULL AND cardinality(sqlc.arg('region')::int[]) > 0
+                 AND m.id_commune IN (SELECT c.id_commune
+                                      FROM loc_communes c
+                                               JOIN loc_departements d ON c.id_departement = d.id_departement
+                                      WHERE d.id_region = ANY (sqlc.arg('region')::int[])))
+             )
+           AND (sqlc.arg('natures_monu')::int[] IS NULL OR cardinality(sqlc.arg('natures_monu')::int[]) = 0 OR
                 cnm.monu_lieu_nature_id = ANY (sqlc.arg('natures_monu')::int[]))
-           AND ((sqlc.arg('etats_monu')::int[]) IS NULL OR cardinality(sqlc.arg('etats_monu')::int[]) = 0 OR
+           AND (sqlc.arg('etats_monu')::int[] IS NULL OR cardinality(sqlc.arg('etats_monu')::int[]) = 0 OR
                 cnm.monu_lieu_nature_id = ANY (sqlc.arg('etats_monu')::int[]))
-           AND ((sqlc.arg('materiaux_monu')::int[]) IS NULL OR cardinality(sqlc.arg('materiaux_monu')::int[]) = 0 OR
+           AND (sqlc.arg('materiaux_monu')::int[] IS NULL OR cardinality(sqlc.arg('materiaux_monu')::int[]) = 0 OR
                 cnm.monu_lieu_nature_id = ANY (sqlc.arg('materiaux_monu')::int[]))
-           AND m.publie = true AND m.publication_status = 'PUBLISHED'
+           AND m.publie = true
+           AND m.publication_status = 'PUBLISHED'
          GROUP BY m.id_monument_lieu
 
          UNION ALL
@@ -100,10 +110,10 @@ FROM (
                 'mobiliers_images'                           AS source,
                 similarity(mob.titre_mob_img, sqlc.arg('q')) AS score
          FROM t_mobiliers_images mob
-                  LEFT JOIN loc_communes c ON c.id_commune = mob.id_commune
-                  LEFT JOIN loc_departements d ON d.id_departement = c.id_departement
-                  LEFT JOIN loc_regions r ON r.id_region = d.id_region
-                  LEFT JOIN loc_pays p ON p.id_pays = r.id_pays
+                  LEFT JOIN loc_communes mobc ON mobc.id_commune = mob.id_commune
+                  LEFT JOIN loc_departements mobd ON mobd.id_departement = mobc.id_departement
+                  LEFT JOIN loc_regions mobr ON mobr.id_region = mobd.id_region
+                  LEFT JOIN loc_pays mobp ON mobp.id_pays = mob.id_pays
                   LEFT JOIN cor_siecles_mob_img csm ON csm.mobilier_image_id = mob.id_mobilier_image
                   LEFT JOIN bib_siecle bs ON bs.id_siecle = csm.siecle_mob_img_id
                   LEFT JOIN cor_natures_mob_img cnm ON cnm.mobilier_image_id = mob.id_mobilier_image
@@ -115,25 +125,35 @@ FROM (
                   LEFT JOIN t_medias tm ON tm.id_media = cme.media_mob_img_id
          WHERE sqlc.arg('include_mobiliers_images') = true
            AND (sqlc.arg('q') IS NULL OR mob.titre_mob_img ILIKE '%' || sqlc.arg('q') || '%')
-           AND ((sqlc.arg('siecles')::int[]) IS NULL OR cardinality(sqlc.arg('siecles')::int[]) = 0 OR
+           AND (sqlc.arg('siecles')::int[] IS NULL OR cardinality(sqlc.arg('siecles')::int[]) = 0 OR
                 csm.siecle_mob_img_id = ANY (sqlc.arg('siecles')::int[]))
-           AND ((sqlc.arg('pays')::int[]) IS NULL OR cardinality(sqlc.arg('pays')::int[]) = 0 OR
-                p.id_pays = ANY (sqlc.arg('pays')::int[]))
-           AND ((sqlc.arg('region')::int[]) IS NULL OR cardinality(sqlc.arg('region')::int[]) = 0 OR
-                r.id_region = ANY (sqlc.arg('region')::int[]))
-           AND ((sqlc.arg('departement')::int[]) IS NULL OR cardinality(sqlc.arg('departement')::int[]) = 0 OR
-                d.id_departement = ANY (sqlc.arg('departement')::int[]))
-           AND ((sqlc.arg('commune')::int[]) IS NULL OR cardinality(sqlc.arg('commune')::int[]) = 0 OR
-                c.id_commune = ANY (sqlc.arg('commune')::int[]))
-           AND ((sqlc.arg('natures_mob')::int[]) IS NULL OR cardinality(sqlc.arg('natures_mob')::int[]) = 0 OR
+           AND (sqlc.arg('pays')::int[] IS NULL OR cardinality(sqlc.arg('pays')::int[]) = 0 OR
+                mob.id_pays = ANY (sqlc.arg('pays')::int[]))
+
+           AND (
+             (sqlc.arg('commune')::int[] IS NOT NULL AND cardinality(sqlc.arg('commune')::int[]) > 0 AND
+              mob.id_commune = ANY (sqlc.arg('commune')::int[]))
+                 OR (sqlc.arg('departement')::int[] IS NOT NULL AND cardinality(sqlc.arg('departement')::int[]) > 0
+                 AND mob.id_commune IN (SELECT id_commune
+                                        FROM loc_communes
+                                        WHERE id_departement = ANY (sqlc.arg('departement')::int[]))
+                 )
+                 OR (sqlc.arg('region')::int[] IS NOT NULL AND cardinality(sqlc.arg('region')::int[]) > 0
+                 AND mob.id_commune IN (SELECT c.id_commune
+                                        FROM loc_communes c
+                                                 JOIN loc_departements d ON c.id_departement = d.id_departement
+                                        WHERE d.id_region = ANY (sqlc.arg('region')::int[])))
+             )
+           AND (sqlc.arg('natures_mob')::int[] IS NULL OR cardinality(sqlc.arg('natures_mob')::int[]) = 0 OR
                 cnm.nature_id = ANY (sqlc.arg('natures_mob')::int[]))
-           AND ((sqlc.arg('etats_mob')::int[]) IS NULL OR cardinality(sqlc.arg('etats_mob')::int[]) = 0 OR
+           AND (sqlc.arg('etats_mob')::int[] IS NULL OR cardinality(sqlc.arg('etats_mob')::int[]) = 0 OR
                 cem.etat_cons_mob_img_id = ANY (sqlc.arg('etats_mob')::int[]))
-           AND ((sqlc.arg('materiaux_mob')::int[]) IS NULL OR cardinality(sqlc.arg('materiaux_mob')::int[]) = 0 OR
+           AND (sqlc.arg('materiaux_mob')::int[] IS NULL OR cardinality(sqlc.arg('materiaux_mob')::int[]) = 0 OR
                 cmm.materiau_mob_img_id = ANY (sqlc.arg('materiaux_mob')::int[]))
-           AND ((sqlc.arg('techniques_mob')::int[]) IS NULL OR cardinality(sqlc.arg('techniques_mob')::int[]) = 0 OR
+           AND (sqlc.arg('techniques_mob')::int[] IS NULL OR cardinality(sqlc.arg('techniques_mob')::int[]) = 0 OR
                 ctm.technique_id = ANY (sqlc.arg('techniques_mob')::int[]))
-           AND mob.publie = true AND mob.publication_status = 'PUBLISHED'
+           AND mob.publie = true
+           AND mob.publication_status = 'PUBLISHED'
          GROUP BY mob.id_mobilier_image
 
          UNION ALL
@@ -169,10 +189,10 @@ FROM (
                 'personnes_morales'                         AS source,
                 similarity(pm.titre_pers_mo, sqlc.arg('q')) AS score
          FROM t_pers_morales pm
-                  LEFT JOIN loc_communes c ON c.id_commune = pm.id_commune
-                  LEFT JOIN loc_departements d ON d.id_departement = c.id_departement
-                  LEFT JOIN loc_regions r ON r.id_region = d.id_region
-                  LEFT JOIN loc_pays p ON p.id_pays = r.id_pays
+                  LEFT JOIN loc_communes pmc ON pmc.id_commune = pm.id_commune
+                  LEFT JOIN loc_departements pmd ON pmd.id_departement = pmc.id_departement
+                  LEFT JOIN loc_regions pmr ON pmr.id_region = pmd.id_region
+                  LEFT JOIN loc_pays pmp ON pmp.id_pays = pm.id_pays
                   LEFT JOIN cor_siecles_pers_mo csp ON csp.pers_morale_id = pm.id_pers_morale
                   LEFT JOIN bib_siecle bs ON bs.id_siecle = csp.siecle_pers_mo_id
                   LEFT JOIN cor_natures_pers_mo cnp ON cnp.pers_morale_id = pm.id_pers_morale
@@ -181,19 +201,29 @@ FROM (
                   LEFT JOIN t_medias tm ON tm.id_media = cme.media_pers_mo_id
          WHERE sqlc.arg('include_pers_morales') = true
            AND (sqlc.arg('q') IS NULL OR pm.titre_pers_mo ILIKE '%' || sqlc.arg('q') || '%')
-           AND ((sqlc.arg('siecles')::int[]) IS NULL OR cardinality(sqlc.arg('siecles')::int[]) = 0 OR
+           AND (sqlc.arg('siecles')::int[] IS NULL OR cardinality(sqlc.arg('siecles')::int[]) = 0 OR
                 csp.siecle_pers_mo_id = ANY (sqlc.arg('siecles')::int[]))
-           AND ((sqlc.arg('pays')::int[]) IS NULL OR cardinality(sqlc.arg('pays')::int[]) = 0 OR
-                p.id_pays = ANY (sqlc.arg('pays')::int[]))
-           AND ((sqlc.arg('region')::int[]) IS NULL OR cardinality(sqlc.arg('region')::int[]) = 0 OR
-                r.id_region = ANY (sqlc.arg('region')::int[]))
-           AND ((sqlc.arg('departement')::int[]) IS NULL OR cardinality(sqlc.arg('departement')::int[]) = 0 OR
-                d.id_departement = ANY (sqlc.arg('departement')::int[]))
-           AND ((sqlc.arg('commune')::int[]) IS NULL OR cardinality(sqlc.arg('commune')::int[]) = 0 OR
-                c.id_commune = ANY (sqlc.arg('commune')::int[]))
-           AND ((sqlc.arg('natures_pers_mo')::int[]) IS NULL OR cardinality(sqlc.arg('natures_pers_mo')::int[]) = 0 OR
+           AND (sqlc.arg('pays')::int[] IS NULL OR cardinality(sqlc.arg('pays')::int[]) = 0 OR
+                pm.id_pays = ANY (sqlc.arg('pays')::int[]))
+
+           AND (
+             (sqlc.arg('commune')::int[] IS NOT NULL AND cardinality(sqlc.arg('commune')::int[]) > 0 AND
+              pm.id_commune = ANY (sqlc.arg('commune')::int[]))
+                 OR (sqlc.arg('departement')::int[] IS NOT NULL AND cardinality(sqlc.arg('departement')::int[]) > 0
+                 AND pm.id_commune IN (SELECT id_commune
+                                       FROM loc_communes
+                                       WHERE id_departement = ANY (sqlc.arg('departement')::int[]))
+                 )
+                 OR (sqlc.arg('region')::int[] IS NOT NULL AND cardinality(sqlc.arg('region')::int[]) > 0
+                 AND pm.id_commune IN (SELECT c.id_commune
+                                       FROM loc_communes c
+                                                JOIN loc_departements d ON c.id_departement = d.id_departement
+                                       WHERE d.id_region = ANY (sqlc.arg('region')::int[])))
+             )
+           AND (sqlc.arg('natures_pers_mo')::int[] IS NULL OR cardinality(sqlc.arg('natures_pers_mo')::int[]) = 0 OR
                 cnp.pers_mo_nature_id = ANY (sqlc.arg('natures_pers_mo')::int[]))
-           AND pm.publie = true AND pm.publication_status = 'PUBLISHED'
+           AND pm.publie = true
+           AND pm.publication_status = 'PUBLISHED'
          GROUP BY pm.id_pers_morale
 
          UNION ALL
@@ -229,10 +259,10 @@ FROM (
                 'personnes_physiques'                             AS source,
                 similarity(pp.prenom_nom_pers_phy, sqlc.arg('q')) AS score
          FROM t_pers_physiques pp
-                  LEFT JOIN loc_communes c ON c.id_commune = pp.id_commune
-                  LEFT JOIN loc_departements d ON d.id_departement = c.id_departement
-                  LEFT JOIN loc_regions r ON r.id_region = d.id_region
-                  LEFT JOIN loc_pays p ON p.id_pays = r.id_pays
+                  LEFT JOIN loc_communes ppc ON ppc.id_commune = pp.id_commune
+                  LEFT JOIN loc_departements ppd ON ppd.id_departement = ppc.id_departement
+                  LEFT JOIN loc_regions ppr ON ppr.id_region = ppd.id_region
+                  LEFT JOIN loc_pays ppp ON ppp.id_pays = pp.id_pays
                   LEFT JOIN cor_siecles_pers_phy csp ON csp.pers_physique_id = pp.id_pers_physique
                   LEFT JOIN bib_siecle bs ON bs.id_siecle = csp.siecle_pers_phy_id
                   LEFT JOIN cor_professions_pers_phy cpp ON cpp.pers_physique_id = pp.id_pers_physique
@@ -242,22 +272,32 @@ FROM (
                   LEFT JOIN t_medias tm ON tm.id_media = cmp.media_pers_phy_id
          WHERE sqlc.arg('include_pers_physiques') = true
            AND (sqlc.arg('q') IS NULL OR pp.prenom_nom_pers_phy ILIKE '%' || sqlc.arg('q') || '%')
-           AND ((sqlc.arg('siecles')::int[]) IS NULL OR cardinality(sqlc.arg('siecles')::int[]) = 0 OR
+           AND (sqlc.arg('siecles')::int[] IS NULL OR cardinality(sqlc.arg('siecles')::int[]) = 0 OR
                 csp.siecle_pers_phy_id = ANY (sqlc.arg('siecles')::int[]))
-           AND ((sqlc.arg('pays')::int[]) IS NULL OR cardinality(sqlc.arg('pays')::int[]) = 0 OR
-                p.id_pays = ANY (sqlc.arg('pays')::int[]))
-           AND ((sqlc.arg('region')::int[]) IS NULL OR cardinality(sqlc.arg('region')::int[]) = 0 OR
-                r.id_region = ANY (sqlc.arg('region')::int[]))
-           AND ((sqlc.arg('departement')::int[]) IS NULL OR cardinality(sqlc.arg('departement')::int[]) = 0 OR
-                d.id_departement = ANY (sqlc.arg('departement')::int[]))
-           AND ((sqlc.arg('commune')::int[]) IS NULL OR cardinality(sqlc.arg('commune')::int[]) = 0 OR
-                c.id_commune = ANY (sqlc.arg('commune')::int[]))
-           AND ((sqlc.arg('professions')::int[]) IS NULL OR cardinality(sqlc.arg('professions')::int[]) = 0 OR
+           AND (sqlc.arg('pays')::int[] IS NULL OR cardinality(sqlc.arg('pays')::int[]) = 0 OR
+                pp.id_pays = ANY (sqlc.arg('pays')::int[]))
+
+           AND (
+             (sqlc.arg('commune')::int[] IS NOT NULL AND cardinality(sqlc.arg('commune')::int[]) > 0 AND
+              pp.id_commune = ANY (sqlc.arg('commune')::int[]))
+                 OR (sqlc.arg('departement')::int[] IS NOT NULL AND cardinality(sqlc.arg('departement')::int[]) > 0
+                 AND pp.id_commune IN (SELECT id_commune
+                                       FROM loc_communes
+                                       WHERE id_departement = ANY (sqlc.arg('departement')::int[]))
+                 )
+                 OR (sqlc.arg('region')::int[] IS NOT NULL AND cardinality(sqlc.arg('region')::int[]) > 0
+                 AND pp.id_commune IN (SELECT c.id_commune
+                                       FROM loc_communes c
+                                                JOIN loc_departements d ON c.id_departement = d.id_departement
+                                       WHERE d.id_region = ANY (sqlc.arg('region')::int[])))
+             )
+           AND (sqlc.arg('professions')::int[] IS NULL OR cardinality(sqlc.arg('professions')::int[]) = 0 OR
                 cpp.profession_id = ANY (sqlc.arg('professions')::int[]))
-           AND ((sqlc.arg('modes_deplacements')::int[]) IS NULL OR
+           AND (sqlc.arg('modes_deplacements')::int[] IS NULL OR
                 cardinality(sqlc.arg('modes_deplacements')::int[]) = 0 OR
                 cmd.mode_deplacement_id = ANY (sqlc.arg('modes_deplacements')::int[]))
-           AND pp.publie = true AND pp.publication_status = 'PUBLISHED'
+           AND pp.publie = true
+           AND pp.publication_status = 'PUBLISHED'
          GROUP BY pp.id_pers_physique) AS results
 
 
@@ -270,13 +310,13 @@ FROM (
          -- ===============================
          -- 1. Monuments & lieux
          -- ===============================
-         SELECT m.id_monument_lieu                           AS id,
-                m.titre_monu_lieu                            AS title,
+         SELECT m.id_monument_lieu AS id,
+                m.titre_monu_lieu  AS title,
                 COALESCE(array_agg(DISTINCT bs.siecle_list) FILTER (WHERE bs.siecle_list IS NOT NULL),
-                         '{}')                               AS siecles,
+                         '{}')     AS siecles,
                 COALESCE(array_agg(DISTINCT bmn.monu_lieu_nature_type)
                          FILTER (WHERE bmn.monu_lieu_nature_type IS NOT NULL),
-                         '{}')                               AS natures,
+                         '{}')     AS natures,
                 COALESCE(
                                 jsonb_agg(
                                 DISTINCT jsonb_build_object(
@@ -294,14 +334,14 @@ FROM (
                                             WHERE COALESCE(elem ->> 'path', '') <> '')
                                     ),
                                 '[]'::jsonb
-                )                                            AS medias,
-                '{}'::text[]                                 AS professions,
-                'monuments_lieux'                            AS source
+                )                  AS medias,
+                '{}'::text[]       AS professions,
+                'monuments_lieux'  AS source
          FROM t_monuments_lieux m
-                  LEFT JOIN loc_communes c ON c.id_commune = m.id_commune
-                  LEFT JOIN loc_departements d ON d.id_departement = c.id_departement
-                  LEFT JOIN loc_regions r ON r.id_region = d.id_region
-                  LEFT JOIN loc_pays p ON p.id_pays = r.id_pays
+                  LEFT JOIN loc_communes mc ON mc.id_commune = m.id_commune
+                  LEFT JOIN loc_departements md ON md.id_departement = mc.id_departement
+                  LEFT JOIN loc_regions mr ON mr.id_region = md.id_region
+                  LEFT JOIN loc_pays mp ON mp.id_pays = m.id_pays
                   LEFT JOIN cor_siecles_monu_lieu csm ON csm.monument_lieu_id = m.id_monument_lieu
                   LEFT JOIN bib_siecle bs ON bs.id_siecle = csm.siecle_monu_lieu_id
                   LEFT JOIN cor_natures_monu_lieu cnm ON cnm.monument_lieu_id = m.id_monument_lieu
@@ -311,23 +351,33 @@ FROM (
                   LEFT JOIN cor_medias_monu_lieu cme ON m.id_monument_lieu = cme.monument_lieu_id
                   LEFT JOIN t_medias tm ON tm.id_media = cme.media_monu_lieu_id
          WHERE sqlc.arg('include_monuments_lieux') = true
-           AND ((sqlc.arg('siecles')::int[]) IS NULL OR cardinality(sqlc.arg('siecles')::int[]) = 0 OR
+           AND (sqlc.arg('siecles')::int[] IS NULL OR cardinality(sqlc.arg('siecles')::int[]) = 0 OR
                 csm.siecle_monu_lieu_id = ANY (sqlc.arg('siecles')::int[]))
-           AND ((sqlc.arg('pays')::int[]) IS NULL OR cardinality(sqlc.arg('pays')::int[]) = 0 OR
-                p.id_pays = ANY (sqlc.arg('pays')::int[]))
-           AND ((sqlc.arg('region')::int[]) IS NULL OR cardinality(sqlc.arg('region')::int[]) = 0 OR
-                r.id_region = ANY (sqlc.arg('region')::int[]))
-           AND ((sqlc.arg('departement')::int[]) IS NULL OR cardinality(sqlc.arg('departement')::int[]) = 0 OR
-                d.id_departement = ANY (sqlc.arg('departement')::int[]))
-           AND ((sqlc.arg('commune')::int[]) IS NULL OR cardinality(sqlc.arg('commune')::int[]) = 0 OR
-                c.id_commune = ANY (sqlc.arg('commune')::int[]))
-           AND ((sqlc.arg('natures_monu')::int[]) IS NULL OR cardinality(sqlc.arg('natures_monu')::int[]) = 0 OR
+           AND (sqlc.arg('pays')::int[] IS NULL OR cardinality(sqlc.arg('pays')::int[]) = 0 OR
+                m.id_pays = ANY (sqlc.arg('pays')::int[]))
+
+           AND (
+             (sqlc.arg('commune')::int[] IS NOT NULL AND cardinality(sqlc.arg('commune')::int[]) > 0 AND
+              m.id_commune = ANY (sqlc.arg('commune')::int[]))
+                 OR (sqlc.arg('departement')::int[] IS NOT NULL AND cardinality(sqlc.arg('departement')::int[]) > 0
+                 AND m.id_commune IN (SELECT id_commune
+                                      FROM loc_communes
+                                      WHERE id_departement = ANY (sqlc.arg('departement')::int[]))
+                 )
+                 OR (sqlc.arg('region')::int[] IS NOT NULL AND cardinality(sqlc.arg('region')::int[]) > 0
+                 AND m.id_commune IN (SELECT c.id_commune
+                                      FROM loc_communes c
+                                               JOIN loc_departements d ON c.id_departement = d.id_departement
+                                      WHERE d.id_region = ANY (sqlc.arg('region')::int[])))
+             )
+           AND (sqlc.arg('natures_monu')::int[] IS NULL OR cardinality(sqlc.arg('natures_monu')::int[]) = 0 OR
                 cnm.monu_lieu_nature_id = ANY (sqlc.arg('natures_monu')::int[]))
-           AND ((sqlc.arg('etats_monu')::int[]) IS NULL OR cardinality(sqlc.arg('etats_monu')::int[]) = 0 OR
+           AND (sqlc.arg('etats_monu')::int[] IS NULL OR cardinality(sqlc.arg('etats_monu')::int[]) = 0 OR
                 cnm.monu_lieu_nature_id = ANY (sqlc.arg('etats_monu')::int[]))
-           AND ((sqlc.arg('materiaux_monu')::int[]) IS NULL OR cardinality(sqlc.arg('materiaux_monu')::int[]) = 0 OR
+           AND (sqlc.arg('materiaux_monu')::int[] IS NULL OR cardinality(sqlc.arg('materiaux_monu')::int[]) = 0 OR
                 cnm.monu_lieu_nature_id = ANY (sqlc.arg('materiaux_monu')::int[]))
-           AND m.publie = true AND m.publication_status = 'PUBLISHED'
+           AND m.publie = true
+           AND m.publication_status = 'PUBLISHED'
          GROUP BY m.id_monument_lieu
 
          UNION ALL
@@ -335,12 +385,12 @@ FROM (
          -- ===============================
          -- 2. Mobiliers & images
          -- ===============================
-         SELECT mob.id_mobilier_image                        AS id,
-                mob.titre_mob_img                            AS title,
+         SELECT mob.id_mobilier_image AS id,
+                mob.titre_mob_img     AS title,
                 COALESCE(array_agg(DISTINCT bs.siecle_list) FILTER (WHERE bs.siecle_list IS NOT NULL),
-                         '{}')                               AS siecles,
+                         '{}')        AS siecles,
                 COALESCE(array_agg(DISTINCT bmn.nature_type) FILTER (WHERE bmn.nature_type IS NOT NULL),
-                         '{}')                               AS natures,
+                         '{}')        AS natures,
                 COALESCE(
                                 jsonb_agg(
                                 DISTINCT jsonb_build_object(
@@ -358,14 +408,14 @@ FROM (
                                             WHERE COALESCE(elem ->> 'path', '') <> '')
                                     ),
                                 '[]'::jsonb
-                )                                            AS medias,
-                '{}'::text[]                                 AS professions,
-                'mobiliers_images'                           AS source
+                )                     AS medias,
+                '{}'::text[]          AS professions,
+                'mobiliers_images'    AS source
          FROM t_mobiliers_images mob
-                  LEFT JOIN loc_communes c ON c.id_commune = mob.id_commune
-                  LEFT JOIN loc_departements d ON d.id_departement = c.id_departement
-                  LEFT JOIN loc_regions r ON r.id_region = d.id_region
-                  LEFT JOIN loc_pays p ON p.id_pays = r.id_pays
+                  LEFT JOIN loc_communes mobc ON mobc.id_commune = mob.id_commune
+                  LEFT JOIN loc_departements mobd ON mobd.id_departement = mobc.id_departement
+                  LEFT JOIN loc_regions mobr ON mobr.id_region = mobd.id_region
+                  LEFT JOIN loc_pays mobp ON mobp.id_pays = mob.id_pays
                   LEFT JOIN cor_siecles_mob_img csm ON csm.mobilier_image_id = mob.id_mobilier_image
                   LEFT JOIN bib_siecle bs ON bs.id_siecle = csm.siecle_mob_img_id
                   LEFT JOIN cor_natures_mob_img cnm ON cnm.mobilier_image_id = mob.id_mobilier_image
@@ -376,25 +426,35 @@ FROM (
                   LEFT JOIN cor_medias_mob_img cme ON mob.id_mobilier_image = cme.mobilier_image_id
                   LEFT JOIN t_medias tm ON tm.id_media = cme.media_mob_img_id
          WHERE sqlc.arg('include_mobiliers_images') = true
-           AND ((sqlc.arg('siecles')::int[]) IS NULL OR cardinality(sqlc.arg('siecles')::int[]) = 0 OR
+           AND (sqlc.arg('siecles')::int[] IS NULL OR cardinality(sqlc.arg('siecles')::int[]) = 0 OR
                 csm.siecle_mob_img_id = ANY (sqlc.arg('siecles')::int[]))
-           AND ((sqlc.arg('pays')::int[]) IS NULL OR cardinality(sqlc.arg('pays')::int[]) = 0 OR
-                p.id_pays = ANY (sqlc.arg('pays')::int[]))
-           AND ((sqlc.arg('region')::int[]) IS NULL OR cardinality(sqlc.arg('region')::int[]) = 0 OR
-                r.id_region = ANY (sqlc.arg('region')::int[]))
-           AND ((sqlc.arg('departement')::int[]) IS NULL OR cardinality(sqlc.arg('departement')::int[]) = 0 OR
-                d.id_departement = ANY (sqlc.arg('departement')::int[]))
-           AND ((sqlc.arg('commune')::int[]) IS NULL OR cardinality(sqlc.arg('commune')::int[]) = 0 OR
-                c.id_commune = ANY (sqlc.arg('commune')::int[]))
-           AND ((sqlc.arg('natures_mob')::int[]) IS NULL OR cardinality(sqlc.arg('natures_mob')::int[]) = 0 OR
+           AND (sqlc.arg('pays')::int[] IS NULL OR cardinality(sqlc.arg('pays')::int[]) = 0 OR
+                mob.id_pays = ANY (sqlc.arg('pays')::int[]))
+
+           AND (
+             (sqlc.arg('commune')::int[] IS NOT NULL AND cardinality(sqlc.arg('commune')::int[]) > 0 AND
+              mob.id_commune = ANY (sqlc.arg('commune')::int[]))
+                 OR (sqlc.arg('departement')::int[] IS NOT NULL AND cardinality(sqlc.arg('departement')::int[]) > 0
+                 AND mob.id_commune IN (SELECT id_commune
+                                        FROM loc_communes
+                                        WHERE id_departement = ANY (sqlc.arg('departement')::int[]))
+                 )
+                 OR (sqlc.arg('region')::int[] IS NOT NULL AND cardinality(sqlc.arg('region')::int[]) > 0
+                 AND mob.id_commune IN (SELECT c.id_commune
+                                        FROM loc_communes c
+                                                 JOIN loc_departements d ON c.id_departement = d.id_departement
+                                        WHERE d.id_region = ANY (sqlc.arg('region')::int[])))
+             )
+           AND (sqlc.arg('natures_mob')::int[] IS NULL OR cardinality(sqlc.arg('natures_mob')::int[]) = 0 OR
                 cnm.nature_id = ANY (sqlc.arg('natures_mob')::int[]))
-           AND ((sqlc.arg('etats_mob')::int[]) IS NULL OR cardinality(sqlc.arg('etats_mob')::int[]) = 0 OR
+           AND (sqlc.arg('etats_mob')::int[] IS NULL OR cardinality(sqlc.arg('etats_mob')::int[]) = 0 OR
                 cem.etat_cons_mob_img_id = ANY (sqlc.arg('etats_mob')::int[]))
-           AND ((sqlc.arg('materiaux_mob')::int[]) IS NULL OR cardinality(sqlc.arg('materiaux_mob')::int[]) = 0 OR
+           AND (sqlc.arg('materiaux_mob')::int[] IS NULL OR cardinality(sqlc.arg('materiaux_mob')::int[]) = 0 OR
                 cmm.materiau_mob_img_id = ANY (sqlc.arg('materiaux_mob')::int[]))
-           AND ((sqlc.arg('techniques_mob')::int[]) IS NULL OR cardinality(sqlc.arg('techniques_mob')::int[]) = 0 OR
+           AND (sqlc.arg('techniques_mob')::int[] IS NULL OR cardinality(sqlc.arg('techniques_mob')::int[]) = 0 OR
                 ctm.technique_id = ANY (sqlc.arg('techniques_mob')::int[]))
-           AND mob.publie = true AND mob.publication_status = 'PUBLISHED'
+           AND mob.publie = true
+           AND mob.publication_status = 'PUBLISHED'
          GROUP BY mob.id_mobilier_image
 
          UNION ALL
@@ -402,12 +462,12 @@ FROM (
          -- ===============================
          -- 3. Personnes morales
          -- ===============================
-         SELECT pm.id_pers_morale                           AS id,
-                pm.titre_pers_mo                            AS title,
+         SELECT pm.id_pers_morale   AS id,
+                pm.titre_pers_mo    AS title,
                 COALESCE(array_agg(DISTINCT bs.siecle_list) FILTER (WHERE bs.siecle_list IS NOT NULL),
-                         '{}')                              AS siecles,
+                         '{}')      AS siecles,
                 COALESCE(array_agg(DISTINCT bpn.pers_mo_nature_type) FILTER (WHERE bpn.pers_mo_nature_type IS NOT NULL),
-                         '{}')                              AS natures,
+                         '{}')      AS natures,
                 COALESCE(
                                 jsonb_agg(
                                 DISTINCT jsonb_build_object(
@@ -425,14 +485,14 @@ FROM (
                                             WHERE COALESCE(elem ->> 'path', '') <> '')
                                     ),
                                 '[]'::jsonb
-                )                                           AS medias,
-                '{}'::text[]                                AS professions,
-                'personnes_morales'                         AS source
+                )                   AS medias,
+                '{}'::text[]        AS professions,
+                'personnes_morales' AS source
          FROM t_pers_morales pm
-                  LEFT JOIN loc_communes c ON c.id_commune = pm.id_commune
-                  LEFT JOIN loc_departements d ON d.id_departement = c.id_departement
-                  LEFT JOIN loc_regions r ON r.id_region = d.id_region
-                  LEFT JOIN loc_pays p ON p.id_pays = r.id_pays
+                  LEFT JOIN loc_communes pmc ON pmc.id_commune = pm.id_commune
+                  LEFT JOIN loc_departements pmd ON pmd.id_departement = pmc.id_departement
+                  LEFT JOIN loc_regions pmr ON pmr.id_region = pmd.id_region
+                  LEFT JOIN loc_pays pmp ON pmp.id_pays = pm.id_pays
                   LEFT JOIN cor_siecles_pers_mo csp ON csp.pers_morale_id = pm.id_pers_morale
                   LEFT JOIN bib_siecle bs ON bs.id_siecle = csp.siecle_pers_mo_id
                   LEFT JOIN cor_natures_pers_mo cnp ON cnp.pers_morale_id = pm.id_pers_morale
@@ -440,19 +500,29 @@ FROM (
                   LEFT JOIN cor_medias_pers_mo cme ON pm.id_pers_morale = cme.pers_morale_id
                   LEFT JOIN t_medias tm ON tm.id_media = cme.media_pers_mo_id
          WHERE sqlc.arg('include_pers_morales') = true
-           AND ((sqlc.arg('siecles')::int[]) IS NULL OR cardinality(sqlc.arg('siecles')::int[]) = 0 OR
+           AND (sqlc.arg('siecles')::int[] IS NULL OR cardinality(sqlc.arg('siecles')::int[]) = 0 OR
                 csp.siecle_pers_mo_id = ANY (sqlc.arg('siecles')::int[]))
-           AND ((sqlc.arg('pays')::int[]) IS NULL OR cardinality(sqlc.arg('pays')::int[]) = 0 OR
-                p.id_pays = ANY (sqlc.arg('pays')::int[]))
-           AND ((sqlc.arg('region')::int[]) IS NULL OR cardinality(sqlc.arg('region')::int[]) = 0 OR
-                r.id_region = ANY (sqlc.arg('region')::int[]))
-           AND ((sqlc.arg('departement')::int[]) IS NULL OR cardinality(sqlc.arg('departement')::int[]) = 0 OR
-                d.id_departement = ANY (sqlc.arg('departement')::int[]))
-           AND ((sqlc.arg('commune')::int[]) IS NULL OR cardinality(sqlc.arg('commune')::int[]) = 0 OR
-                c.id_commune = ANY (sqlc.arg('commune')::int[]))
-           AND ((sqlc.arg('natures_pers_mo')::int[]) IS NULL OR cardinality(sqlc.arg('natures_pers_mo')::int[]) = 0 OR
+           AND (sqlc.arg('pays')::int[] IS NULL OR cardinality(sqlc.arg('pays')::int[]) = 0 OR
+                pm.id_pays = ANY (sqlc.arg('pays')::int[]))
+
+           AND (
+             (sqlc.arg('commune')::int[] IS NOT NULL AND cardinality(sqlc.arg('commune')::int[]) > 0 AND
+              pm.id_commune = ANY (sqlc.arg('commune')::int[]))
+                 OR (sqlc.arg('departement')::int[] IS NOT NULL AND cardinality(sqlc.arg('departement')::int[]) > 0
+                 AND pm.id_commune IN (SELECT id_commune
+                                       FROM loc_communes
+                                       WHERE id_departement = ANY (sqlc.arg('departement')::int[]))
+                 )
+                 OR (sqlc.arg('region')::int[] IS NOT NULL AND cardinality(sqlc.arg('region')::int[]) > 0
+                 AND pm.id_commune IN (SELECT c.id_commune
+                                       FROM loc_communes c
+                                                JOIN loc_departements d ON c.id_departement = d.id_departement
+                                       WHERE d.id_region = ANY (sqlc.arg('region')::int[])))
+             )
+           AND (sqlc.arg('natures_pers_mo')::int[] IS NULL OR cardinality(sqlc.arg('natures_pers_mo')::int[]) = 0 OR
                 cnp.pers_mo_nature_id = ANY (sqlc.arg('natures_pers_mo')::int[]))
-           AND pm.publie = true AND pm.publication_status = 'PUBLISHED'
+           AND pm.publie = true
+           AND pm.publication_status = 'PUBLISHED'
          GROUP BY pm.id_pers_morale
 
          UNION ALL
@@ -460,11 +530,11 @@ FROM (
          -- ===============================
          -- 4. Personnes physiques
          -- ===============================
-         SELECT pp.id_pers_physique                               AS id,
-                pp.prenom_nom_pers_phy                            AS title,
+         SELECT pp.id_pers_physique    AS id,
+                pp.prenom_nom_pers_phy AS title,
                 COALESCE(array_agg(DISTINCT bs.siecle_list) FILTER (WHERE bs.siecle_list IS NOT NULL),
-                         '{}')                                    AS siecles,
-                '{}'::text[]                                      AS natures,
+                         '{}')         AS siecles,
+                '{}'::text[]           AS natures,
                 COALESCE(
                                 jsonb_agg(
                                 DISTINCT jsonb_build_object(
@@ -482,15 +552,15 @@ FROM (
                                             WHERE COALESCE(elem ->> 'path', '') <> '')
                                     ),
                                 '[]'::jsonb
-                )                                                 AS medias,
+                )                      AS medias,
                 COALESCE(array_agg(DISTINCT bpp.profession_type) FILTER (WHERE bpp.profession_type IS NOT NULL),
-                         '{}')                                    AS professions,
-                'personnes_physiques'                             AS source
+                         '{}')         AS professions,
+                'personnes_physiques'  AS source
          FROM t_pers_physiques pp
-                  LEFT JOIN loc_communes c ON c.id_commune = pp.id_commune
-                  LEFT JOIN loc_departements d ON d.id_departement = c.id_departement
-                  LEFT JOIN loc_regions r ON r.id_region = d.id_region
-                  LEFT JOIN loc_pays p ON p.id_pays = r.id_pays
+                  LEFT JOIN loc_communes ppc ON ppc.id_commune = pp.id_commune
+                  LEFT JOIN loc_departements ppd ON ppd.id_departement = ppc.id_departement
+                  LEFT JOIN loc_regions ppr ON ppr.id_region = ppd.id_region
+                  LEFT JOIN loc_pays ppp ON ppp.id_pays = pp.id_pays
                   LEFT JOIN cor_siecles_pers_phy csp ON csp.pers_physique_id = pp.id_pers_physique
                   LEFT JOIN bib_siecle bs ON bs.id_siecle = csp.siecle_pers_phy_id
                   LEFT JOIN cor_professions_pers_phy cpp ON cpp.pers_physique_id = pp.id_pers_physique
@@ -499,22 +569,32 @@ FROM (
                   LEFT JOIN cor_medias_pers_phy cmp ON pp.id_pers_physique = cmp.pers_physique_id
                   LEFT JOIN t_medias tm ON tm.id_media = cmp.media_pers_phy_id
          WHERE sqlc.arg('include_pers_physiques') = true
-           AND ((sqlc.arg('siecles')::int[]) IS NULL OR cardinality(sqlc.arg('siecles')::int[]) = 0 OR
+           AND (sqlc.arg('siecles')::int[] IS NULL OR cardinality(sqlc.arg('siecles')::int[]) = 0 OR
                 csp.siecle_pers_phy_id = ANY (sqlc.arg('siecles')::int[]))
-           AND ((sqlc.arg('pays')::int[]) IS NULL OR cardinality(sqlc.arg('pays')::int[]) = 0 OR
-                p.id_pays = ANY (sqlc.arg('pays')::int[]))
-           AND ((sqlc.arg('region')::int[]) IS NULL OR cardinality(sqlc.arg('region')::int[]) = 0 OR
-                r.id_region = ANY (sqlc.arg('region')::int[]))
-           AND ((sqlc.arg('departement')::int[]) IS NULL OR cardinality(sqlc.arg('departement')::int[]) = 0 OR
-                d.id_departement = ANY (sqlc.arg('departement')::int[]))
-           AND ((sqlc.arg('commune')::int[]) IS NULL OR cardinality(sqlc.arg('commune')::int[]) = 0 OR
-                c.id_commune = ANY (sqlc.arg('commune')::int[]))
-           AND ((sqlc.arg('professions')::int[]) IS NULL OR cardinality(sqlc.arg('professions')::int[]) = 0 OR
+           AND (sqlc.arg('pays')::int[] IS NULL OR cardinality(sqlc.arg('pays')::int[]) = 0 OR
+                pp.id_pays = ANY (sqlc.arg('pays')::int[]))
+
+           AND (
+             (sqlc.arg('commune')::int[] IS NOT NULL AND cardinality(sqlc.arg('commune')::int[]) > 0 AND
+              pp.id_commune = ANY (sqlc.arg('commune')::int[]))
+                 OR (sqlc.arg('departement')::int[] IS NOT NULL AND cardinality(sqlc.arg('departement')::int[]) > 0
+                 AND pp.id_commune IN (SELECT id_commune
+                                       FROM loc_communes
+                                       WHERE id_departement = ANY (sqlc.arg('departement')::int[]))
+                 )
+                 OR (sqlc.arg('region')::int[] IS NOT NULL AND cardinality(sqlc.arg('region')::int[]) > 0
+                 AND pp.id_commune IN (SELECT c.id_commune
+                                       FROM loc_communes c
+                                                JOIN loc_departements d ON c.id_departement = d.id_departement
+                                       WHERE d.id_region = ANY (sqlc.arg('region')::int[])))
+             )
+           AND (sqlc.arg('professions')::int[] IS NULL OR cardinality(sqlc.arg('professions')::int[]) = 0 OR
                 cpp.profession_id = ANY (sqlc.arg('professions')::int[]))
-           AND ((sqlc.arg('modes_deplacements')::int[]) IS NULL OR
+           AND (sqlc.arg('modes_deplacements')::int[] IS NULL OR
                 cardinality(sqlc.arg('modes_deplacements')::int[]) = 0 OR
                 cmd.mode_deplacement_id = ANY (sqlc.arg('modes_deplacements')::int[]))
-           AND pp.publie = true AND pp.publication_status = 'PUBLISHED'
+           AND pp.publie = true
+           AND pp.publication_status = 'PUBLISHED'
          GROUP BY pp.id_pers_physique) AS results
 
 

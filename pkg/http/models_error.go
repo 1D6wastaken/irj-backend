@@ -20,7 +20,7 @@ type APIError struct {
 	Details  string `json:"details,omitempty"`
 }
 
-// Just to avoid linter issues...
+// Error Just to avoid linter issues...
 func (a APIError) Error() string {
 	return a.Message
 }

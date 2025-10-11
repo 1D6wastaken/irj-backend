@@ -45,10 +45,10 @@ FROM (
                 'monuments_lieux'                            AS source,
                 similarity(m.titre_monu_lieu, $1) AS score
          FROM t_monuments_lieux m
-                  LEFT JOIN loc_communes c ON c.id_commune = m.id_commune
-                  LEFT JOIN loc_departements d ON d.id_departement = c.id_departement
-                  LEFT JOIN loc_regions r ON r.id_region = d.id_region
-                  LEFT JOIN loc_pays p ON p.id_pays = r.id_pays
+                  LEFT JOIN loc_communes mc ON mc.id_commune = m.id_commune
+                  LEFT JOIN loc_departements md ON md.id_departement = mc.id_departement
+                  LEFT JOIN loc_regions mr ON mr.id_region = md.id_region
+                  LEFT JOIN loc_pays mp ON mp.id_pays = m.id_pays
                   LEFT JOIN cor_siecles_monu_lieu csm ON csm.monument_lieu_id = m.id_monument_lieu
                   LEFT JOIN bib_siecle bs ON bs.id_siecle = csm.siecle_monu_lieu_id
                   LEFT JOIN cor_natures_monu_lieu cnm ON cnm.monument_lieu_id = m.id_monument_lieu
@@ -59,23 +59,33 @@ FROM (
                   LEFT JOIN t_medias tm ON tm.id_media = cme.media_monu_lieu_id
          WHERE $2 = true
            AND ($1 IS NULL OR m.titre_monu_lieu ILIKE '%' || $1 || '%')
-           AND (($3::int[]) IS NULL OR cardinality($3::int[]) = 0 OR
+           AND ($3::int[] IS NULL OR cardinality($3::int[]) = 0 OR
                 csm.siecle_monu_lieu_id = ANY ($3::int[]))
-           AND (($4::int[]) IS NULL OR cardinality($4::int[]) = 0 OR
-                p.id_pays = ANY ($4::int[]))
-           AND (($5::int[]) IS NULL OR cardinality($5::int[]) = 0 OR
-                r.id_region = ANY ($5::int[]))
-           AND (($6::int[]) IS NULL OR cardinality($6::int[]) = 0 OR
-                d.id_departement = ANY ($6::int[]))
-           AND (($7::int[]) IS NULL OR cardinality($7::int[]) = 0 OR
-                c.id_commune = ANY ($7::int[]))
-           AND (($8::int[]) IS NULL OR cardinality($8::int[]) = 0 OR
+           AND ($4::int[] IS NULL OR cardinality($4::int[]) = 0 OR
+                m.id_pays = ANY ($4::int[]))
+
+           AND (
+             ($5::int[] IS NOT NULL AND cardinality($5::int[]) > 0 AND
+              mc.id_commune = ANY ($5::int[]))
+                 OR ($6::int[] IS NOT NULL AND cardinality($6::int[]) > 0
+                 AND m.id_commune IN (SELECT id_commune
+                                      FROM loc_communes
+                                      WHERE id_departement = ANY ($6::int[]))
+                 )
+                 OR ($7::int[] IS NOT NULL AND cardinality($7::int[]) > 0
+                 AND m.id_commune IN (SELECT c.id_commune
+                                      FROM loc_communes c
+                                               JOIN loc_departements d ON c.id_departement = d.id_departement
+                                      WHERE d.id_region = ANY ($7::int[])))
+             )
+           AND ($8::int[] IS NULL OR cardinality($8::int[]) = 0 OR
                 cnm.monu_lieu_nature_id = ANY ($8::int[]))
-           AND (($9::int[]) IS NULL OR cardinality($9::int[]) = 0 OR
+           AND ($9::int[] IS NULL OR cardinality($9::int[]) = 0 OR
                 cnm.monu_lieu_nature_id = ANY ($9::int[]))
-           AND (($10::int[]) IS NULL OR cardinality($10::int[]) = 0 OR
+           AND ($10::int[] IS NULL OR cardinality($10::int[]) = 0 OR
                 cnm.monu_lieu_nature_id = ANY ($10::int[]))
-           AND m.publie = true AND m.publication_status = 'PUBLISHED'
+           AND m.publie = true
+           AND m.publication_status = 'PUBLISHED'
          GROUP BY m.id_monument_lieu
 
          UNION ALL
@@ -111,10 +121,10 @@ FROM (
                 'mobiliers_images'                           AS source,
                 similarity(mob.titre_mob_img, $1) AS score
          FROM t_mobiliers_images mob
-                  LEFT JOIN loc_communes c ON c.id_commune = mob.id_commune
-                  LEFT JOIN loc_departements d ON d.id_departement = c.id_departement
-                  LEFT JOIN loc_regions r ON r.id_region = d.id_region
-                  LEFT JOIN loc_pays p ON p.id_pays = r.id_pays
+                  LEFT JOIN loc_communes mobc ON mobc.id_commune = mob.id_commune
+                  LEFT JOIN loc_departements mobd ON mobd.id_departement = mobc.id_departement
+                  LEFT JOIN loc_regions mobr ON mobr.id_region = mobd.id_region
+                  LEFT JOIN loc_pays mobp ON mobp.id_pays = mob.id_pays
                   LEFT JOIN cor_siecles_mob_img csm ON csm.mobilier_image_id = mob.id_mobilier_image
                   LEFT JOIN bib_siecle bs ON bs.id_siecle = csm.siecle_mob_img_id
                   LEFT JOIN cor_natures_mob_img cnm ON cnm.mobilier_image_id = mob.id_mobilier_image
@@ -126,25 +136,35 @@ FROM (
                   LEFT JOIN t_medias tm ON tm.id_media = cme.media_mob_img_id
          WHERE $11 = true
            AND ($1 IS NULL OR mob.titre_mob_img ILIKE '%' || $1 || '%')
-           AND (($3::int[]) IS NULL OR cardinality($3::int[]) = 0 OR
+           AND ($3::int[] IS NULL OR cardinality($3::int[]) = 0 OR
                 csm.siecle_mob_img_id = ANY ($3::int[]))
-           AND (($4::int[]) IS NULL OR cardinality($4::int[]) = 0 OR
-                p.id_pays = ANY ($4::int[]))
-           AND (($5::int[]) IS NULL OR cardinality($5::int[]) = 0 OR
-                r.id_region = ANY ($5::int[]))
-           AND (($6::int[]) IS NULL OR cardinality($6::int[]) = 0 OR
-                d.id_departement = ANY ($6::int[]))
-           AND (($7::int[]) IS NULL OR cardinality($7::int[]) = 0 OR
-                c.id_commune = ANY ($7::int[]))
-           AND (($12::int[]) IS NULL OR cardinality($12::int[]) = 0 OR
+           AND ($4::int[] IS NULL OR cardinality($4::int[]) = 0 OR
+                mob.id_pays = ANY ($4::int[]))
+
+           AND (
+             ($5::int[] IS NOT NULL AND cardinality($5::int[]) > 0 AND
+              mob.id_commune = ANY ($5::int[]))
+                 OR ($6::int[] IS NOT NULL AND cardinality($6::int[]) > 0
+                 AND mob.id_commune IN (SELECT id_commune
+                                        FROM loc_communes
+                                        WHERE id_departement = ANY ($6::int[]))
+                 )
+                 OR ($7::int[] IS NOT NULL AND cardinality($7::int[]) > 0
+                 AND mob.id_commune IN (SELECT c.id_commune
+                                        FROM loc_communes c
+                                                 JOIN loc_departements d ON c.id_departement = d.id_departement
+                                        WHERE d.id_region = ANY ($7::int[])))
+             )
+           AND ($12::int[] IS NULL OR cardinality($12::int[]) = 0 OR
                 cnm.nature_id = ANY ($12::int[]))
-           AND (($13::int[]) IS NULL OR cardinality($13::int[]) = 0 OR
+           AND ($13::int[] IS NULL OR cardinality($13::int[]) = 0 OR
                 cem.etat_cons_mob_img_id = ANY ($13::int[]))
-           AND (($14::int[]) IS NULL OR cardinality($14::int[]) = 0 OR
+           AND ($14::int[] IS NULL OR cardinality($14::int[]) = 0 OR
                 cmm.materiau_mob_img_id = ANY ($14::int[]))
-           AND (($15::int[]) IS NULL OR cardinality($15::int[]) = 0 OR
+           AND ($15::int[] IS NULL OR cardinality($15::int[]) = 0 OR
                 ctm.technique_id = ANY ($15::int[]))
-           AND mob.publie = true AND mob.publication_status = 'PUBLISHED'
+           AND mob.publie = true
+           AND mob.publication_status = 'PUBLISHED'
          GROUP BY mob.id_mobilier_image
 
          UNION ALL
@@ -180,10 +200,10 @@ FROM (
                 'personnes_morales'                         AS source,
                 similarity(pm.titre_pers_mo, $1) AS score
          FROM t_pers_morales pm
-                  LEFT JOIN loc_communes c ON c.id_commune = pm.id_commune
-                  LEFT JOIN loc_departements d ON d.id_departement = c.id_departement
-                  LEFT JOIN loc_regions r ON r.id_region = d.id_region
-                  LEFT JOIN loc_pays p ON p.id_pays = r.id_pays
+                  LEFT JOIN loc_communes pmc ON pmc.id_commune = pm.id_commune
+                  LEFT JOIN loc_departements pmd ON pmd.id_departement = pmc.id_departement
+                  LEFT JOIN loc_regions pmr ON pmr.id_region = pmd.id_region
+                  LEFT JOIN loc_pays pmp ON pmp.id_pays = pm.id_pays
                   LEFT JOIN cor_siecles_pers_mo csp ON csp.pers_morale_id = pm.id_pers_morale
                   LEFT JOIN bib_siecle bs ON bs.id_siecle = csp.siecle_pers_mo_id
                   LEFT JOIN cor_natures_pers_mo cnp ON cnp.pers_morale_id = pm.id_pers_morale
@@ -192,19 +212,29 @@ FROM (
                   LEFT JOIN t_medias tm ON tm.id_media = cme.media_pers_mo_id
          WHERE $16 = true
            AND ($1 IS NULL OR pm.titre_pers_mo ILIKE '%' || $1 || '%')
-           AND (($3::int[]) IS NULL OR cardinality($3::int[]) = 0 OR
+           AND ($3::int[] IS NULL OR cardinality($3::int[]) = 0 OR
                 csp.siecle_pers_mo_id = ANY ($3::int[]))
-           AND (($4::int[]) IS NULL OR cardinality($4::int[]) = 0 OR
-                p.id_pays = ANY ($4::int[]))
-           AND (($5::int[]) IS NULL OR cardinality($5::int[]) = 0 OR
-                r.id_region = ANY ($5::int[]))
-           AND (($6::int[]) IS NULL OR cardinality($6::int[]) = 0 OR
-                d.id_departement = ANY ($6::int[]))
-           AND (($7::int[]) IS NULL OR cardinality($7::int[]) = 0 OR
-                c.id_commune = ANY ($7::int[]))
-           AND (($17::int[]) IS NULL OR cardinality($17::int[]) = 0 OR
+           AND ($4::int[] IS NULL OR cardinality($4::int[]) = 0 OR
+                pm.id_pays = ANY ($4::int[]))
+
+           AND (
+             ($5::int[] IS NOT NULL AND cardinality($5::int[]) > 0 AND
+              pm.id_commune = ANY ($5::int[]))
+                 OR ($6::int[] IS NOT NULL AND cardinality($6::int[]) > 0
+                 AND pm.id_commune IN (SELECT id_commune
+                                       FROM loc_communes
+                                       WHERE id_departement = ANY ($6::int[]))
+                 )
+                 OR ($7::int[] IS NOT NULL AND cardinality($7::int[]) > 0
+                 AND pm.id_commune IN (SELECT c.id_commune
+                                       FROM loc_communes c
+                                                JOIN loc_departements d ON c.id_departement = d.id_departement
+                                       WHERE d.id_region = ANY ($7::int[])))
+             )
+           AND ($17::int[] IS NULL OR cardinality($17::int[]) = 0 OR
                 cnp.pers_mo_nature_id = ANY ($17::int[]))
-           AND pm.publie = true AND pm.publication_status = 'PUBLISHED'
+           AND pm.publie = true
+           AND pm.publication_status = 'PUBLISHED'
          GROUP BY pm.id_pers_morale
 
          UNION ALL
@@ -240,10 +270,10 @@ FROM (
                 'personnes_physiques'                             AS source,
                 similarity(pp.prenom_nom_pers_phy, $1) AS score
          FROM t_pers_physiques pp
-                  LEFT JOIN loc_communes c ON c.id_commune = pp.id_commune
-                  LEFT JOIN loc_departements d ON d.id_departement = c.id_departement
-                  LEFT JOIN loc_regions r ON r.id_region = d.id_region
-                  LEFT JOIN loc_pays p ON p.id_pays = r.id_pays
+                  LEFT JOIN loc_communes ppc ON ppc.id_commune = pp.id_commune
+                  LEFT JOIN loc_departements ppd ON ppd.id_departement = ppc.id_departement
+                  LEFT JOIN loc_regions ppr ON ppr.id_region = ppd.id_region
+                  LEFT JOIN loc_pays ppp ON ppp.id_pays = pp.id_pays
                   LEFT JOIN cor_siecles_pers_phy csp ON csp.pers_physique_id = pp.id_pers_physique
                   LEFT JOIN bib_siecle bs ON bs.id_siecle = csp.siecle_pers_phy_id
                   LEFT JOIN cor_professions_pers_phy cpp ON cpp.pers_physique_id = pp.id_pers_physique
@@ -253,22 +283,32 @@ FROM (
                   LEFT JOIN t_medias tm ON tm.id_media = cmp.media_pers_phy_id
          WHERE $18 = true
            AND ($1 IS NULL OR pp.prenom_nom_pers_phy ILIKE '%' || $1 || '%')
-           AND (($3::int[]) IS NULL OR cardinality($3::int[]) = 0 OR
+           AND ($3::int[] IS NULL OR cardinality($3::int[]) = 0 OR
                 csp.siecle_pers_phy_id = ANY ($3::int[]))
-           AND (($4::int[]) IS NULL OR cardinality($4::int[]) = 0 OR
-                p.id_pays = ANY ($4::int[]))
-           AND (($5::int[]) IS NULL OR cardinality($5::int[]) = 0 OR
-                r.id_region = ANY ($5::int[]))
-           AND (($6::int[]) IS NULL OR cardinality($6::int[]) = 0 OR
-                d.id_departement = ANY ($6::int[]))
-           AND (($7::int[]) IS NULL OR cardinality($7::int[]) = 0 OR
-                c.id_commune = ANY ($7::int[]))
-           AND (($19::int[]) IS NULL OR cardinality($19::int[]) = 0 OR
+           AND ($4::int[] IS NULL OR cardinality($4::int[]) = 0 OR
+                pp.id_pays = ANY ($4::int[]))
+
+           AND (
+             ($5::int[] IS NOT NULL AND cardinality($5::int[]) > 0 AND
+              pp.id_commune = ANY ($5::int[]))
+                 OR ($6::int[] IS NOT NULL AND cardinality($6::int[]) > 0
+                 AND pp.id_commune IN (SELECT id_commune
+                                       FROM loc_communes
+                                       WHERE id_departement = ANY ($6::int[]))
+                 )
+                 OR ($7::int[] IS NOT NULL AND cardinality($7::int[]) > 0
+                 AND pp.id_commune IN (SELECT c.id_commune
+                                       FROM loc_communes c
+                                                JOIN loc_departements d ON c.id_departement = d.id_departement
+                                       WHERE d.id_region = ANY ($7::int[])))
+             )
+           AND ($19::int[] IS NULL OR cardinality($19::int[]) = 0 OR
                 cpp.profession_id = ANY ($19::int[]))
-           AND (($20::int[]) IS NULL OR
+           AND ($20::int[] IS NULL OR
                 cardinality($20::int[]) = 0 OR
                 cmd.mode_deplacement_id = ANY ($20::int[]))
-           AND pp.publie = true AND pp.publication_status = 'PUBLISHED'
+           AND pp.publie = true
+           AND pp.publication_status = 'PUBLISHED'
          GROUP BY pp.id_pers_physique) AS results
 
 
@@ -281,9 +321,9 @@ type SearchGlobalParams struct {
 	IncludeMonumentsLieux  interface{}
 	Siecles                []int32
 	Pays                   []int32
-	Region                 []int32
-	Departement            []int32
 	Commune                []int32
+	Departement            []int32
+	Region                 []int32
 	NaturesMonu            []int32
 	EtatsMonu              []int32
 	MateriauxMonu          []int32
@@ -319,9 +359,9 @@ func (q *Queries) SearchGlobal(ctx context.Context, arg SearchGlobalParams) ([]S
 		arg.IncludeMonumentsLieux,
 		arg.Siecles,
 		arg.Pays,
-		arg.Region,
-		arg.Departement,
 		arg.Commune,
+		arg.Departement,
+		arg.Region,
 		arg.NaturesMonu,
 		arg.EtatsMonu,
 		arg.MateriauxMonu,
@@ -372,13 +412,13 @@ FROM (
          -- ===============================
          -- 1. Monuments & lieux
          -- ===============================
-         SELECT m.id_monument_lieu                           AS id,
-                m.titre_monu_lieu                            AS title,
+         SELECT m.id_monument_lieu AS id,
+                m.titre_monu_lieu  AS title,
                 COALESCE(array_agg(DISTINCT bs.siecle_list) FILTER (WHERE bs.siecle_list IS NOT NULL),
-                         '{}')                               AS siecles,
+                         '{}')     AS siecles,
                 COALESCE(array_agg(DISTINCT bmn.monu_lieu_nature_type)
                          FILTER (WHERE bmn.monu_lieu_nature_type IS NOT NULL),
-                         '{}')                               AS natures,
+                         '{}')     AS natures,
                 COALESCE(
                                 jsonb_agg(
                                 DISTINCT jsonb_build_object(
@@ -396,14 +436,14 @@ FROM (
                                             WHERE COALESCE(elem ->> 'path', '') <> '')
                                     ),
                                 '[]'::jsonb
-                )                                            AS medias,
-                '{}'::text[]                                 AS professions,
-                'monuments_lieux'                            AS source
+                )                  AS medias,
+                '{}'::text[]       AS professions,
+                'monuments_lieux'  AS source
          FROM t_monuments_lieux m
-                  LEFT JOIN loc_communes c ON c.id_commune = m.id_commune
-                  LEFT JOIN loc_departements d ON d.id_departement = c.id_departement
-                  LEFT JOIN loc_regions r ON r.id_region = d.id_region
-                  LEFT JOIN loc_pays p ON p.id_pays = r.id_pays
+                  LEFT JOIN loc_communes mc ON mc.id_commune = m.id_commune
+                  LEFT JOIN loc_departements md ON md.id_departement = mc.id_departement
+                  LEFT JOIN loc_regions mr ON mr.id_region = md.id_region
+                  LEFT JOIN loc_pays mp ON mp.id_pays = m.id_pays
                   LEFT JOIN cor_siecles_monu_lieu csm ON csm.monument_lieu_id = m.id_monument_lieu
                   LEFT JOIN bib_siecle bs ON bs.id_siecle = csm.siecle_monu_lieu_id
                   LEFT JOIN cor_natures_monu_lieu cnm ON cnm.monument_lieu_id = m.id_monument_lieu
@@ -413,23 +453,33 @@ FROM (
                   LEFT JOIN cor_medias_monu_lieu cme ON m.id_monument_lieu = cme.monument_lieu_id
                   LEFT JOIN t_medias tm ON tm.id_media = cme.media_monu_lieu_id
          WHERE $1 = true
-           AND (($2::int[]) IS NULL OR cardinality($2::int[]) = 0 OR
+           AND ($2::int[] IS NULL OR cardinality($2::int[]) = 0 OR
                 csm.siecle_monu_lieu_id = ANY ($2::int[]))
-           AND (($3::int[]) IS NULL OR cardinality($3::int[]) = 0 OR
-                p.id_pays = ANY ($3::int[]))
-           AND (($4::int[]) IS NULL OR cardinality($4::int[]) = 0 OR
-                r.id_region = ANY ($4::int[]))
-           AND (($5::int[]) IS NULL OR cardinality($5::int[]) = 0 OR
-                d.id_departement = ANY ($5::int[]))
-           AND (($6::int[]) IS NULL OR cardinality($6::int[]) = 0 OR
-                c.id_commune = ANY ($6::int[]))
-           AND (($7::int[]) IS NULL OR cardinality($7::int[]) = 0 OR
+           AND ($3::int[] IS NULL OR cardinality($3::int[]) = 0 OR
+                m.id_pays = ANY ($3::int[]))
+
+           AND (
+             ($4::int[] IS NOT NULL AND cardinality($4::int[]) > 0 AND
+              m.id_commune = ANY ($4::int[]))
+                 OR ($5::int[] IS NOT NULL AND cardinality($5::int[]) > 0
+                 AND m.id_commune IN (SELECT id_commune
+                                      FROM loc_communes
+                                      WHERE id_departement = ANY ($5::int[]))
+                 )
+                 OR ($6::int[] IS NOT NULL AND cardinality($6::int[]) > 0
+                 AND m.id_commune IN (SELECT c.id_commune
+                                      FROM loc_communes c
+                                               JOIN loc_departements d ON c.id_departement = d.id_departement
+                                      WHERE d.id_region = ANY ($6::int[])))
+             )
+           AND ($7::int[] IS NULL OR cardinality($7::int[]) = 0 OR
                 cnm.monu_lieu_nature_id = ANY ($7::int[]))
-           AND (($8::int[]) IS NULL OR cardinality($8::int[]) = 0 OR
+           AND ($8::int[] IS NULL OR cardinality($8::int[]) = 0 OR
                 cnm.monu_lieu_nature_id = ANY ($8::int[]))
-           AND (($9::int[]) IS NULL OR cardinality($9::int[]) = 0 OR
+           AND ($9::int[] IS NULL OR cardinality($9::int[]) = 0 OR
                 cnm.monu_lieu_nature_id = ANY ($9::int[]))
-           AND m.publie = true AND m.publication_status = 'PUBLISHED'
+           AND m.publie = true
+           AND m.publication_status = 'PUBLISHED'
          GROUP BY m.id_monument_lieu
 
          UNION ALL
@@ -437,12 +487,12 @@ FROM (
          -- ===============================
          -- 2. Mobiliers & images
          -- ===============================
-         SELECT mob.id_mobilier_image                        AS id,
-                mob.titre_mob_img                            AS title,
+         SELECT mob.id_mobilier_image AS id,
+                mob.titre_mob_img     AS title,
                 COALESCE(array_agg(DISTINCT bs.siecle_list) FILTER (WHERE bs.siecle_list IS NOT NULL),
-                         '{}')                               AS siecles,
+                         '{}')        AS siecles,
                 COALESCE(array_agg(DISTINCT bmn.nature_type) FILTER (WHERE bmn.nature_type IS NOT NULL),
-                         '{}')                               AS natures,
+                         '{}')        AS natures,
                 COALESCE(
                                 jsonb_agg(
                                 DISTINCT jsonb_build_object(
@@ -460,14 +510,14 @@ FROM (
                                             WHERE COALESCE(elem ->> 'path', '') <> '')
                                     ),
                                 '[]'::jsonb
-                )                                            AS medias,
-                '{}'::text[]                                 AS professions,
-                'mobiliers_images'                           AS source
+                )                     AS medias,
+                '{}'::text[]          AS professions,
+                'mobiliers_images'    AS source
          FROM t_mobiliers_images mob
-                  LEFT JOIN loc_communes c ON c.id_commune = mob.id_commune
-                  LEFT JOIN loc_departements d ON d.id_departement = c.id_departement
-                  LEFT JOIN loc_regions r ON r.id_region = d.id_region
-                  LEFT JOIN loc_pays p ON p.id_pays = r.id_pays
+                  LEFT JOIN loc_communes mobc ON mobc.id_commune = mob.id_commune
+                  LEFT JOIN loc_departements mobd ON mobd.id_departement = mobc.id_departement
+                  LEFT JOIN loc_regions mobr ON mobr.id_region = mobd.id_region
+                  LEFT JOIN loc_pays mobp ON mobp.id_pays = mob.id_pays
                   LEFT JOIN cor_siecles_mob_img csm ON csm.mobilier_image_id = mob.id_mobilier_image
                   LEFT JOIN bib_siecle bs ON bs.id_siecle = csm.siecle_mob_img_id
                   LEFT JOIN cor_natures_mob_img cnm ON cnm.mobilier_image_id = mob.id_mobilier_image
@@ -478,25 +528,35 @@ FROM (
                   LEFT JOIN cor_medias_mob_img cme ON mob.id_mobilier_image = cme.mobilier_image_id
                   LEFT JOIN t_medias tm ON tm.id_media = cme.media_mob_img_id
          WHERE $10 = true
-           AND (($2::int[]) IS NULL OR cardinality($2::int[]) = 0 OR
+           AND ($2::int[] IS NULL OR cardinality($2::int[]) = 0 OR
                 csm.siecle_mob_img_id = ANY ($2::int[]))
-           AND (($3::int[]) IS NULL OR cardinality($3::int[]) = 0 OR
-                p.id_pays = ANY ($3::int[]))
-           AND (($4::int[]) IS NULL OR cardinality($4::int[]) = 0 OR
-                r.id_region = ANY ($4::int[]))
-           AND (($5::int[]) IS NULL OR cardinality($5::int[]) = 0 OR
-                d.id_departement = ANY ($5::int[]))
-           AND (($6::int[]) IS NULL OR cardinality($6::int[]) = 0 OR
-                c.id_commune = ANY ($6::int[]))
-           AND (($11::int[]) IS NULL OR cardinality($11::int[]) = 0 OR
+           AND ($3::int[] IS NULL OR cardinality($3::int[]) = 0 OR
+                mob.id_pays = ANY ($3::int[]))
+
+           AND (
+             ($4::int[] IS NOT NULL AND cardinality($4::int[]) > 0 AND
+              mob.id_commune = ANY ($4::int[]))
+                 OR ($5::int[] IS NOT NULL AND cardinality($5::int[]) > 0
+                 AND mob.id_commune IN (SELECT id_commune
+                                        FROM loc_communes
+                                        WHERE id_departement = ANY ($5::int[]))
+                 )
+                 OR ($6::int[] IS NOT NULL AND cardinality($6::int[]) > 0
+                 AND mob.id_commune IN (SELECT c.id_commune
+                                        FROM loc_communes c
+                                                 JOIN loc_departements d ON c.id_departement = d.id_departement
+                                        WHERE d.id_region = ANY ($6::int[])))
+             )
+           AND ($11::int[] IS NULL OR cardinality($11::int[]) = 0 OR
                 cnm.nature_id = ANY ($11::int[]))
-           AND (($12::int[]) IS NULL OR cardinality($12::int[]) = 0 OR
+           AND ($12::int[] IS NULL OR cardinality($12::int[]) = 0 OR
                 cem.etat_cons_mob_img_id = ANY ($12::int[]))
-           AND (($13::int[]) IS NULL OR cardinality($13::int[]) = 0 OR
+           AND ($13::int[] IS NULL OR cardinality($13::int[]) = 0 OR
                 cmm.materiau_mob_img_id = ANY ($13::int[]))
-           AND (($14::int[]) IS NULL OR cardinality($14::int[]) = 0 OR
+           AND ($14::int[] IS NULL OR cardinality($14::int[]) = 0 OR
                 ctm.technique_id = ANY ($14::int[]))
-           AND mob.publie = true AND mob.publication_status = 'PUBLISHED'
+           AND mob.publie = true
+           AND mob.publication_status = 'PUBLISHED'
          GROUP BY mob.id_mobilier_image
 
          UNION ALL
@@ -504,12 +564,12 @@ FROM (
          -- ===============================
          -- 3. Personnes morales
          -- ===============================
-         SELECT pm.id_pers_morale                           AS id,
-                pm.titre_pers_mo                            AS title,
+         SELECT pm.id_pers_morale   AS id,
+                pm.titre_pers_mo    AS title,
                 COALESCE(array_agg(DISTINCT bs.siecle_list) FILTER (WHERE bs.siecle_list IS NOT NULL),
-                         '{}')                              AS siecles,
+                         '{}')      AS siecles,
                 COALESCE(array_agg(DISTINCT bpn.pers_mo_nature_type) FILTER (WHERE bpn.pers_mo_nature_type IS NOT NULL),
-                         '{}')                              AS natures,
+                         '{}')      AS natures,
                 COALESCE(
                                 jsonb_agg(
                                 DISTINCT jsonb_build_object(
@@ -527,14 +587,14 @@ FROM (
                                             WHERE COALESCE(elem ->> 'path', '') <> '')
                                     ),
                                 '[]'::jsonb
-                )                                           AS medias,
-                '{}'::text[]                                AS professions,
-                'personnes_morales'                         AS source
+                )                   AS medias,
+                '{}'::text[]        AS professions,
+                'personnes_morales' AS source
          FROM t_pers_morales pm
-                  LEFT JOIN loc_communes c ON c.id_commune = pm.id_commune
-                  LEFT JOIN loc_departements d ON d.id_departement = c.id_departement
-                  LEFT JOIN loc_regions r ON r.id_region = d.id_region
-                  LEFT JOIN loc_pays p ON p.id_pays = r.id_pays
+                  LEFT JOIN loc_communes pmc ON pmc.id_commune = pm.id_commune
+                  LEFT JOIN loc_departements pmd ON pmd.id_departement = pmc.id_departement
+                  LEFT JOIN loc_regions pmr ON pmr.id_region = pmd.id_region
+                  LEFT JOIN loc_pays pmp ON pmp.id_pays = pm.id_pays
                   LEFT JOIN cor_siecles_pers_mo csp ON csp.pers_morale_id = pm.id_pers_morale
                   LEFT JOIN bib_siecle bs ON bs.id_siecle = csp.siecle_pers_mo_id
                   LEFT JOIN cor_natures_pers_mo cnp ON cnp.pers_morale_id = pm.id_pers_morale
@@ -542,19 +602,29 @@ FROM (
                   LEFT JOIN cor_medias_pers_mo cme ON pm.id_pers_morale = cme.pers_morale_id
                   LEFT JOIN t_medias tm ON tm.id_media = cme.media_pers_mo_id
          WHERE $15 = true
-           AND (($2::int[]) IS NULL OR cardinality($2::int[]) = 0 OR
+           AND ($2::int[] IS NULL OR cardinality($2::int[]) = 0 OR
                 csp.siecle_pers_mo_id = ANY ($2::int[]))
-           AND (($3::int[]) IS NULL OR cardinality($3::int[]) = 0 OR
-                p.id_pays = ANY ($3::int[]))
-           AND (($4::int[]) IS NULL OR cardinality($4::int[]) = 0 OR
-                r.id_region = ANY ($4::int[]))
-           AND (($5::int[]) IS NULL OR cardinality($5::int[]) = 0 OR
-                d.id_departement = ANY ($5::int[]))
-           AND (($6::int[]) IS NULL OR cardinality($6::int[]) = 0 OR
-                c.id_commune = ANY ($6::int[]))
-           AND (($16::int[]) IS NULL OR cardinality($16::int[]) = 0 OR
+           AND ($3::int[] IS NULL OR cardinality($3::int[]) = 0 OR
+                pm.id_pays = ANY ($3::int[]))
+
+           AND (
+             ($4::int[] IS NOT NULL AND cardinality($4::int[]) > 0 AND
+              pm.id_commune = ANY ($4::int[]))
+                 OR ($5::int[] IS NOT NULL AND cardinality($5::int[]) > 0
+                 AND pm.id_commune IN (SELECT id_commune
+                                       FROM loc_communes
+                                       WHERE id_departement = ANY ($5::int[]))
+                 )
+                 OR ($6::int[] IS NOT NULL AND cardinality($6::int[]) > 0
+                 AND pm.id_commune IN (SELECT c.id_commune
+                                       FROM loc_communes c
+                                                JOIN loc_departements d ON c.id_departement = d.id_departement
+                                       WHERE d.id_region = ANY ($6::int[])))
+             )
+           AND ($16::int[] IS NULL OR cardinality($16::int[]) = 0 OR
                 cnp.pers_mo_nature_id = ANY ($16::int[]))
-           AND pm.publie = true AND pm.publication_status = 'PUBLISHED'
+           AND pm.publie = true
+           AND pm.publication_status = 'PUBLISHED'
          GROUP BY pm.id_pers_morale
 
          UNION ALL
@@ -562,11 +632,11 @@ FROM (
          -- ===============================
          -- 4. Personnes physiques
          -- ===============================
-         SELECT pp.id_pers_physique                               AS id,
-                pp.prenom_nom_pers_phy                            AS title,
+         SELECT pp.id_pers_physique    AS id,
+                pp.prenom_nom_pers_phy AS title,
                 COALESCE(array_agg(DISTINCT bs.siecle_list) FILTER (WHERE bs.siecle_list IS NOT NULL),
-                         '{}')                                    AS siecles,
-                '{}'::text[]                                      AS natures,
+                         '{}')         AS siecles,
+                '{}'::text[]           AS natures,
                 COALESCE(
                                 jsonb_agg(
                                 DISTINCT jsonb_build_object(
@@ -584,15 +654,15 @@ FROM (
                                             WHERE COALESCE(elem ->> 'path', '') <> '')
                                     ),
                                 '[]'::jsonb
-                )                                                 AS medias,
+                )                      AS medias,
                 COALESCE(array_agg(DISTINCT bpp.profession_type) FILTER (WHERE bpp.profession_type IS NOT NULL),
-                         '{}')                                    AS professions,
-                'personnes_physiques'                             AS source
+                         '{}')         AS professions,
+                'personnes_physiques'  AS source
          FROM t_pers_physiques pp
-                  LEFT JOIN loc_communes c ON c.id_commune = pp.id_commune
-                  LEFT JOIN loc_departements d ON d.id_departement = c.id_departement
-                  LEFT JOIN loc_regions r ON r.id_region = d.id_region
-                  LEFT JOIN loc_pays p ON p.id_pays = r.id_pays
+                  LEFT JOIN loc_communes ppc ON ppc.id_commune = pp.id_commune
+                  LEFT JOIN loc_departements ppd ON ppd.id_departement = ppc.id_departement
+                  LEFT JOIN loc_regions ppr ON ppr.id_region = ppd.id_region
+                  LEFT JOIN loc_pays ppp ON ppp.id_pays = pp.id_pays
                   LEFT JOIN cor_siecles_pers_phy csp ON csp.pers_physique_id = pp.id_pers_physique
                   LEFT JOIN bib_siecle bs ON bs.id_siecle = csp.siecle_pers_phy_id
                   LEFT JOIN cor_professions_pers_phy cpp ON cpp.pers_physique_id = pp.id_pers_physique
@@ -601,22 +671,32 @@ FROM (
                   LEFT JOIN cor_medias_pers_phy cmp ON pp.id_pers_physique = cmp.pers_physique_id
                   LEFT JOIN t_medias tm ON tm.id_media = cmp.media_pers_phy_id
          WHERE $17 = true
-           AND (($2::int[]) IS NULL OR cardinality($2::int[]) = 0 OR
+           AND ($2::int[] IS NULL OR cardinality($2::int[]) = 0 OR
                 csp.siecle_pers_phy_id = ANY ($2::int[]))
-           AND (($3::int[]) IS NULL OR cardinality($3::int[]) = 0 OR
-                p.id_pays = ANY ($3::int[]))
-           AND (($4::int[]) IS NULL OR cardinality($4::int[]) = 0 OR
-                r.id_region = ANY ($4::int[]))
-           AND (($5::int[]) IS NULL OR cardinality($5::int[]) = 0 OR
-                d.id_departement = ANY ($5::int[]))
-           AND (($6::int[]) IS NULL OR cardinality($6::int[]) = 0 OR
-                c.id_commune = ANY ($6::int[]))
-           AND (($18::int[]) IS NULL OR cardinality($18::int[]) = 0 OR
+           AND ($3::int[] IS NULL OR cardinality($3::int[]) = 0 OR
+                pp.id_pays = ANY ($3::int[]))
+
+           AND (
+             ($4::int[] IS NOT NULL AND cardinality($4::int[]) > 0 AND
+              pp.id_commune = ANY ($4::int[]))
+                 OR ($5::int[] IS NOT NULL AND cardinality($5::int[]) > 0
+                 AND pp.id_commune IN (SELECT id_commune
+                                       FROM loc_communes
+                                       WHERE id_departement = ANY ($5::int[]))
+                 )
+                 OR ($6::int[] IS NOT NULL AND cardinality($6::int[]) > 0
+                 AND pp.id_commune IN (SELECT c.id_commune
+                                       FROM loc_communes c
+                                                JOIN loc_departements d ON c.id_departement = d.id_departement
+                                       WHERE d.id_region = ANY ($6::int[])))
+             )
+           AND ($18::int[] IS NULL OR cardinality($18::int[]) = 0 OR
                 cpp.profession_id = ANY ($18::int[]))
-           AND (($19::int[]) IS NULL OR
+           AND ($19::int[] IS NULL OR
                 cardinality($19::int[]) = 0 OR
                 cmd.mode_deplacement_id = ANY ($19::int[]))
-           AND pp.publie = true AND pp.publication_status = 'PUBLISHED'
+           AND pp.publie = true
+           AND pp.publication_status = 'PUBLISHED'
          GROUP BY pp.id_pers_physique) AS results
 
 
@@ -628,9 +708,9 @@ type SearchGlobalNoTextParams struct {
 	IncludeMonumentsLieux  interface{}
 	Siecles                []int32
 	Pays                   []int32
-	Region                 []int32
-	Departement            []int32
 	Commune                []int32
+	Departement            []int32
+	Region                 []int32
 	NaturesMonu            []int32
 	EtatsMonu              []int32
 	MateriauxMonu          []int32
@@ -664,9 +744,9 @@ func (q *Queries) SearchGlobalNoText(ctx context.Context, arg SearchGlobalNoText
 		arg.IncludeMonumentsLieux,
 		arg.Siecles,
 		arg.Pays,
-		arg.Region,
-		arg.Departement,
 		arg.Commune,
+		arg.Departement,
+		arg.Region,
 		arg.NaturesMonu,
 		arg.EtatsMonu,
 		arg.MateriauxMonu,
