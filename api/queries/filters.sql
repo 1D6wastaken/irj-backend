@@ -8,7 +8,8 @@ SELECT d.id_departement AS id,
 FROM loc_departements d
          JOIN loc_regions r ON d.id_region = r.id_region
          JOIN loc_pays p ON r.id_pays = p.id_pays
-WHERE d.nom_departement != '' AND d.nom_departement IS NOT NULL;
+WHERE d.nom_departement != '' AND d.nom_departement IS NOT NULL
+ORDER BY d.nom_departement ASC;
 
 -- name: GetRegions :many
 SELECT r.id_region AS id,
@@ -17,7 +18,8 @@ SELECT r.id_region AS id,
        p.nom_pays AS pays_name
 FROM loc_regions r
          JOIN loc_pays p ON r.id_pays = p.id_pays
-WHERE r.nom_region != '' AND r.nom_region IS NOT NULL;
+WHERE r.nom_region != '' AND r.nom_region IS NOT NULL
+ORDER BY r.nom_region ASC;
 
 -- name: GetPays :many
 SELECT id_pays AS id, nom_pays AS name FROM loc_pays WHERE nom_pays != '' AND nom_pays IS NOT NULL ORDER BY nom_pays ASC;

@@ -22,6 +22,7 @@ FROM loc_departements d
          JOIN loc_regions r ON d.id_region = r.id_region
          JOIN loc_pays p ON r.id_pays = p.id_pays
 WHERE d.nom_departement != '' AND d.nom_departement IS NOT NULL
+ORDER BY d.nom_departement ASC
 `
 
 type GetDepartementsRow struct {
@@ -329,6 +330,7 @@ SELECT r.id_region AS id,
 FROM loc_regions r
          JOIN loc_pays p ON r.id_pays = p.id_pays
 WHERE r.nom_region != '' AND r.nom_region IS NOT NULL
+ORDER BY r.nom_region ASC
 `
 
 type GetRegionsRow struct {
