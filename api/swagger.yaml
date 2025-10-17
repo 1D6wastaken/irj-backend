@@ -79,6 +79,10 @@ paths:
           required: false
           default: 0
           in: query
+        - name: body
+          in: body
+          schema:
+              $ref: "#/definitions/CityFilterBody"
       produces:
         - "application/json"
       responses:
@@ -2693,3 +2697,22 @@ definitions:
     properties:
       department:
         $ref: "#/definitions/DepartmentFilter"
+
+  CityFilterBody:
+    type: object
+    properties:
+      countries:
+        type: array
+        items:
+          type: integer
+          format: int32
+      regions:
+        type: array
+        items:
+          type: integer
+          format: int32
+      departments:
+        type: array
+        items:
+          type: integer
+          format: int32

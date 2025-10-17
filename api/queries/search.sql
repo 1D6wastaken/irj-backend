@@ -1,5 +1,98 @@
 -- name: SearchGlobal :many
-WITH query AS (SELECT unnest(string_to_array(lower(sqlc.arg('q')), ' ')) AS term)
+WITH
+
+query AS (SELECT unnest(string_to_array(lower(sqlc.arg('q')), ' ')) AS term),
+
+-- inputs (coalesce pour gérer NULLs venant de sqlc.arg)
+in_communes AS (
+    SELECT unnest(coalesce(sqlc.arg('communes')::int[], ARRAY[]::int[])) AS id_commune
+),
+in_departements AS (
+    SELECT unnest(coalesce(sqlc.arg('departements')::int[], ARRAY[]::int[])) AS id_departement
+),
+in_regions AS (
+    SELECT unnest(coalesce(sqlc.arg('regions')::int[], ARRAY[]::int[])) AS id_region
+),
+in_pays AS (
+    SELECT unnest(coalesce(sqlc.arg('pays')::int[], ARRAY[]::int[])) AS id_pays
+),
+
+-- départements couverts par les communes sélectionnées
+depts_from_communes AS (
+    SELECT DISTINCT c.id_departement
+    FROM loc_communes c
+    WHERE c.id_commune IN (SELECT id_commune FROM in_communes)
+),
+
+-- régions couvertes par communes sélectionnées
+regions_from_communes AS (
+    SELECT DISTINCT d.id_region
+    FROM loc_departements d
+    WHERE d.id_departement IN (SELECT id_departement FROM depts_from_communes)
+),
+
+-- régions correspondant aux départements sélectionnés
+regions_from_departements AS (
+    SELECT DISTINCT d.id_region
+    FROM loc_departements d
+    WHERE d.id_departement IN (SELECT id_departement FROM in_departements)
+),
+
+-- union des régions couvertes par communes ou départements sélectionnés
+regions_covered AS (
+    SELECT id_region FROM regions_from_communes
+    UNION
+    SELECT id_region FROM regions_from_departements
+),
+
+-- ensembles effectifs : on retire aux niveaux supérieurs les ancêtres couverts par des sélections plus précises
+effective_communes AS (
+    SELECT id_commune FROM in_communes
+),
+effective_departements AS (
+    SELECT id_departement FROM in_departements
+    EXCEPT
+    SELECT id_departement FROM depts_from_communes
+),
+effective_regions AS (
+    SELECT id_region FROM in_regions
+    EXCEPT
+    SELECT id_region FROM regions_covered
+),
+
+-- pays couverts par communes / départements / régions sélectionnés
+countries_from_communes AS (
+    SELECT DISTINCT r.id_pays
+    FROM loc_departements d
+             JOIN loc_regions r ON d.id_region = r.id_region
+    WHERE d.id_departement IN (SELECT id_departement FROM depts_from_communes)
+),
+countries_from_departements AS (
+    SELECT DISTINCT r.id_pays
+    FROM loc_departements d
+             JOIN loc_regions r ON d.id_region = r.id_region
+    WHERE d.id_departement IN (SELECT id_departement FROM in_departements)
+),
+countries_from_regions AS (
+    SELECT DISTINCT r.id_pays
+    FROM loc_regions r
+    WHERE r.id_region IN (SELECT id_region FROM in_regions)
+),
+
+countries_covered AS (
+    SELECT id_pays FROM countries_from_communes
+    UNION
+    SELECT id_pays FROM countries_from_departements
+    UNION
+    SELECT id_pays FROM countries_from_regions
+),
+
+effective_countries AS (
+    SELECT id_pays FROM in_pays
+    EXCEPT
+    SELECT id_pays FROM countries_covered
+)
+
 SELECT *, COUNT(*) OVER () AS total_count
 FROM (
          -- ===============================
@@ -51,30 +144,40 @@ FROM (
            AND (sqlc.arg('siecles')::int[] IS NULL OR cardinality(sqlc.arg('siecles')::int[]) = 0 OR
                 csm.siecle_monu_lieu_id = ANY (sqlc.arg('siecles')::int[]))
            AND (
-             -- CAS A: aucun filtre géographique fourni => on accepte tout
+             -- aucun filtre géographique fourni => on accepte tout
              (COALESCE(cardinality(sqlc.arg('pays')::int[]), 0) = 0
                  AND COALESCE(cardinality(sqlc.arg('communes')::int[]), 0) = 0
                  AND COALESCE(cardinality(sqlc.arg('departements')::int[]), 0) = 0
                  AND COALESCE(cardinality(sqlc.arg('regions')::int[]), 0) = 0)
                  OR
-                 -- CAS B: au moins un filtre fourni => il faut qu'une des conditions actives soit vraie
-             (
-                 (COALESCE(cardinality(sqlc.arg('pays')::int[]), 0)  > 0 AND m.id_pays = ANY(sqlc.arg('pays')::int[]))
-                     OR (COALESCE(cardinality(sqlc.arg('communes')::int[]), 0) > 0 AND m.id_commune = ANY(sqlc.arg('communes')::int[]))
-                     OR (COALESCE(cardinality(sqlc.arg('departements')::int[]), 0) > 0
-                     AND m.id_commune IN (
-                         SELECT id_commune
-                         FROM loc_communes
-                         WHERE id_departement = ANY(sqlc.arg('departements')::int[])
-                     ))
-                     OR (COALESCE(cardinality(sqlc.arg('regions')::int[]), 0) > 0
-                     AND m.id_commune IN (
-                         SELECT c.id_commune
-                         FROM loc_communes c
-                                  JOIN loc_departements d ON c.id_departement = d.id_departement
-                         WHERE d.id_region = ANY(sqlc.arg('regions')::int[])
-                     ))
-                 )
+                 -- correspond à une commune explicitement sélectionnée
+             (EXISTS (SELECT 1 FROM effective_communes) AND m.id_commune IN (SELECT id_commune FROM effective_communes))
+                 OR
+                 -- correspond à un département sélectionné (via la commune associée)
+             (EXISTS (SELECT 1 FROM effective_departements)
+                 AND m.id_commune IN (SELECT id_commune FROM loc_communes WHERE id_departement IN (SELECT id_departement FROM effective_departements)))
+                 OR
+                 -- correspond à une région sélectionnée (via la chaine commune->departement->region)
+             (EXISTS (SELECT 1 FROM effective_regions)
+                 AND m.id_commune IN (
+                     SELECT c.id_commune
+                     FROM loc_communes c
+                              JOIN loc_departements d ON c.id_departement = d.id_departement
+                     WHERE d.id_region IN (SELECT id_region FROM effective_regions)
+                 ))
+                 OR
+                 -- correspond à un pays sélectionné (soit id_pays renseigné sur l'enregistrement, soit via la commune -> dept -> region -> pays)
+             (EXISTS (SELECT 1 FROM effective_countries)
+                 AND (
+                  m.id_pays IN (SELECT id_pays FROM effective_countries)
+                      OR m.id_commune IN (
+                      SELECT c.id_commune
+                      FROM loc_communes c
+                               JOIN loc_departements d ON c.id_departement = d.id_departement
+                               JOIN loc_regions r ON d.id_region = r.id_region
+                      WHERE r.id_pays IN (SELECT id_pays FROM effective_countries)
+                  )
+                  ))
              )
            AND (sqlc.arg('natures_monu')::int[] IS NULL OR cardinality(sqlc.arg('natures_monu')::int[]) = 0 OR
                 cnm.monu_lieu_nature_id = ANY (sqlc.arg('natures_monu')::int[]))
@@ -137,30 +240,40 @@ FROM (
            AND (sqlc.arg('siecles')::int[] IS NULL OR cardinality(sqlc.arg('siecles')::int[]) = 0 OR
                 csm.siecle_mob_img_id = ANY (sqlc.arg('siecles')::int[]))
            AND (
-             -- CAS A: aucun filtre géographique fourni => on accepte tout
+             -- aucun filtre géographique fourni => on accepte tout
              (COALESCE(cardinality(sqlc.arg('pays')::int[]), 0) = 0
                  AND COALESCE(cardinality(sqlc.arg('communes')::int[]), 0) = 0
                  AND COALESCE(cardinality(sqlc.arg('departements')::int[]), 0) = 0
                  AND COALESCE(cardinality(sqlc.arg('regions')::int[]), 0) = 0)
                  OR
-                 -- CAS B: au moins un filtre fourni => il faut qu'une des conditions actives soit vraie
-             (
-                 (COALESCE(cardinality(sqlc.arg('pays')::int[]), 0)  > 0 AND mob.id_pays = ANY(sqlc.arg('pays')::int[]))
-                     OR (COALESCE(cardinality(sqlc.arg('communes')::int[]), 0) > 0 AND mob.id_commune = ANY(sqlc.arg('communes')::int[]))
-                     OR (COALESCE(cardinality(sqlc.arg('departements')::int[]), 0) > 0
-                     AND mob.id_commune IN (
-                         SELECT id_commune
-                         FROM loc_communes
-                         WHERE id_departement = ANY(sqlc.arg('departements')::int[])
-                     ))
-                     OR (COALESCE(cardinality(sqlc.arg('regions')::int[]), 0) > 0
-                     AND mob.id_commune IN (
-                         SELECT c.id_commune
-                         FROM loc_communes c
-                                  JOIN loc_departements d ON c.id_departement = d.id_departement
-                         WHERE d.id_region = ANY(sqlc.arg('regions')::int[])
-                     ))
-                 )
+                 -- correspond à une commune explicitement sélectionnée
+             (EXISTS (SELECT 1 FROM effective_communes) AND mob.id_commune IN (SELECT id_commune FROM effective_communes))
+                 OR
+                 -- correspond à un département sélectionné (via la commune associée)
+             (EXISTS (SELECT 1 FROM effective_departements)
+                 AND mob.id_commune IN (SELECT id_commune FROM loc_communes WHERE id_departement IN (SELECT id_departement FROM effective_departements)))
+                 OR
+                 -- correspond à une région sélectionnée (via la chaine commune->departement->region)
+             (EXISTS (SELECT 1 FROM effective_regions)
+                 AND mob.id_commune IN (
+                     SELECT c.id_commune
+                     FROM loc_communes c
+                              JOIN loc_departements d ON c.id_departement = d.id_departement
+                     WHERE d.id_region IN (SELECT id_region FROM effective_regions)
+                 ))
+                 OR
+                 -- correspond à un pays sélectionné (soit id_pays renseigné sur l'enregistrement, soit via la commune -> dept -> region -> pays)
+             (EXISTS (SELECT 1 FROM effective_countries)
+                 AND (
+                  mob.id_pays IN (SELECT id_pays FROM effective_countries)
+                      OR mob.id_commune IN (
+                      SELECT c.id_commune
+                      FROM loc_communes c
+                               JOIN loc_departements d ON c.id_departement = d.id_departement
+                               JOIN loc_regions r ON d.id_region = r.id_region
+                      WHERE r.id_pays IN (SELECT id_pays FROM effective_countries)
+                  )
+                  ))
              )
            AND (sqlc.arg('natures_mob')::int[] IS NULL OR cardinality(sqlc.arg('natures_mob')::int[]) = 0 OR
                 cnm.nature_id = ANY (sqlc.arg('natures_mob')::int[]))
@@ -222,30 +335,40 @@ FROM (
            AND (sqlc.arg('siecles')::int[] IS NULL OR cardinality(sqlc.arg('siecles')::int[]) = 0 OR
                 csp.siecle_pers_mo_id = ANY (sqlc.arg('siecles')::int[]))
            AND (
-             -- CAS A: aucun filtre géographique fourni => on accepte tout
+             -- aucun filtre géographique fourni => on accepte tout
              (COALESCE(cardinality(sqlc.arg('pays')::int[]), 0) = 0
                  AND COALESCE(cardinality(sqlc.arg('communes')::int[]), 0) = 0
                  AND COALESCE(cardinality(sqlc.arg('departements')::int[]), 0) = 0
                  AND COALESCE(cardinality(sqlc.arg('regions')::int[]), 0) = 0)
                  OR
-                 -- CAS B: au moins un filtre fourni => il faut qu'une des conditions actives soit vraie
-             (
-                 (COALESCE(cardinality(sqlc.arg('pays')::int[]), 0)  > 0 AND pm.id_pays = ANY(sqlc.arg('pays')::int[]))
-                     OR (COALESCE(cardinality(sqlc.arg('communes')::int[]), 0) > 0 AND pm.id_commune = ANY(sqlc.arg('communes')::int[]))
-                     OR (COALESCE(cardinality(sqlc.arg('departements')::int[]), 0) > 0
-                     AND pm.id_commune IN (
-                         SELECT id_commune
-                         FROM loc_communes
-                         WHERE id_departement = ANY(sqlc.arg('departements')::int[])
-                     ))
-                     OR (COALESCE(cardinality(sqlc.arg('regions')::int[]), 0) > 0
-                     AND pm.id_commune IN (
-                         SELECT c.id_commune
-                         FROM loc_communes c
-                                  JOIN loc_departements d ON c.id_departement = d.id_departement
-                         WHERE d.id_region = ANY(sqlc.arg('regions')::int[])
-                     ))
-                 )
+                 -- correspond à une commune explicitement sélectionnée
+             (EXISTS (SELECT 1 FROM effective_communes) AND pm.id_commune IN (SELECT id_commune FROM effective_communes))
+                 OR
+                 -- correspond à un département sélectionné (via la commune associée)
+             (EXISTS (SELECT 1 FROM effective_departements)
+                 AND pm.id_commune IN (SELECT id_commune FROM loc_communes WHERE id_departement IN (SELECT id_departement FROM effective_departements)))
+                 OR
+                 -- correspond à une région sélectionnée (via la chaine commune->departement->region)
+             (EXISTS (SELECT 1 FROM effective_regions)
+                 AND pm.id_commune IN (
+                     SELECT c.id_commune
+                     FROM loc_communes c
+                              JOIN loc_departements d ON c.id_departement = d.id_departement
+                     WHERE d.id_region IN (SELECT id_region FROM effective_regions)
+                 ))
+                 OR
+                 -- correspond à un pays sélectionné (soit id_pays renseigné sur l'enregistrement, soit via la commune -> dept -> region -> pays)
+             (EXISTS (SELECT 1 FROM effective_countries)
+                 AND (
+                  pm.id_pays IN (SELECT id_pays FROM effective_countries)
+                      OR pm.id_commune IN (
+                      SELECT c.id_commune
+                      FROM loc_communes c
+                               JOIN loc_departements d ON c.id_departement = d.id_departement
+                               JOIN loc_regions r ON d.id_region = r.id_region
+                      WHERE r.id_pays IN (SELECT id_pays FROM effective_countries)
+                  )
+                  ))
              )
            AND (sqlc.arg('natures_pers_mo')::int[] IS NULL OR cardinality(sqlc.arg('natures_pers_mo')::int[]) = 0 OR
                 cnp.pers_mo_nature_id = ANY (sqlc.arg('natures_pers_mo')::int[]))
@@ -302,30 +425,40 @@ FROM (
            AND (sqlc.arg('siecles')::int[] IS NULL OR cardinality(sqlc.arg('siecles')::int[]) = 0 OR
                 csp.siecle_pers_phy_id = ANY (sqlc.arg('siecles')::int[]))
            AND (
-             -- CAS A: aucun filtre géographique fourni => on accepte tout
+             -- aucun filtre géographique fourni => on accepte tout
              (COALESCE(cardinality(sqlc.arg('pays')::int[]), 0) = 0
                  AND COALESCE(cardinality(sqlc.arg('communes')::int[]), 0) = 0
                  AND COALESCE(cardinality(sqlc.arg('departements')::int[]), 0) = 0
                  AND COALESCE(cardinality(sqlc.arg('regions')::int[]), 0) = 0)
                  OR
-                 -- CAS B: au moins un filtre fourni => il faut qu'une des conditions actives soit vraie
-             (
-                 (COALESCE(cardinality(sqlc.arg('pays')::int[]), 0)  > 0 AND pp.id_pays = ANY(sqlc.arg('pays')::int[]))
-                     OR (COALESCE(cardinality(sqlc.arg('communes')::int[]), 0) > 0 AND pp.id_commune = ANY(sqlc.arg('communes')::int[]))
-                     OR (COALESCE(cardinality(sqlc.arg('departements')::int[]), 0) > 0
-                     AND pp.id_commune IN (
-                         SELECT id_commune
-                         FROM loc_communes
-                         WHERE id_departement = ANY(sqlc.arg('departements')::int[])
-                     ))
-                     OR (COALESCE(cardinality(sqlc.arg('regions')::int[]), 0) > 0
-                     AND pp.id_commune IN (
-                         SELECT c.id_commune
-                         FROM loc_communes c
-                                  JOIN loc_departements d ON c.id_departement = d.id_departement
-                         WHERE d.id_region = ANY(sqlc.arg('regions')::int[])
-                     ))
-                 )
+                 -- correspond à une commune explicitement sélectionnée
+             (EXISTS (SELECT 1 FROM effective_communes) AND pp.id_commune IN (SELECT id_commune FROM effective_communes))
+                 OR
+                 -- correspond à un département sélectionné (via la commune associée)
+             (EXISTS (SELECT 1 FROM effective_departements)
+                 AND pp.id_commune IN (SELECT id_commune FROM loc_communes WHERE id_departement IN (SELECT id_departement FROM effective_departements)))
+                 OR
+                 -- correspond à une région sélectionnée (via la chaine commune->departement->region)
+             (EXISTS (SELECT 1 FROM effective_regions)
+                 AND pp.id_commune IN (
+                     SELECT c.id_commune
+                     FROM loc_communes c
+                              JOIN loc_departements d ON c.id_departement = d.id_departement
+                     WHERE d.id_region IN (SELECT id_region FROM effective_regions)
+                 ))
+                 OR
+                 -- correspond à un pays sélectionné (soit id_pays renseigné sur l'enregistrement, soit via la commune -> dept -> region -> pays)
+             (EXISTS (SELECT 1 FROM effective_countries)
+                 AND (
+                  pp.id_pays IN (SELECT id_pays FROM effective_countries)
+                      OR pp.id_commune IN (
+                      SELECT c.id_commune
+                      FROM loc_communes c
+                               JOIN loc_departements d ON c.id_departement = d.id_departement
+                               JOIN loc_regions r ON d.id_region = r.id_region
+                      WHERE r.id_pays IN (SELECT id_pays FROM effective_countries)
+                  )
+                  ))
              )
            AND (sqlc.arg('professions')::int[] IS NULL OR cardinality(sqlc.arg('professions')::int[]) = 0 OR
                 cpp.profession_id = ANY (sqlc.arg('professions')::int[]))
@@ -341,6 +474,97 @@ ORDER BY score DESC
 LIMIT sqlc.arg(limit_param) OFFSET sqlc.arg(offset_param);
 
 -- name: SearchGlobalNoText :many
+WITH
+-- inputs (coalesce pour gérer NULLs venant de sqlc.arg)
+in_communes AS (
+    SELECT unnest(coalesce(sqlc.arg('communes')::int[], ARRAY[]::int[])) AS id_commune
+),
+in_departements AS (
+    SELECT unnest(coalesce(sqlc.arg('departements')::int[], ARRAY[]::int[])) AS id_departement
+),
+in_regions AS (
+    SELECT unnest(coalesce(sqlc.arg('regions')::int[], ARRAY[]::int[])) AS id_region
+),
+in_pays AS (
+    SELECT unnest(coalesce(sqlc.arg('pays')::int[], ARRAY[]::int[])) AS id_pays
+),
+
+-- départements couverts par les communes sélectionnées
+depts_from_communes AS (
+    SELECT DISTINCT c.id_departement
+    FROM loc_communes c
+    WHERE c.id_commune IN (SELECT id_commune FROM in_communes)
+),
+
+-- régions couvertes par communes sélectionnées
+regions_from_communes AS (
+    SELECT DISTINCT d.id_region
+    FROM loc_departements d
+    WHERE d.id_departement IN (SELECT id_departement FROM depts_from_communes)
+),
+
+-- régions correspondant aux départements sélectionnés
+regions_from_departements AS (
+    SELECT DISTINCT d.id_region
+    FROM loc_departements d
+    WHERE d.id_departement IN (SELECT id_departement FROM in_departements)
+),
+
+-- union des régions couvertes par communes ou départements sélectionnés
+regions_covered AS (
+    SELECT id_region FROM regions_from_communes
+    UNION
+    SELECT id_region FROM regions_from_departements
+),
+
+-- ensembles effectifs : on retire aux niveaux supérieurs les ancêtres couverts par des sélections plus précises
+effective_communes AS (
+    SELECT id_commune FROM in_communes
+),
+effective_departements AS (
+    SELECT id_departement FROM in_departements
+    EXCEPT
+    SELECT id_departement FROM depts_from_communes
+),
+effective_regions AS (
+    SELECT id_region FROM in_regions
+    EXCEPT
+    SELECT id_region FROM regions_covered
+),
+
+-- pays couverts par communes / départements / régions sélectionnés
+countries_from_communes AS (
+    SELECT DISTINCT r.id_pays
+    FROM loc_departements d
+             JOIN loc_regions r ON d.id_region = r.id_region
+    WHERE d.id_departement IN (SELECT id_departement FROM depts_from_communes)
+),
+countries_from_departements AS (
+    SELECT DISTINCT r.id_pays
+    FROM loc_departements d
+             JOIN loc_regions r ON d.id_region = r.id_region
+    WHERE d.id_departement IN (SELECT id_departement FROM in_departements)
+),
+countries_from_regions AS (
+    SELECT DISTINCT r.id_pays
+    FROM loc_regions r
+    WHERE r.id_region IN (SELECT id_region FROM in_regions)
+),
+
+countries_covered AS (
+    SELECT id_pays FROM countries_from_communes
+    UNION
+    SELECT id_pays FROM countries_from_departements
+    UNION
+    SELECT id_pays FROM countries_from_regions
+),
+
+effective_countries AS (
+    SELECT id_pays FROM in_pays
+    EXCEPT
+    SELECT id_pays FROM countries_covered
+)
+
 SELECT *, COUNT(*) OVER () AS total_count
 FROM (
          -- ===============================
@@ -390,39 +614,49 @@ FROM (
            AND (sqlc.arg('siecles')::int[] IS NULL OR cardinality(sqlc.arg('siecles')::int[]) = 0 OR
                 csm.siecle_monu_lieu_id = ANY (sqlc.arg('siecles')::int[]))
            AND (
-             -- CAS A: aucun filtre géographique fourni => on accepte tout
+             -- aucun filtre géographique fourni => on accepte tout
              (COALESCE(cardinality(sqlc.arg('pays')::int[]), 0) = 0
                  AND COALESCE(cardinality(sqlc.arg('communes')::int[]), 0) = 0
                  AND COALESCE(cardinality(sqlc.arg('departements')::int[]), 0) = 0
                  AND COALESCE(cardinality(sqlc.arg('regions')::int[]), 0) = 0)
                  OR
-                 -- CAS B: au moins un filtre fourni => il faut qu'une des conditions actives soit vraie
-             (
-                 (COALESCE(cardinality(sqlc.arg('pays')::int[]), 0)  > 0 AND m.id_pays = ANY(sqlc.arg('pays')::int[]))
-                     OR (COALESCE(cardinality(sqlc.arg('communes')::int[]), 0) > 0 AND m.id_commune = ANY(sqlc.arg('communes')::int[]))
-                     OR (COALESCE(cardinality(sqlc.arg('departements')::int[]), 0) > 0
-                     AND m.id_commune IN (
-                         SELECT id_commune
-                         FROM loc_communes
-                         WHERE id_departement = ANY(sqlc.arg('departements')::int[])
-                     ))
-                     OR (COALESCE(cardinality(sqlc.arg('regions')::int[]), 0) > 0
-                     AND m.id_commune IN (
-                         SELECT c.id_commune
-                         FROM loc_communes c
-                                  JOIN loc_departements d ON c.id_departement = d.id_departement
-                         WHERE d.id_region = ANY(sqlc.arg('regions')::int[])
-                     ))
-                 )
+                 -- correspond à une commune explicitement sélectionnée
+             (EXISTS (SELECT 1 FROM effective_communes) AND m.id_commune IN (SELECT id_commune FROM effective_communes))
+                 OR
+                 -- correspond à un département sélectionné (via la commune associée)
+             (EXISTS (SELECT 1 FROM effective_departements)
+                 AND m.id_commune IN (SELECT id_commune FROM loc_communes WHERE id_departement IN (SELECT id_departement FROM effective_departements)))
+                 OR
+                 -- correspond à une région sélectionnée (via la chaine commune->departement->region)
+             (EXISTS (SELECT 1 FROM effective_regions)
+                 AND m.id_commune IN (
+                     SELECT c.id_commune
+                     FROM loc_communes c
+                              JOIN loc_departements d ON c.id_departement = d.id_departement
+                     WHERE d.id_region IN (SELECT id_region FROM effective_regions)
+                 ))
+                 OR
+                 -- correspond à un pays sélectionné (soit id_pays renseigné sur l'enregistrement, soit via la commune -> dept -> region -> pays)
+             (EXISTS (SELECT 1 FROM effective_countries)
+                 AND (
+                  m.id_pays IN (SELECT id_pays FROM effective_countries)
+                      OR m.id_commune IN (
+                      SELECT c.id_commune
+                      FROM loc_communes c
+                               JOIN loc_departements d ON c.id_departement = d.id_departement
+                               JOIN loc_regions r ON d.id_region = r.id_region
+                      WHERE r.id_pays IN (SELECT id_pays FROM effective_countries)
+                  )
+                  ))
              )
-           AND (sqlc.arg('natures_monu')::int[] IS NULL OR cardinality(sqlc.arg('natures_monu')::int[]) = 0 OR
-                cnm.monu_lieu_nature_id = ANY (sqlc.arg('natures_monu')::int[]))
-           AND (sqlc.arg('etats_monu')::int[] IS NULL OR cardinality(sqlc.arg('etats_monu')::int[]) = 0 OR
-                cnm.monu_lieu_nature_id = ANY (sqlc.arg('etats_monu')::int[]))
-           AND (sqlc.arg('materiaux_monu')::int[] IS NULL OR cardinality(sqlc.arg('materiaux_monu')::int[]) = 0 OR
-                cnm.monu_lieu_nature_id = ANY (sqlc.arg('materiaux_monu')::int[]))
-           AND m.publie = true
-           AND m.publication_status = 'PUBLISHED'
+                 AND (sqlc.arg('natures_monu')::int[] IS NULL OR cardinality(sqlc.arg('natures_monu')::int[]) = 0 OR
+                      cnm.monu_lieu_nature_id = ANY (sqlc.arg('natures_monu')::int[]))
+                 AND (sqlc.arg('etats_monu')::int[] IS NULL OR cardinality(sqlc.arg('etats_monu')::int[]) = 0 OR
+                      cnm.monu_lieu_nature_id = ANY (sqlc.arg('etats_monu')::int[]))
+                 AND (sqlc.arg('materiaux_monu')::int[] IS NULL OR cardinality(sqlc.arg('materiaux_monu')::int[]) = 0 OR
+                      cnm.monu_lieu_nature_id = ANY (sqlc.arg('materiaux_monu')::int[]))
+                 AND m.publie = true
+                 AND m.publication_status = 'PUBLISHED'
          GROUP BY m.id_monument_lieu
 
          UNION ALL
@@ -474,30 +708,40 @@ FROM (
            AND (sqlc.arg('siecles')::int[] IS NULL OR cardinality(sqlc.arg('siecles')::int[]) = 0 OR
                 csm.siecle_mob_img_id = ANY (sqlc.arg('siecles')::int[]))
            AND (
-             -- CAS A: aucun filtre géographique fourni => on accepte tout
+             -- aucun filtre géographique fourni => on accepte tout
              (COALESCE(cardinality(sqlc.arg('pays')::int[]), 0) = 0
                  AND COALESCE(cardinality(sqlc.arg('communes')::int[]), 0) = 0
                  AND COALESCE(cardinality(sqlc.arg('departements')::int[]), 0) = 0
                  AND COALESCE(cardinality(sqlc.arg('regions')::int[]), 0) = 0)
                  OR
-                 -- CAS B: au moins un filtre fourni => il faut qu'une des conditions actives soit vraie
-             (
-                 (COALESCE(cardinality(sqlc.arg('pays')::int[]), 0)  > 0 AND mob.id_pays = ANY(sqlc.arg('pays')::int[]))
-                     OR (COALESCE(cardinality(sqlc.arg('communes')::int[]), 0) > 0 AND mob.id_commune = ANY(sqlc.arg('communes')::int[]))
-                     OR (COALESCE(cardinality(sqlc.arg('departements')::int[]), 0) > 0
-                     AND mob.id_commune IN (
-                         SELECT id_commune
-                         FROM loc_communes
-                         WHERE id_departement = ANY(sqlc.arg('departements')::int[])
-                     ))
-                     OR (COALESCE(cardinality(sqlc.arg('regions')::int[]), 0) > 0
-                     AND mob.id_commune IN (
-                         SELECT c.id_commune
-                         FROM loc_communes c
-                                  JOIN loc_departements d ON c.id_departement = d.id_departement
-                         WHERE d.id_region = ANY(sqlc.arg('regions')::int[])
-                     ))
-                 )
+                 -- correspond à une commune explicitement sélectionnée
+             (EXISTS (SELECT 1 FROM effective_communes) AND mob.id_commune IN (SELECT id_commune FROM effective_communes))
+                 OR
+                 -- correspond à un département sélectionné (via la commune associée)
+             (EXISTS (SELECT 1 FROM effective_departements)
+                 AND mob.id_commune IN (SELECT id_commune FROM loc_communes WHERE id_departement IN (SELECT id_departement FROM effective_departements)))
+                 OR
+                 -- correspond à une région sélectionnée (via la chaine commune->departement->region)
+             (EXISTS (SELECT 1 FROM effective_regions)
+                 AND mob.id_commune IN (
+                     SELECT c.id_commune
+                     FROM loc_communes c
+                              JOIN loc_departements d ON c.id_departement = d.id_departement
+                     WHERE d.id_region IN (SELECT id_region FROM effective_regions)
+                 ))
+                 OR
+                 -- correspond à un pays sélectionné (soit id_pays renseigné sur l'enregistrement, soit via la commune -> dept -> region -> pays)
+             (EXISTS (SELECT 1 FROM effective_countries)
+                 AND (
+                  mob.id_pays IN (SELECT id_pays FROM effective_countries)
+                      OR mob.id_commune IN (
+                      SELECT c.id_commune
+                      FROM loc_communes c
+                               JOIN loc_departements d ON c.id_departement = d.id_departement
+                               JOIN loc_regions r ON d.id_region = r.id_region
+                      WHERE r.id_pays IN (SELECT id_pays FROM effective_countries)
+                  )
+                  ))
              )
            AND (sqlc.arg('natures_mob')::int[] IS NULL OR cardinality(sqlc.arg('natures_mob')::int[]) = 0 OR
                 cnm.nature_id = ANY (sqlc.arg('natures_mob')::int[]))
@@ -557,30 +801,40 @@ FROM (
            AND (sqlc.arg('siecles')::int[] IS NULL OR cardinality(sqlc.arg('siecles')::int[]) = 0 OR
                 csp.siecle_pers_mo_id = ANY (sqlc.arg('siecles')::int[]))
            AND (
-             -- CAS A: aucun filtre géographique fourni => on accepte tout
+             -- aucun filtre géographique fourni => on accepte tout
              (COALESCE(cardinality(sqlc.arg('pays')::int[]), 0) = 0
                  AND COALESCE(cardinality(sqlc.arg('communes')::int[]), 0) = 0
                  AND COALESCE(cardinality(sqlc.arg('departements')::int[]), 0) = 0
                  AND COALESCE(cardinality(sqlc.arg('regions')::int[]), 0) = 0)
                  OR
-                 -- CAS B: au moins un filtre fourni => il faut qu'une des conditions actives soit vraie
-             (
-                 (COALESCE(cardinality(sqlc.arg('pays')::int[]), 0)  > 0 AND pm.id_pays = ANY(sqlc.arg('pays')::int[]))
-                     OR (COALESCE(cardinality(sqlc.arg('communes')::int[]), 0) > 0 AND pm.id_commune = ANY(sqlc.arg('communes')::int[]))
-                     OR (COALESCE(cardinality(sqlc.arg('departements')::int[]), 0) > 0
-                     AND pm.id_commune IN (
-                         SELECT id_commune
-                         FROM loc_communes
-                         WHERE id_departement = ANY(sqlc.arg('departements')::int[])
-                     ))
-                     OR (COALESCE(cardinality(sqlc.arg('regions')::int[]), 0) > 0
-                     AND pm.id_commune IN (
-                         SELECT c.id_commune
-                         FROM loc_communes c
-                                  JOIN loc_departements d ON c.id_departement = d.id_departement
-                         WHERE d.id_region = ANY(sqlc.arg('regions')::int[])
-                     ))
-                 )
+                 -- correspond à une commune explicitement sélectionnée
+             (EXISTS (SELECT 1 FROM effective_communes) AND pm.id_commune IN (SELECT id_commune FROM effective_communes))
+                 OR
+                 -- correspond à un département sélectionné (via la commune associée)
+             (EXISTS (SELECT 1 FROM effective_departements)
+                 AND pm.id_commune IN (SELECT id_commune FROM loc_communes WHERE id_departement IN (SELECT id_departement FROM effective_departements)))
+                 OR
+                 -- correspond à une région sélectionnée (via la chaine commune->departement->region)
+             (EXISTS (SELECT 1 FROM effective_regions)
+                 AND pm.id_commune IN (
+                     SELECT c.id_commune
+                     FROM loc_communes c
+                              JOIN loc_departements d ON c.id_departement = d.id_departement
+                     WHERE d.id_region IN (SELECT id_region FROM effective_regions)
+                 ))
+                 OR
+                 -- correspond à un pays sélectionné (soit id_pays renseigné sur l'enregistrement, soit via la commune -> dept -> region -> pays)
+             (EXISTS (SELECT 1 FROM effective_countries)
+                 AND (
+                  pm.id_pays IN (SELECT id_pays FROM effective_countries)
+                      OR pm.id_commune IN (
+                      SELECT c.id_commune
+                      FROM loc_communes c
+                               JOIN loc_departements d ON c.id_departement = d.id_departement
+                               JOIN loc_regions r ON d.id_region = r.id_region
+                      WHERE r.id_pays IN (SELECT id_pays FROM effective_countries)
+                  )
+                  ))
              )
            AND (sqlc.arg('natures_pers_mo')::int[] IS NULL OR cardinality(sqlc.arg('natures_pers_mo')::int[]) = 0 OR
                 cnp.pers_mo_nature_id = ANY (sqlc.arg('natures_pers_mo')::int[]))
@@ -635,30 +889,40 @@ FROM (
            AND (sqlc.arg('siecles')::int[] IS NULL OR cardinality(sqlc.arg('siecles')::int[]) = 0 OR
                 csp.siecle_pers_phy_id = ANY (sqlc.arg('siecles')::int[]))
            AND (
-             -- CAS A: aucun filtre géographique fourni => on accepte tout
+             -- aucun filtre géographique fourni => on accepte tout
              (COALESCE(cardinality(sqlc.arg('pays')::int[]), 0) = 0
                  AND COALESCE(cardinality(sqlc.arg('communes')::int[]), 0) = 0
                  AND COALESCE(cardinality(sqlc.arg('departements')::int[]), 0) = 0
                  AND COALESCE(cardinality(sqlc.arg('regions')::int[]), 0) = 0)
                  OR
-                 -- CAS B: au moins un filtre fourni => il faut qu'une des conditions actives soit vraie
-             (
-                 (COALESCE(cardinality(sqlc.arg('pays')::int[]), 0)  > 0 AND pp.id_pays = ANY(sqlc.arg('pays')::int[]))
-                     OR (COALESCE(cardinality(sqlc.arg('communes')::int[]), 0) > 0 AND pp.id_commune = ANY(sqlc.arg('communes')::int[]))
-                     OR (COALESCE(cardinality(sqlc.arg('departements')::int[]), 0) > 0
-                     AND pp.id_commune IN (
-                         SELECT id_commune
-                         FROM loc_communes
-                         WHERE id_departement = ANY(sqlc.arg('departements')::int[])
-                     ))
-                     OR (COALESCE(cardinality(sqlc.arg('regions')::int[]), 0) > 0
-                     AND pp.id_commune IN (
-                         SELECT c.id_commune
-                         FROM loc_communes c
-                                  JOIN loc_departements d ON c.id_departement = d.id_departement
-                         WHERE d.id_region = ANY(sqlc.arg('regions')::int[])
-                     ))
-                 )
+                 -- correspond à une commune explicitement sélectionnée
+             (EXISTS (SELECT 1 FROM effective_communes) AND pp.id_commune IN (SELECT id_commune FROM effective_communes))
+                 OR
+                 -- correspond à un département sélectionné (via la commune associée)
+             (EXISTS (SELECT 1 FROM effective_departements)
+                 AND pp.id_commune IN (SELECT id_commune FROM loc_communes WHERE id_departement IN (SELECT id_departement FROM effective_departements)))
+                 OR
+                 -- correspond à une région sélectionnée (via la chaine commune->departement->region)
+             (EXISTS (SELECT 1 FROM effective_regions)
+                 AND pp.id_commune IN (
+                     SELECT c.id_commune
+                     FROM loc_communes c
+                              JOIN loc_departements d ON c.id_departement = d.id_departement
+                     WHERE d.id_region IN (SELECT id_region FROM effective_regions)
+                 ))
+                 OR
+                 -- correspond à un pays sélectionné (soit id_pays renseigné sur l'enregistrement, soit via la commune -> dept -> region -> pays)
+             (EXISTS (SELECT 1 FROM effective_countries)
+                 AND (
+                  pp.id_pays IN (SELECT id_pays FROM effective_countries)
+                      OR pp.id_commune IN (
+                      SELECT c.id_commune
+                      FROM loc_communes c
+                               JOIN loc_departements d ON c.id_departement = d.id_departement
+                               JOIN loc_regions r ON d.id_region = r.id_region
+                      WHERE r.id_pays IN (SELECT id_pays FROM effective_countries)
+                  )
+                  ))
              )
            AND (sqlc.arg('professions')::int[] IS NULL OR cardinality(sqlc.arg('professions')::int[]) = 0 OR
                 cpp.profession_id = ANY (sqlc.arg('professions')::int[]))
