@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"irj/internal/catalogs"
@@ -163,6 +164,10 @@ func (b *BusinessService) UploadImage(w http.ResponseWriter, r *http.Request) *_
 	}
 
 	mimeType := fileHeader.Header.Get("Content-Type")
+	if !strings.HasPrefix(mimeType, "image/") && mimeType != "" {
+		return _http.ErrBadRequest.Msg("Type de fichier non autorisé (jpeg, png, webp uniquement)")
+	}
+
 	if mimeType == "" {
 		mimeType = "application/octet-stream"
 	}
