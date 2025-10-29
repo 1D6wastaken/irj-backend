@@ -112,6 +112,8 @@ func createMobilierImage(ctx context.Context, s *BusinessService, exData *create
 			Int32: exData.params.Country,
 			Valid: exData.params.Country != 0,
 		},
+		PublicationStatus: "PENDING",
+		ParentID:          pgtype.Int4{},
 	})
 	if err != nil {
 		exData.logger.Error().Err(err).Msg("failed to insert mobilier image")
