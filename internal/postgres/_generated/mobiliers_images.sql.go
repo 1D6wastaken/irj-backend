@@ -576,7 +576,7 @@ FROM t_mobiliers_images m
          LEFT JOIN loc_communes c ON m.id_commune = c.id_commune
          LEFT JOIN loc_departements d ON d.id_departement = COALESCE(m.id_departement, c.id_departement)
          LEFT JOIN loc_regions r ON r.id_region = COALESCE(m.id_region, d.id_region)
-         LEFT JOIN loc_pays p ON r.id_pays = p.id_pays
+         LEFT JOIN loc_pays p ON p.id_pays = COALESCE(m.id_pays, r.id_pays)
          LEFT JOIN cor_techniques_mob_img ctm ON m.id_mobilier_image = ctm.mobilier_image_id
          LEFT JOIN bib_mob_img_techniques bmt ON bmt.id_technique = ctm.technique_id
          LEFT JOIN cor_etat_cons_mob_img cec ON m.id_mobilier_image = cec.mobilier_image_id

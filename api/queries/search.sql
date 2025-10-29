@@ -108,7 +108,7 @@ FROM (
                   LEFT JOIN loc_communes mc ON mc.id_commune = m.id_commune
                   LEFT JOIN loc_departements md ON md.id_departement = COALESCE(m.id_departement, mc.id_departement)
                   LEFT JOIN loc_regions mr ON mr.id_region = COALESCE(m.id_region, md.id_region)
-                  LEFT JOIN loc_pays mp ON mp.id_pays = m.id_pays
+                  LEFT JOIN loc_pays mp ON mp.id_pays = COALESCE(m.id_pays, mr.id_pays)
                   LEFT JOIN cor_siecles_monu_lieu csm ON csm.monument_lieu_id = m.id_monument_lieu
                   LEFT JOIN bib_siecle bs ON bs.id_siecle = csm.siecle_monu_lieu_id
                   LEFT JOIN cor_natures_monu_lieu cnm ON cnm.monument_lieu_id = m.id_monument_lieu
@@ -217,7 +217,7 @@ FROM (
                   LEFT JOIN loc_departements mobd
                             ON mobd.id_departement = COALESCE(mob.id_departement, mobc.id_departement)
                   LEFT JOIN loc_regions mobr ON mobr.id_region = COALESCE(mob.id_region, mobd.id_region)
-                  LEFT JOIN loc_pays mobp ON mobp.id_pays = mob.id_pays
+                  LEFT JOIN loc_pays mobp ON mobp.id_pays = COALESCE(mob.id_pays, mobr.id_pays)
                   LEFT JOIN cor_siecles_mob_img csm ON csm.mobilier_image_id = mob.id_mobilier_image
                   LEFT JOIN bib_siecle bs ON bs.id_siecle = csm.siecle_mob_img_id
                   LEFT JOIN cor_natures_mob_img cnm ON cnm.mobilier_image_id = mob.id_mobilier_image
@@ -329,7 +329,7 @@ FROM (
                   LEFT JOIN loc_communes pmc ON pmc.id_commune = pm.id_commune
                   LEFT JOIN loc_departements pmd ON pmd.id_departement = COALESCE(pm.id_departement, pmc.id_departement)
                   LEFT JOIN loc_regions pmr ON pmr.id_region = COALESCE(pm.id_region, pmd.id_region)
-                  LEFT JOIN loc_pays pmp ON pmp.id_pays = pm.id_pays
+                  LEFT JOIN loc_pays pmp ON pmp.id_pays = COALESCE(pm.id_pays, pmr.id_pays)
                   LEFT JOIN cor_siecles_pers_mo csp ON csp.pers_morale_id = pm.id_pers_morale
                   LEFT JOIN bib_siecle bs ON bs.id_siecle = csp.siecle_pers_mo_id
                   LEFT JOIN cor_natures_pers_mo cnp ON cnp.pers_morale_id = pm.id_pers_morale
@@ -432,7 +432,7 @@ FROM (
                   LEFT JOIN loc_communes ppc ON ppc.id_commune = pp.id_commune
                   LEFT JOIN loc_departements ppd ON ppd.id_departement = COALESCE(pp.id_departement, ppc.id_departement)
                   LEFT JOIN loc_regions ppr ON ppr.id_region = COALESCE(pp.id_region, ppd.id_region)
-                  LEFT JOIN loc_pays ppp ON ppp.id_pays = pp.id_pays
+                  LEFT JOIN loc_pays ppp ON ppp.id_pays = COALESCE(pp.id_pays, ppr.id_pays)
                   LEFT JOIN cor_siecles_pers_phy csp ON csp.pers_physique_id = pp.id_pers_physique
                   LEFT JOIN bib_siecle bs ON bs.id_siecle = csp.siecle_pers_phy_id
                   LEFT JOIN cor_professions_pers_phy cpp ON cpp.pers_physique_id = pp.id_pers_physique
@@ -615,7 +615,7 @@ FROM (
                   LEFT JOIN loc_communes mc ON mc.id_commune = m.id_commune
                   LEFT JOIN loc_departements md ON md.id_departement = COALESCE(m.id_departement, mc.id_departement)
                   LEFT JOIN loc_regions mr ON mr.id_region = COALESCE(m.id_region, md.id_region)
-                  LEFT JOIN loc_pays mp ON mp.id_pays = m.id_pays
+                  LEFT JOIN loc_pays mp ON mp.id_pays = COALESCE(m.id_pays, mr.id_pays)
                   LEFT JOIN cor_siecles_monu_lieu csm ON csm.monument_lieu_id = m.id_monument_lieu
                   LEFT JOIN bib_siecle bs ON bs.id_siecle = csm.siecle_monu_lieu_id
                   LEFT JOIN cor_natures_monu_lieu cnm ON cnm.monument_lieu_id = m.id_monument_lieu
@@ -722,7 +722,7 @@ FROM (
                   LEFT JOIN loc_departements mobd
                             ON mobd.id_departement = COALESCE(mob.id_departement, mobc.id_departement)
                   LEFT JOIN loc_regions mobr ON mobr.id_region = COALESCE(mob.id_region, mobd.id_region)
-                  LEFT JOIN loc_pays mobp ON mobp.id_pays = mob.id_pays
+                  LEFT JOIN loc_pays mobp ON mobp.id_pays = COALESCE(mob.id_pays, mobr.id_pays)
                   LEFT JOIN cor_siecles_mob_img csm ON csm.mobilier_image_id = mob.id_mobilier_image
                   LEFT JOIN bib_siecle bs ON bs.id_siecle = csm.siecle_mob_img_id
                   LEFT JOIN cor_natures_mob_img cnm ON cnm.mobilier_image_id = mob.id_mobilier_image
@@ -832,7 +832,7 @@ FROM (
                   LEFT JOIN loc_communes pmc ON pmc.id_commune = pm.id_commune
                   LEFT JOIN loc_departements pmd ON pmd.id_departement = COALESCE(pm.id_departement, pmc.id_departement)
                   LEFT JOIN loc_regions pmr ON pmr.id_region = COALESCE(pm.id_region, pmd.id_region)
-                  LEFT JOIN loc_pays pmp ON pmp.id_pays = pm.id_pays
+                  LEFT JOIN loc_pays pmp ON pmp.id_pays = COALESCE(pm.id_pays, pmr.id_pays)
                   LEFT JOIN cor_siecles_pers_mo csp ON csp.pers_morale_id = pm.id_pers_morale
                   LEFT JOIN bib_siecle bs ON bs.id_siecle = csp.siecle_pers_mo_id
                   LEFT JOIN cor_natures_pers_mo cnp ON cnp.pers_morale_id = pm.id_pers_morale
@@ -933,7 +933,7 @@ FROM (
                   LEFT JOIN loc_communes ppc ON ppc.id_commune = pp.id_commune
                   LEFT JOIN loc_departements ppd ON ppd.id_departement = COALESCE(pp.id_departement, ppc.id_departement)
                   LEFT JOIN loc_regions ppr ON ppr.id_region = COALESCE(pp.id_region, ppd.id_region)
-                  LEFT JOIN loc_pays ppp ON ppp.id_pays = pp.id_pays
+                  LEFT JOIN loc_pays ppp ON ppp.id_pays = COALESCE(pp.id_pays, ppr.id_pays)
                   LEFT JOIN cor_siecles_pers_phy csp ON csp.pers_physique_id = pp.id_pers_physique
                   LEFT JOIN bib_siecle bs ON bs.id_siecle = csp.siecle_pers_phy_id
                   LEFT JOIN cor_professions_pers_phy cpp ON cpp.pers_physique_id = pp.id_pers_physique

@@ -79,10 +79,6 @@ paths:
           required: false
           default: 0
           in: query
-        - name: body
-          in: body
-          schema:
-              $ref: "#/definitions/CityFilterBody"
       produces:
         - "application/json"
       responses:

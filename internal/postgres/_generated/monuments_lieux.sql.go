@@ -522,9 +522,9 @@ FROM t_monuments_lieux m
          LEFT JOIN cor_auteur_fiche_monu_lieu caf ON m.id_monument_lieu = caf.monument_lieu_id
          LEFT JOIN bib_auteurs baf ON caf.auteur_fiche_monu_lieu_id = baf.id_auteur_fiche
          LEFT JOIN loc_communes c ON m.id_commune = c.id_commune
-         LEFT JOIN loc_departements d ON c.id_departement = d.id_departement
-         LEFT JOIN loc_regions r ON d.id_region = r.id_region
-         LEFT JOIN loc_pays p ON r.id_pays = p.id_pays
+         LEFT JOIN loc_departements d ON d.id_departement = COALESCE(m.id_departement, c.id_departement)
+         LEFT JOIN loc_regions r ON r.id_region = COALESCE(m.id_region, d.id_region)
+         LEFT JOIN loc_pays p ON p.id_pays = COALESCE(m.id_pays, r.id_pays)
          LEFT JOIN cor_etat_cons_monu_lieu cec ON m.id_monument_lieu = cec.monument_lieu_id
          LEFT JOIN bib_etats_conservation bec ON cec.etat_cons_monu_lieu_id = bec.id_etat_conservation
          LEFT JOIN cor_materiaux_monu_lieu cm ON m.id_monument_lieu = cm.monument_lieu_id

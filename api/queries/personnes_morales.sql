@@ -154,7 +154,7 @@ FROM t_pers_morales p
          LEFT JOIN loc_communes c ON p.id_commune = c.id_commune
          LEFT JOIN loc_departements d ON d.id_departement = COALESCE(p.id_departement, c.id_departement)
          LEFT JOIN loc_regions r ON r.id_region = COALESCE(p.id_region, d.id_region)
-         LEFT JOIN loc_pays pa ON r.id_pays = pa.id_pays
+         LEFT JOIN loc_pays pa ON pa.id_pays = COALESCE(p.id_pays, r.id_pays)
          LEFT JOIN cor_natures_pers_mo cnp ON p.id_pers_morale = cnp.pers_morale_id
          LEFT JOIN bib_pers_mo_natures bpn ON cnp.pers_mo_nature_id = bpn.id_pers_mo_nature
          LEFT JOIN cor_medias_pers_mo cmp ON p.id_pers_morale = cmp.pers_morale_id

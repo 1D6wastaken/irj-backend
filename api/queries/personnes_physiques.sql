@@ -169,9 +169,9 @@ FROM t_pers_physiques p
          LEFT JOIN cor_auteur_fiche_pers_phy cap ON p.id_pers_physique = cap.pers_physique_id
          LEFT JOIN bib_auteurs baf ON cap.auteur_fiche_pers_phy_id = baf.id_auteur_fiche
          LEFT JOIN loc_communes c ON p.id_commune = c.id_commune
-         LEFT JOIN loc_departements d ON c.id_departement = d.id_departement
-         LEFT JOIN loc_regions r ON d.id_region = r.id_region
-         LEFT JOIN loc_pays pa ON r.id_pays = pa.id_pays
+         LEFT JOIN loc_departements d ON d.id_departement = COALESCE(p.id_departement, c.id_departement)
+         LEFT JOIN loc_regions r ON r.id_region = COALESCE(p.id_region, d.id_region)
+         LEFT JOIN loc_pays pa ON pa.id_pays = COALESCE(p.id_pays, r.id_pays)
          LEFT JOIN cor_medias_pers_phy cmp ON p.id_pers_physique = cmp.pers_physique_id
          LEFT JOIN t_medias tm ON cmp.media_pers_phy_id = tm.id_media
          LEFT JOIN cor_periodes_historiques_pers_phy cph ON p.id_pers_physique = cph.pers_physique_id
