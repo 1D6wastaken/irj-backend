@@ -127,8 +127,8 @@ VALUES ($1,
         $13,
         $14,
         false,
-        'DRAFT',
-        $15)
+        $15,
+        $16)
 RETURNING id_pers_morale
 `
 
@@ -147,6 +147,7 @@ type CreatePersMoraleParams struct {
 	Contributeurs       pgtype.Text
 	IDCommune           pgtype.Int4
 	IDPays              pgtype.Int4
+	PublicationStatus   PublicationStatus
 	ParentID            pgtype.Int4
 }
 
@@ -166,6 +167,7 @@ func (q *Queries) CreatePersMorale(ctx context.Context, arg CreatePersMoralePara
 		arg.Contributeurs,
 		arg.IDCommune,
 		arg.IDPays,
+		arg.PublicationStatus,
 		arg.ParentID,
 	)
 	var id_pers_morale int32
@@ -177,6 +179,7 @@ const deletePendingPersonneMorale = `-- name: DeletePendingPersonneMorale :exec
 DELETE
 FROM t_pers_morales
 WHERE id_pers_morale = $1
+AND publication_status = 'PENDING'
 `
 
 func (q *Queries) DeletePendingPersonneMorale(ctx context.Context, idPersMorale int32) error {
@@ -425,8 +428,7 @@ FROM t_pers_morales p
          LEFT JOIN bib_siecle bs ON csp.siecle_pers_mo_id = bs.id_siecle
          LEFT JOIN cor_themes_pers_mo ctpm ON p.id_pers_morale = ctpm.pers_mo_id
          LEFT JOIN t_themes t ON t.id_theme = ctpm.theme_id
-WHERE p.publication_status = 'DRAFT'
-   or p.publication_status = 'PENDING'
+WHERE p.publication_status = 'PENDING'
 GROUP BY p.id_pers_morale
 `
 
@@ -525,19 +527,48 @@ SELECT p.id_pers_morale  AS id,
        p.contributeurs,
        p.commentaires,
        -- Redacteurs (auteurs fiche)
-       COALESCE(array_agg(DISTINCT baf.auteur_fiche_nom) FILTER (WHERE baf.auteur_fiche_nom IS NOT NULL),
-                '{}')    AS redacteurs,
+       COALESCE(
+                       jsonb_agg(
+                       DISTINCT jsonb_build_object(
+                               'id', baf.id_auteur_fiche,
+                               'name', baf.auteur_fiche_nom
+                                )
+                                ) FILTER (WHERE baf.id_auteur_fiche IS NOT NULL),
+                       '[]'::jsonb
+       ) AS authors,
        -- Commune
-       c.nom_commune     AS commune,
+       jsonb_build_object(
+               'id', c.id_commune,
+               'name', c.nom_commune
+       ) AS city,
+
        -- Département
-       d.nom_departement AS departement,
+       jsonb_build_object(
+               'id', d.id_departement,
+               'name', d.nom_departement
+       ) AS department,
+
        -- Région
-       r.nom_region      AS region,
+       jsonb_build_object(
+               'id', r.id_region,
+               'name', r.nom_region
+       ) AS region,
+
        -- Pays
-       pa.nom_pays       AS pays,
+       jsonb_build_object(
+               'id', pa.id_pays,
+               'name', pa.nom_pays
+       ) AS country,
        -- Natures
-       COALESCE(array_agg(DISTINCT bpn.pers_mo_nature_type) FILTER (WHERE bpn.pers_mo_nature_type IS NOT NULL),
-                '{}')    AS natures,
+       COALESCE(
+                       jsonb_agg(
+                       DISTINCT jsonb_build_object(
+                               'id', bpn.id_pers_mo_nature,
+                               'name', bpn.pers_mo_nature_type
+                                )
+                                ) FILTER (WHERE bpn.id_pers_mo_nature IS NOT NULL),
+                       '[]'::jsonb
+       ) AS natures,
        -- Médias
        COALESCE(
                        jsonb_agg(
@@ -565,19 +596,33 @@ SELECT p.id_pers_morale  AS id,
        COALESCE(array_agg(DISTINCT cpp.pers_physique_id) FILTER (WHERE cpp.pers_physique_id IS NOT NULL),
                 '{}')    AS personnes_physiques_liees,
        -- Siècles
-       COALESCE(array_agg(DISTINCT bs.siecle_list) FILTER (WHERE bs.siecle_list IS NOT NULL),
-                '{}')    AS siecles,
+       COALESCE(
+                       jsonb_agg(
+                       DISTINCT jsonb_build_object(
+                               'id', bs.id_siecle,
+                               'name', bs.siecle_list
+                                )
+                                ) FILTER (WHERE bs.id_siecle IS NOT NULL),
+                       '[]'::jsonb
+       ) AS centuries,
        -- Themes
-       COALESCE(array_agg(DISTINCT t.theme_type) FILTER (WHERE t.theme_type IS NOT NULL),
-                '{}')    AS themes,
+       COALESCE(
+                       jsonb_agg(
+                       DISTINCT jsonb_build_object(
+                               'id', t.id_theme,
+                               'name', t.theme_type
+                                )
+                                ) FILTER (WHERE t.id_theme IS NOT NULL),
+                       '[]'::jsonb
+       ) AS themes,
        publication_status,
        parent_id
 FROM t_pers_morales p
          LEFT JOIN cor_auteur_fiche_pers_mo cap ON p.id_pers_morale = cap.pers_morale_id
          LEFT JOIN bib_auteurs baf ON cap.auteur_fiche_pers_mo_id = baf.id_auteur_fiche
          LEFT JOIN loc_communes c ON p.id_commune = c.id_commune
-         LEFT JOIN loc_departements d ON c.id_departement = d.id_departement
-         LEFT JOIN loc_regions r ON d.id_region = r.id_region
+         LEFT JOIN loc_departements d ON d.id_departement = COALESCE(p.id_departement, c.id_departement)
+         LEFT JOIN loc_regions r ON r.id_region = COALESCE(p.id_region, d.id_region)
          LEFT JOIN loc_pays pa ON r.id_pays = pa.id_pays
          LEFT JOIN cor_natures_pers_mo cnp ON p.id_pers_morale = cnp.pers_morale_id
          LEFT JOIN bib_pers_mo_natures bpn ON cnp.pers_mo_nature_id = bpn.id_pers_mo_nature
@@ -592,10 +637,10 @@ FROM t_pers_morales p
          LEFT JOIN t_themes t ON t.id_theme = ctpm.theme_id
 WHERE p.id_pers_morale = $1
 GROUP BY p.id_pers_morale,
-         c.nom_commune,
-         d.nom_departement,
-         r.nom_region,
-         pa.nom_pays
+         c.id_commune, c.nom_commune,
+         d.id_departement, d.nom_departement,
+         r.id_region, r.nom_region,
+         pa.id_pays, pa.nom_pays
 `
 
 type GetPersonneMoraleByIDRow struct {
@@ -614,17 +659,17 @@ type GetPersonneMoraleByIDRow struct {
 	Publie                  pgtype.Bool
 	Contributeurs           pgtype.Text
 	Commentaires            pgtype.Text
-	Redacteurs              interface{}
-	Commune                 pgtype.Text
-	Departement             pgtype.Text
-	Region                  pgtype.Text
-	Pays                    pgtype.Text
+	Authors                 interface{}
+	City                    []byte
+	Department              []byte
+	Region                  []byte
+	Country                 []byte
 	Natures                 interface{}
 	Medias                  interface{}
 	MonumentsLieuxLiees     interface{}
 	MobiliersImagesLiees    interface{}
 	PersonnesPhysiquesLiees interface{}
-	Siecles                 interface{}
+	Centuries               interface{}
 	Themes                  interface{}
 	PublicationStatus       PublicationStatus
 	ParentID                pgtype.Int4
@@ -649,17 +694,17 @@ func (q *Queries) GetPersonneMoraleByID(ctx context.Context, idPersMorale int32)
 		&i.Publie,
 		&i.Contributeurs,
 		&i.Commentaires,
-		&i.Redacteurs,
-		&i.Commune,
-		&i.Departement,
+		&i.Authors,
+		&i.City,
+		&i.Department,
 		&i.Region,
-		&i.Pays,
+		&i.Country,
 		&i.Natures,
 		&i.Medias,
 		&i.MonumentsLieuxLiees,
 		&i.MobiliersImagesLiees,
 		&i.PersonnesPhysiquesLiees,
-		&i.Siecles,
+		&i.Centuries,
 		&i.Themes,
 		&i.PublicationStatus,
 		&i.ParentID,
@@ -715,6 +760,18 @@ func (q *Queries) LinkPersMoToPersPhy(ctx context.Context, arg LinkPersMoToPersP
 	return err
 }
 
+const submitDraftPersonneMorale = `-- name: SubmitDraftPersonneMorale :exec
+UPDATE t_pers_morales
+SET publication_status = 'PENDING'
+WHERE id_pers_morale = $1
+  AND publication_status = 'DRAFT'
+`
+
+func (q *Queries) SubmitDraftPersonneMorale(ctx context.Context, idPersMorale int32) error {
+	_, err := q.db.Exec(ctx, submitDraftPersonneMorale, idPersMorale)
+	return err
+}
+
 const unlinkPersMoFromMobImg = `-- name: UnlinkPersMoFromMobImg :exec
 DELETE
 FROM cor_mob_img_pers_mo
@@ -754,6 +811,7 @@ SET publication_status = 'PUBLISHED',
     publie             = true,
     parent_id          = NULL
 WHERE id_pers_morale = $1
+AND publication_status = 'PENDING'
 `
 
 func (q *Queries) ValidatePendingPersonneMorales(ctx context.Context, idPersMorale int32) error {

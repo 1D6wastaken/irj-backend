@@ -7,6 +7,7 @@ package api
 
 import (
 	"context"
+	stderrors "errors"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -90,11 +91,15 @@ func (m *PersonnesMoralesListItems) validateMedias(formats strfmt.Registry) erro
 
 		if m.Medias[i] != nil {
 			if err := m.Medias[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
 					return ve.ValidateName("medias" + "." + strconv.Itoa(i))
-				} else if ce, ok := err.(*errors.CompositeError); ok {
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
 					return ce.ValidateName("medias" + "." + strconv.Itoa(i))
 				}
+
 				return err
 			}
 		}
@@ -129,11 +134,15 @@ func (m *PersonnesMoralesListItems) contextValidateMedias(ctx context.Context, f
 			}
 
 			if err := m.Medias[i].ContextValidate(ctx, formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
 					return ve.ValidateName("medias" + "." + strconv.Itoa(i))
-				} else if ce, ok := err.(*errors.CompositeError); ok {
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
 					return ce.ValidateName("medias" + "." + strconv.Itoa(i))
 				}
+
 				return err
 			}
 		}

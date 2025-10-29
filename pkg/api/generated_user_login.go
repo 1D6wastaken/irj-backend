@@ -73,7 +73,7 @@ func (m *UserLogin) validateToken(formats strfmt.Registry) error {
 	return nil
 }
 
-var userLoginTypeTokenTypePropEnum []interface{}
+var userLoginTypeTokenTypePropEnum []any
 
 func init() {
 	var res []string

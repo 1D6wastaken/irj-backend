@@ -7,6 +7,7 @@ package api
 
 import (
 	"context"
+	stderrors "errors"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -94,11 +95,15 @@ func (m *CommuneFilter) validateDepartment(formats strfmt.Registry) error {
 
 	if m.Department != nil {
 		if err := m.Department.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("department")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("department")
 			}
+
 			return err
 		}
 	}
@@ -134,11 +139,15 @@ func (m *CommuneFilter) contextValidateDepartment(ctx context.Context, formats s
 		}
 
 		if err := m.Department.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("department")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("department")
 			}
+
 			return err
 		}
 	}

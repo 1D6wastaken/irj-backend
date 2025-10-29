@@ -40,7 +40,7 @@ func (m *PatchUsersBody) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-var patchUsersBodyTypeActionPropEnum []interface{}
+var patchUsersBodyTypeActionPropEnum []any
 
 func init() {
 	var res []string

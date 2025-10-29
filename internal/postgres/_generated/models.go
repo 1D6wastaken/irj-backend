@@ -148,6 +148,7 @@ func (ns NullUserGrade) Value() (driver.Value, error) {
 type BibAuteur struct {
 	IDAuteurFiche  int32
 	AuteurFicheNom pgtype.Text
+	UserID         pgtype.Text
 }
 
 type TPasswordReset struct {

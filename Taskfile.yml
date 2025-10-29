@@ -10,7 +10,7 @@ vars:
   # https://github.com/oligot/go-mod-upgrade/releases
   GO_MOD_UPGRADE_VERSION: 0.11.0
   # https://github.com/go-swagger/go-swagger/releases
-  GOSWAGGER_VERSION: 0.32.3
+  GOSWAGGER_VERSION: 0.33.1
   # https://github.com/sqlc-dev/sqlc/releases
   SQLC_VERSION: 1.29.0
 

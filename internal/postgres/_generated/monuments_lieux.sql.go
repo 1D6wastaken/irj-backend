@@ -153,8 +153,8 @@ VALUES ($1,
         $10,
         $11,
         false,
-        'DRAFT',
-        $12)
+        $12,
+        $13)
 RETURNING id_monument_lieu
 `
 
@@ -170,6 +170,7 @@ type CreateMonumentLieuParams struct {
 	Contributeurs          pgtype.Text
 	IDCommune              pgtype.Int4
 	IDPays                 pgtype.Int4
+	PublicationStatus      PublicationStatus
 	ParentID               pgtype.Int4
 }
 
@@ -186,6 +187,7 @@ func (q *Queries) CreateMonumentLieu(ctx context.Context, arg CreateMonumentLieu
 		arg.Contributeurs,
 		arg.IDCommune,
 		arg.IDPays,
+		arg.PublicationStatus,
 		arg.ParentID,
 	)
 	var id_monument_lieu int32
@@ -197,6 +199,7 @@ const deletePendingMonumentLieu = `-- name: DeletePendingMonumentLieu :exec
 DELETE
 FROM t_monuments_lieux
 WHERE id_monument_lieu = $1
+  AND publication_status = 'PENDING'
 `
 
 func (q *Queries) DeletePendingMonumentLieu(ctx context.Context, idMonumentLieu int32) error {
@@ -408,25 +411,65 @@ SELECT m.id_monument_lieu AS id,
        m.protection_commentaires,
        m.source,
        -- Redacteurs (auteurs fiche)
-       COALESCE(array_agg(DISTINCT baf.auteur_fiche_nom) FILTER (WHERE baf.auteur_fiche_nom IS NOT NULL),
-                '{}')     AS redacteurs,
+       COALESCE(
+                       jsonb_agg(
+                       DISTINCT jsonb_build_object(
+                               'id', baf.id_auteur_fiche,
+                               'name', baf.auteur_fiche_nom
+                                )
+                                ) FILTER (WHERE baf.id_auteur_fiche IS NOT NULL),
+                       '[]'::jsonb
+       )                  AS authors,
        -- Commune
-       c.nom_commune      AS commune,
+       jsonb_build_object(
+               'id', c.id_commune,
+               'name', c.nom_commune
+       )                  AS city,
        -- Département
-       d.nom_departement  AS departement,
+       jsonb_build_object(
+               'id', d.id_departement,
+               'name', d.nom_departement
+       )                  AS department,
        -- Région
-       r.nom_region       AS region,
+       jsonb_build_object(
+               'id', r.id_region,
+               'name', r.nom_region
+       )                  AS region,
        -- Pays
-       p.nom_pays         AS pays,
+       jsonb_build_object(
+               'id', p.id_pays,
+               'name', p.nom_pays
+       )                  AS country,
        -- États de conservation
-       COALESCE(array_agg(DISTINCT bec.etat_conservation_type) FILTER (WHERE bec.etat_conservation_type IS NOT NULL),
-                '{}')     AS etats_conservation,
+       COALESCE(
+                       jsonb_agg(
+                       DISTINCT jsonb_build_object(
+                               'id', bec.id_etat_conservation,
+                               'name', bec.etat_conservation_type
+                                )
+                                ) FILTER (WHERE bec.id_etat_conservation IS NOT NULL),
+                       '[]'::jsonb
+       )                  AS conservation,
        -- Matériaux
-       COALESCE(array_agg(DISTINCT bm.materiau_type) FILTER (WHERE bm.materiau_type IS NOT NULL),
-                '{}')     AS materiaux,
+       COALESCE(
+                       jsonb_agg(
+                       DISTINCT jsonb_build_object(
+                               'id', bm.id_materiau,
+                               'name', bm.materiau_type
+                                )
+                                ) FILTER (WHERE bm.id_materiau IS NOT NULL),
+                       '[]'::jsonb
+       )                  AS materials,
        -- Natures
-       COALESCE(array_agg(DISTINCT bmn.monu_lieu_nature_type) FILTER (WHERE bmn.id_monu_lieu_nature IS NOT NULL),
-                '{}')     AS natures,
+       COALESCE(
+                       jsonb_agg(
+                       DISTINCT jsonb_build_object(
+                               'id', bmn.id_monu_lieu_nature,
+                               'name', bmn.monu_lieu_nature_type
+                                )
+                                ) FILTER (WHERE bmn.id_monu_lieu_nature IS NOT NULL),
+                       '[]'::jsonb
+       )                  AS natures,
        -- Médias
        COALESCE(
                        jsonb_agg(
@@ -454,11 +497,25 @@ SELECT m.id_monument_lieu AS id,
        COALESCE(array_agg(DISTINCT cpp.pers_phy_id) FILTER (WHERE cpp.pers_phy_id IS NOT NULL),
                 '{}')     AS personnes_physiques_liees,
        -- Siècles
-       COALESCE(array_agg(DISTINCT bs.siecle_list) FILTER (WHERE bs.siecle_list IS NOT NULL),
-                '{}')     AS siecles,
+       COALESCE(
+                       jsonb_agg(
+                       DISTINCT jsonb_build_object(
+                               'id', bs.id_siecle,
+                               'name', bs.siecle_list
+                                )
+                                ) FILTER (WHERE bs.id_siecle IS NOT NULL),
+                       '[]'::jsonb
+       )                  AS centuries,
        -- Themes
-       COALESCE(array_agg(DISTINCT t.theme_type) FILTER (WHERE t.theme_type IS NOT NULL),
-                '{}')     AS themes,
+       COALESCE(
+                       jsonb_agg(
+                       DISTINCT jsonb_build_object(
+                               'id', t.id_theme,
+                               'name', t.theme_type
+                                )
+                                ) FILTER (WHERE t.id_theme IS NOT NULL),
+                       '[]'::jsonb
+       )                  AS themes,
        publication_status,
        parent_id
 FROM t_monuments_lieux m
@@ -485,10 +542,10 @@ FROM t_monuments_lieux m
          LEFT JOIN t_themes t ON t.id_theme = ctml.theme_id
 WHERE m.id_monument_lieu = $1
 GROUP BY m.id_monument_lieu,
-         c.nom_commune,
-         d.nom_departement,
-         r.nom_region,
-         p.nom_pays
+         c.id_commune, c.nom_commune,
+         d.id_departement, d.nom_departement,
+         r.id_region, r.nom_region,
+         p.id_pays, p.nom_pays
 `
 
 type GetMonumentLieuByIDRow struct {
@@ -505,19 +562,19 @@ type GetMonumentLieuByIDRow struct {
 	Protection              pgtype.Bool
 	ProtectionCommentaires  pgtype.Text
 	Source                  pgtype.Text
-	Redacteurs              interface{}
-	Commune                 pgtype.Text
-	Departement             pgtype.Text
-	Region                  pgtype.Text
-	Pays                    pgtype.Text
-	EtatsConservation       interface{}
-	Materiaux               interface{}
+	Authors                 interface{}
+	City                    []byte
+	Department              []byte
+	Region                  []byte
+	Country                 []byte
+	Conservation            interface{}
+	Materials               interface{}
 	Natures                 interface{}
 	Medias                  interface{}
 	MobiliersImagesLiees    interface{}
 	PersonnesMoralesLiees   interface{}
 	PersonnesPhysiquesLiees interface{}
-	Siecles                 interface{}
+	Centuries               interface{}
 	Themes                  interface{}
 	PublicationStatus       PublicationStatus
 	ParentID                pgtype.Int4
@@ -540,19 +597,19 @@ func (q *Queries) GetMonumentLieuByID(ctx context.Context, idMonumentLieu int32)
 		&i.Protection,
 		&i.ProtectionCommentaires,
 		&i.Source,
-		&i.Redacteurs,
-		&i.Commune,
-		&i.Departement,
+		&i.Authors,
+		&i.City,
+		&i.Department,
 		&i.Region,
-		&i.Pays,
-		&i.EtatsConservation,
-		&i.Materiaux,
+		&i.Country,
+		&i.Conservation,
+		&i.Materials,
 		&i.Natures,
 		&i.Medias,
 		&i.MobiliersImagesLiees,
 		&i.PersonnesMoralesLiees,
 		&i.PersonnesPhysiquesLiees,
-		&i.Siecles,
+		&i.Centuries,
 		&i.Themes,
 		&i.PublicationStatus,
 		&i.ParentID,
@@ -648,8 +705,7 @@ FROM t_monuments_lieux m
          LEFT JOIN bib_siecle bs ON csl.siecle_monu_lieu_id = bs.id_siecle
          LEFT JOIN cor_themes_monu_lieu ctml ON m.id_monument_lieu = ctml.monu_lieu_id
          LEFT JOIN t_themes t ON t.id_theme = ctml.theme_id
-WHERE m.publication_status = 'DRAFT'
-   OR m.publication_status = 'PENDING'
+WHERE m.publication_status = 'PENDING'
 GROUP BY m.id_monument_lieu
 `
 
@@ -779,6 +835,18 @@ func (q *Queries) LinkMonuLieuToPersPhy(ctx context.Context, arg LinkMonuLieuToP
 	return err
 }
 
+const submitDraftMonumentLieu = `-- name: SubmitDraftMonumentLieu :exec
+UPDATE t_monuments_lieux
+SET publication_status = 'PENDING'
+WHERE id_monument_lieu = $1
+  AND publication_status = 'DRAFT'
+`
+
+func (q *Queries) SubmitDraftMonumentLieu(ctx context.Context, idMonumentLieu int32) error {
+	_, err := q.db.Exec(ctx, submitDraftMonumentLieu, idMonumentLieu)
+	return err
+}
+
 const unlinkMonuLieuFromMobImg = `-- name: UnlinkMonuLieuFromMobImg :exec
 DELETE
 FROM cor_monu_lieu_mob_img
@@ -818,6 +886,7 @@ SET publication_status = 'PUBLISHED',
     publie             = true,
     parent_id          = NULL
 WHERE id_monument_lieu = $1
+  AND publication_status = 'PENDING'
 `
 
 func (q *Queries) ValidatePendingMonumentLieu(ctx context.Context, idMonumentLieu int32) error {

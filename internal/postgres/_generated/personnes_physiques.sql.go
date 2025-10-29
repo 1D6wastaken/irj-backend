@@ -157,8 +157,8 @@ VALUES ($1,
         $13,
         $14,
         false,
-        'DRAFT',
-        $15)
+        $15,
+        $16)
 RETURNING id_pers_physique
 `
 
@@ -177,6 +177,7 @@ type CreatePersPhysiqueParams struct {
 	Contributeurs         pgtype.Text
 	IDCommune             pgtype.Int4
 	IDPays                pgtype.Int4
+	PublicationStatus     PublicationStatus
 	ParentID              pgtype.Int4
 }
 
@@ -196,6 +197,7 @@ func (q *Queries) CreatePersPhysique(ctx context.Context, arg CreatePersPhysique
 		arg.Contributeurs,
 		arg.IDCommune,
 		arg.IDPays,
+		arg.PublicationStatus,
 		arg.ParentID,
 	)
 	var id_pers_physique int32
@@ -207,6 +209,7 @@ const deletePendingPersonnePhysique = `-- name: DeletePendingPersonnePhysique :e
 DELETE
 FROM t_pers_physiques
 WHERE id_pers_physique = $1
+  AND publication_status = 'PENDING'
 `
 
 func (q *Queries) DeletePendingPersonnePhysique(ctx context.Context, idPersPhysique int32) error {
@@ -487,8 +490,7 @@ FROM t_pers_physiques p
          LEFT JOIN bib_siecle bs ON csp.siecle_pers_phy_id = bs.id_siecle
          LEFT JOIN cor_themes_pers_phy ctpp ON p.id_pers_physique = ctpp.pers_phy_id
          LEFT JOIN t_themes t ON t.id_theme = ctpp.theme_id
-WHERE p.publication_status = 'DRAFT'
-   or p.publication_status = 'PENDING'
+WHERE p.publication_status = 'PENDING'
 GROUP BY p.id_pers_physique
 `
 
@@ -583,8 +585,15 @@ SELECT p.id_pers_physique    AS id,
        p.date_deces,
        p.attestation,
        -- Periode historique
-       COALESCE(array_agg(DISTINCT bph.periode_historique_type) FILTER (WHERE bph.periode_historique_type IS NOT NULL),
-                '{}')        AS historical_period,
+       COALESCE(
+                       jsonb_agg(
+                       DISTINCT jsonb_build_object(
+                               'id', bph.id_periode_historique,
+                               'name', bph.periode_historique_type
+                                )
+                                ) FILTER (WHERE bph.id_periode_historique IS NOT NULL),
+                       '[]'::jsonb
+       )                     AS historical_period,
        p.bibliographie,
        p.elements_biographiques,
        p.elements_pelerinage,
@@ -596,22 +605,55 @@ SELECT p.id_pers_physique    AS id,
        p.contributeurs,
        p.commentaires,
        -- Redacteurs (auteurs fiche)
-       COALESCE(array_agg(DISTINCT baf.auteur_fiche_nom) FILTER (WHERE baf.auteur_fiche_nom IS NOT NULL),
-                '{}')        AS redacteurs,
+       COALESCE(
+                       jsonb_agg(
+                       DISTINCT jsonb_build_object(
+                               'id', baf.id_auteur_fiche,
+                               'name', baf.auteur_fiche_nom
+                                )
+                                ) FILTER (WHERE baf.id_auteur_fiche IS NOT NULL),
+                       '[]'::jsonb
+       ) AS authors,
        -- Commune
-       c.nom_commune         AS commune,
+       jsonb_build_object(
+               'id', c.id_commune,
+               'name', c.nom_commune
+       )                     AS city,
        -- Département
-       d.nom_departement     AS departement,
+       jsonb_build_object(
+               'id', d.id_departement,
+               'name', d.nom_departement
+       )                     AS department,
        -- Région
-       r.nom_region          AS region,
+       jsonb_build_object(
+               'id', r.id_region,
+               'name', r.nom_region
+       )                     AS region,
        -- Pays
-       pa.nom_pays           AS pays,
+       jsonb_build_object(
+               'id', pa.id_pays,
+               'name', pa.nom_pays
+       )                     AS country,
        -- Travels
-       COALESCE(array_agg(DISTINCT bmd.mode_deplacement_type) FILTER (WHERE bmd.mode_deplacement_type IS NOT NULL),
-                '{}')        AS travels,
+       COALESCE(
+                       jsonb_agg(
+                       DISTINCT jsonb_build_object(
+                               'id', bmd.id_mode_deplacement,
+                               'name', bmd.mode_deplacement_type
+                                )
+                                ) FILTER (WHERE bmd.id_mode_deplacement IS NOT NULL),
+                       '[]'::jsonb
+       )                     AS travels,
        -- Professions
-       COALESCE(array_agg(DISTINCT bpp.profession_type) FILTER (WHERE bpp.profession_type IS NOT NULL),
-                '{}')        AS professions,
+       COALESCE(
+                       jsonb_agg(
+                       DISTINCT jsonb_build_object(
+                               'id', bpp.id_profession,
+                               'name', bpp.profession_type
+                                )
+                                ) FILTER (WHERE bpp.id_profession IS NOT NULL),
+                       '[]'::jsonb
+       )                     AS professions,
        p.nature_evenement,
        -- Médias
        COALESCE(
@@ -640,11 +682,25 @@ SELECT p.id_pers_physique    AS id,
        COALESCE(array_agg(DISTINCT cppmo.pers_morale_id) FILTER (WHERE cppmo.pers_morale_id IS NOT NULL),
                 '{}')        AS personnes_morales_liees,
        -- Siècles
-       COALESCE(array_agg(DISTINCT bs.siecle_list) FILTER (WHERE bs.siecle_list IS NOT NULL),
-                '{}')        AS siecles,
+       COALESCE(
+                       jsonb_agg(
+                       DISTINCT jsonb_build_object(
+                               'id', bs.id_siecle,
+                               'name', bs.siecle_list
+                                )
+                                ) FILTER (WHERE bs.id_siecle IS NOT NULL),
+                       '[]'::jsonb
+       )                     AS centuries,
        -- Themes
-       COALESCE(array_agg(DISTINCT t.theme_type) FILTER (WHERE t.theme_type IS NOT NULL),
-                '{}')        AS themes,
+       COALESCE(
+                       jsonb_agg(
+                       DISTINCT jsonb_build_object(
+                               'id', t.id_theme,
+                               'name', t.theme_type
+                                )
+                                ) FILTER (WHERE t.id_theme IS NOT NULL),
+                       '[]'::jsonb
+       )                     AS themes,
        publication_status,
        parent_id
 FROM t_pers_physiques p
@@ -671,10 +727,10 @@ FROM t_pers_physiques p
          LEFT JOIN t_themes t ON t.id_theme = ctpp.theme_id
 WHERE p.id_pers_physique = $1
 GROUP BY p.id_pers_physique,
-         c.nom_commune,
-         d.nom_departement,
-         r.nom_region,
-         pa.nom_pays
+         c.id_commune, c.nom_commune,
+         d.id_departement, d.nom_departement,
+         r.id_region, r.nom_region,
+         pa.id_pays, pa.nom_pays
 `
 
 type GetPersonnePhysiqueByIDRow struct {
@@ -694,11 +750,11 @@ type GetPersonnePhysiqueByIDRow struct {
 	Publie                pgtype.Bool
 	Contributeurs         pgtype.Text
 	Commentaires          pgtype.Text
-	Redacteurs            interface{}
-	Commune               pgtype.Text
-	Departement           pgtype.Text
-	Region                pgtype.Text
-	Pays                  pgtype.Text
+	Authors               interface{}
+	City                  []byte
+	Department            []byte
+	Region                []byte
+	Country               []byte
 	Travels               interface{}
 	Professions           interface{}
 	NatureEvenement       pgtype.Text
@@ -706,7 +762,7 @@ type GetPersonnePhysiqueByIDRow struct {
 	MonumentsLieuxLiees   interface{}
 	MobiliersImagesLiees  interface{}
 	PersonnesMoralesLiees interface{}
-	Siecles               interface{}
+	Centuries             interface{}
 	Themes                interface{}
 	PublicationStatus     PublicationStatus
 	ParentID              pgtype.Int4
@@ -732,11 +788,11 @@ func (q *Queries) GetPersonnePhysiqueByID(ctx context.Context, idPersPhysique in
 		&i.Publie,
 		&i.Contributeurs,
 		&i.Commentaires,
-		&i.Redacteurs,
-		&i.Commune,
-		&i.Departement,
+		&i.Authors,
+		&i.City,
+		&i.Department,
 		&i.Region,
-		&i.Pays,
+		&i.Country,
 		&i.Travels,
 		&i.Professions,
 		&i.NatureEvenement,
@@ -744,7 +800,7 @@ func (q *Queries) GetPersonnePhysiqueByID(ctx context.Context, idPersPhysique in
 		&i.MonumentsLieuxLiees,
 		&i.MobiliersImagesLiees,
 		&i.PersonnesMoralesLiees,
-		&i.Siecles,
+		&i.Centuries,
 		&i.Themes,
 		&i.PublicationStatus,
 		&i.ParentID,
@@ -800,6 +856,18 @@ func (q *Queries) LinkPersPhyToPersMo(ctx context.Context, arg LinkPersPhyToPers
 	return err
 }
 
+const submitDraftPersonnePhysique = `-- name: SubmitDraftPersonnePhysique :exec
+UPDATE t_pers_physiques
+SET publication_status = 'PENDING'
+WHERE id_pers_physique = $1
+  AND publication_status = 'DRAFT'
+`
+
+func (q *Queries) SubmitDraftPersonnePhysique(ctx context.Context, idPersPhysique int32) error {
+	_, err := q.db.Exec(ctx, submitDraftPersonnePhysique, idPersPhysique)
+	return err
+}
+
 const unlinkPersPhyFromMobImg = `-- name: UnlinkPersPhyFromMobImg :exec
 DELETE
 FROM cor_mob_img_pers_phy
@@ -839,6 +907,7 @@ SET publication_status = 'PUBLISHED',
     publie             = true,
     parent_id          = NULL
 WHERE id_pers_physique = $1
+  AND publication_status = 'PENDING'
 `
 
 func (q *Queries) ValidatePendingPersonnePhysique(ctx context.Context, idPersPhysique int32) error {

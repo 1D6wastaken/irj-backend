@@ -89,6 +89,9 @@ type MonumentsLieuxCreationBody struct {
 
 	// linked pers physiques
 	LinkedPersPhysiques []int32 `json:"linkedPersPhysiques"`
+
+	// draft
+	Draft bool `json:"draft,omitempty"`
 }
 
 // Validate validates this monuments lieux creation body

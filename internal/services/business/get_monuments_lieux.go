@@ -137,6 +137,11 @@ func (b *BusinessService) GetMonumentLieu(w http.ResponseWriter, r *http.Request
 		})
 	}
 
+	city, department, region, country, err := parseLocation(monument.City, monument.Department, monument.Region, monument.Country)
+	if err != nil {
+		return _http.ErrInternalError.Msg("error while parsing location").Err(err)
+	}
+
 	return _http.WriteJSONResponse(w, http.StatusOK, api.MonumentLieu{
 		ID:                    monument.ID,
 		Title:                 monument.Title,
@@ -151,19 +156,19 @@ func (b *BusinessService) GetMonumentLieu(w http.ResponseWriter, r *http.Request
 		Contributors:          monument.Contributeurs.String,
 		Protected:             monument.Protection.Bool,
 		ProtectionComment:     monument.ProtectionCommentaires.String,
-		Authors:               collections.InterfaceToStringSlice(monument.Redacteurs),
-		City:                  monument.Commune.String,
-		Department:            monument.Departement.String,
-		Region:                monument.Region.String,
-		Country:               monument.Pays.String,
-		Conservation:          collections.InterfaceToStringSlice(monument.EtatsConservation),
-		Materials:             collections.InterfaceToStringSlice(monument.Materiaux),
-		Natures:               collections.InterfaceToStringSlice(monument.Natures),
+		Authors:               interfaceSliceToBasicFilterSlice(monument.Authors.([]any)),
+		City:                  city,
+		Department:            department,
+		Region:                region,
+		Country:               country,
+		Conservation:          interfaceSliceToBasicFilterSlice(monument.Conservation.([]any)),
+		Materials:             interfaceSliceToBasicFilterSlice(monument.Materials.([]any)),
+		Natures:               interfaceSliceToBasicFilterSlice(monument.Natures.([]any)),
 		Medias:                medias,
-		Centuries:             collections.InterfaceToStringSlice(monument.Siecles),
+		Centuries:             interfaceSliceToBasicFilterSlice(monument.Centuries.([]any)),
 		LinkedFurnitureImages: collections.InterfaceToInt32Slice(monument.MobiliersImagesLiees),
 		LinkedIndividuals:     collections.InterfaceToInt32Slice(monument.PersonnesPhysiquesLiees),
 		LinkedLegalEntities:   collections.InterfaceToInt32Slice(monument.PersonnesMoralesLiees),
-		Themes:                collections.InterfaceToStringSlice(monument.Themes),
+		Themes:                interfaceSliceToBasicFilterSlice(monument.Themes.([]any)),
 	})
 }

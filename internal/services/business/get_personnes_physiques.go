@@ -137,13 +137,18 @@ func (b *BusinessService) GetPersonnePhysique(w http.ResponseWriter, r *http.Req
 		})
 	}
 
+	city, department, region, country, err := parseLocation(pmo.City, pmo.Department, pmo.Region, pmo.Country)
+	if err != nil {
+		return _http.ErrInternalError.Msg("error while parsing location").Err(err)
+	}
+
 	return _http.WriteJSONResponse(w, http.StatusOK, api.PersonnePhysique{
 		ID:                    pmo.ID,
 		Firstname:             pmo.Firstname.String,
 		Birthdate:             pmo.DateNaissance.String,
 		Death:                 pmo.DateDeces.String,
 		Attestation:           pmo.Attestation.String,
-		HistoricalPeriod:      collections.InterfaceToStringSlice(pmo.HistoricalPeriod),
+		HistoricalPeriod:      interfaceSliceToBasicFilterSlice(pmo.HistoricalPeriod.([]any)),
 		Bibliography:          pmo.Bibliographie.String,
 		BiographicalElements:  pmo.ElementsBiographiques.String,
 		PilgrimageElement:     pmo.ElementsPelerinage.String,
@@ -154,19 +159,19 @@ func (b *BusinessService) GetPersonnePhysique(w http.ResponseWriter, r *http.Req
 		Published:             pmo.Publie.Bool,
 		Contributors:          pmo.Contributeurs.String,
 		Comment:               pmo.Commentaires.String,
-		Authors:               collections.InterfaceToStringSlice(pmo.Redacteurs),
-		City:                  pmo.Commune.String,
-		Department:            pmo.Departement.String,
-		Region:                pmo.Region.String,
-		Country:               pmo.Pays.String,
-		Travels:               collections.InterfaceToStringSlice(pmo.Travels),
-		Professions:           collections.InterfaceToStringSlice(pmo.Professions),
+		Authors:               interfaceSliceToBasicFilterSlice(pmo.Authors.([]any)),
+		City:                  city,
+		Department:            department,
+		Region:                region,
+		Country:               country,
+		Travels:               interfaceSliceToBasicFilterSlice(pmo.Travels.([]any)),
+		Professions:           interfaceSliceToBasicFilterSlice(pmo.Professions.([]any)),
 		EventNature:           pmo.NatureEvenement.String,
 		Medias:                medias,
-		Centuries:             collections.InterfaceToStringSlice(pmo.Siecles),
+		Centuries:             interfaceSliceToBasicFilterSlice(pmo.Centuries.([]any)),
 		LinkedMonumentsPlaces: collections.InterfaceToInt32Slice(pmo.MonumentsLieuxLiees),
 		LinkedLegalEntities:   collections.InterfaceToInt32Slice(pmo.PersonnesMoralesLiees),
 		LinkedFurnitureImages: collections.InterfaceToInt32Slice(pmo.MobiliersImagesLiees),
-		Themes:                collections.InterfaceToStringSlice(pmo.Themes),
+		Themes:                interfaceSliceToBasicFilterSlice(pmo.Themes.([]any)),
 	})
 }

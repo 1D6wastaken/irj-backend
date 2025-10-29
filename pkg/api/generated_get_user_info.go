@@ -157,7 +157,7 @@ func (m *GetUserInfo) validatePhone(formats strfmt.Registry) error {
 	return nil
 }
 
-var getUserInfoTypeDomainPropEnum []interface{}
+var getUserInfoTypeDomainPropEnum []any
 
 func init() {
 	var res []string

@@ -1505,7 +1505,7 @@ definitions:
       historical_period:
         type: array
         items:
-          type: string
+          $ref: "#/definitions/basicFilter"
       bibliography:
         type: string
         description: bibliography of the individual
@@ -1539,28 +1539,28 @@ definitions:
       authors:
         type: array
         items:
-          type: string
+          $ref: "#/definitions/basicFilter"
         description: entry authors
       city:
-        type: string
+        $ref: "#/definitions/basicFilter"
         description: city of the individual
       department:
-        type: string
+        $ref: "#/definitions/basicFilter"
         description: department of the individual
       region:
-        type: string
+        $ref: "#/definitions/basicFilter"
         description: region of the individual
       country:
-        type: string
+        $ref: "#/definitions/basicFilter"
         description: country of the individual
       travels:
         type: array
         items:
-          type: string
+          $ref: "#/definitions/basicFilter"
       professions:
         type: array
         items:
-          type: string
+          $ref: "#/definitions/basicFilter"
       event_nature:
         type: string
       medias:
@@ -1571,7 +1571,7 @@ definitions:
       centuries:
         type: array
         items:
-          type: string
+          $ref: "#/definitions/basicFilter"
         description: time period of the monument lieu
       linked_monuments_places:
         type: array
@@ -1591,7 +1591,7 @@ definitions:
       themes:
         type: array
         items:
-          type: string
+          $ref: "#/definitions/basicFilter"
   PersonnePhysiqueCreationBody:
     type: object
     required:
@@ -1820,24 +1820,24 @@ definitions:
       authors:
         type: array
         items:
-          type: string
+          $ref: "#/definitions/basicFilter"
         description: entry authors
       city:
-        type: string
+        $ref: "#/definitions/basicFilter"
         description: city of the legal entity
       department:
-        type: string
+        $ref: "#/definitions/basicFilter"
         description: department of the legal entity
       region:
-        type: string
+        $ref: "#/definitions/basicFilter"
         description: region of the legal entity
       country:
-        type: string
+        $ref: "#/definitions/basicFilter"
         description: country of the legal entity
       natures:
         type: array
         items:
-          type: string
+          $ref: "#/definitions/basicFilter"
         description: natures of the monument lieu
       medias:
         type: array
@@ -1847,7 +1847,7 @@ definitions:
       centuries:
         type: array
         items:
-          type: string
+          $ref: "#/definitions/basicFilter"
         description: time period of the monument lieu
       linked_monuments_places:
         type: array
@@ -1867,7 +1867,7 @@ definitions:
       themes:
         type: array
         items:
-          type: string
+          $ref: "#/definitions/basicFilter"
   PersonneMoraleCreationBody:
     type: object
     required:
@@ -2076,34 +2076,34 @@ definitions:
       authors:
         type: array
         items:
-          type: string
+          $ref: "#/definitions/basicFilter"
         description: entry authors
       city:
-        type: string
+        $ref: "#/definitions/basicFilter"
         description: city of the mobilier image
       department:
-        type: string
+        $ref: "#/definitions/basicFilter"
         description: department of the mobilier image
       region:
-        type: string
+        $ref: "#/definitions/basicFilter"
         description: region of the mobilier image
       country:
-        type: string
+        $ref: "#/definitions/basicFilter"
         description: country of the mobilier image
       conservation:
         type: array
         items:
-          type: string
+          $ref: "#/definitions/basicFilter"
         description: conservation states
       materials:
         type: array
         items:
-          type: string
+          $ref: "#/definitions/basicFilter"
         description: materials used for the monument lieu
       natures:
         type: array
         items:
-          type: string
+          $ref: "#/definitions/basicFilter"
         description: natures of the monument lieu
       medias:
         type: array
@@ -2115,12 +2115,12 @@ definitions:
       centuries:
         type: array
         items:
-          type: string
+          $ref: "#/definitions/basicFilter"
         description: time period of the monument lieu
       techniques:
         type: array
         items:
-          type: string
+          $ref: "#/definitions/basicFilter"
       linked_monuments_places:
         type: array
         items:
@@ -2139,7 +2139,7 @@ definitions:
       themes:
         type: array
         items:
-          type: string
+          $ref: "#/definitions/basicFilter"
   MobilierImageCreationBody:
     type: object
     required:
@@ -2376,37 +2376,37 @@ definitions:
       authors:
         type: array
         items:
-          type: string
+          $ref: "#/definitions/basicFilter"
         description: entry authors
       sources:
         type: string
         description: Sources of the information
       city:
-        type: string
+        $ref: "#/definitions/basicFilter"
         description: city of the monument lieu
       department:
-        type: string
+        $ref: "#/definitions/basicFilter"
         description: department of the monument lieu
       region:
-        type: string
+        $ref: "#/definitions/basicFilter"
         description: region of the monument lieu
       country:
-        type: string
+        $ref: "#/definitions/basicFilter"
         description: country of the monument lieu
       conservation:
         type: array
         items:
-          type: string
+          $ref: "#/definitions/basicFilter"
         description: conservation states
       materials:
         type: array
         items:
-          type: string
+          $ref: "#/definitions/basicFilter"
         description: materials used for the monument lieu
       natures:
         type: array
         items:
-          type: string
+          $ref: "#/definitions/basicFilter"
         description: natures of the monument lieu
       medias:
         type: array
@@ -2416,7 +2416,7 @@ definitions:
       centuries:
         type: array
         items:
-          type: string
+          $ref: "#/definitions/basicFilter"
         description: time period of the monument lieu
       linked_furniture_images:
         type: array
@@ -2436,7 +2436,7 @@ definitions:
       themes:
         type: array
         items:
-          type: string
+          $ref: "#/definitions/basicFilter"
   PendingDocuments:
     type: object
     required:
@@ -2571,6 +2571,9 @@ definitions:
         items:
           type: integer
           format: int32
+      draft:
+        type: boolean
+
   MonumentsLieuxListFilters:
     type: object
     properties:
@@ -2697,22 +2700,3 @@ definitions:
     properties:
       department:
         $ref: "#/definitions/DepartmentFilter"
-
-  CityFilterBody:
-    type: object
-    properties:
-      countries:
-        type: array
-        items:
-          type: integer
-          format: int32
-      regions:
-        type: array
-        items:
-          type: integer
-          format: int32
-      departments:
-        type: array
-        items:
-          type: integer
-          format: int32

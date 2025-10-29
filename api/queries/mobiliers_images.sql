@@ -63,28 +63,75 @@ SELECT m.id_mobilier_image AS id,
        m.lieu_conservation,
        m.lieu_origine,
        -- Redacteurs (auteurs fiche)
-       COALESCE(array_agg(DISTINCT baf.auteur_fiche_nom) FILTER (WHERE baf.auteur_fiche_nom IS NOT NULL),
-                '{}')      AS redacteurs,
+       COALESCE(
+                       jsonb_agg(
+                       DISTINCT jsonb_build_object(
+                               'id', baf.id_auteur_fiche,
+                               'name', baf.auteur_fiche_nom
+                                )
+                                ) FILTER (WHERE baf.id_auteur_fiche IS NOT NULL),
+                       '[]'::jsonb
+       ) AS authors,
        -- Commune
-       c.nom_commune       AS commune,
+       jsonb_build_object(
+               'id', c.id_commune,
+               'name', c.nom_commune
+       ) AS city,
        -- Département
-       d.nom_departement   AS departement,
+       jsonb_build_object(
+               'id', d.id_departement,
+               'name', d.nom_departement
+       ) AS department,
        -- Région
-       r.nom_region        AS region,
+       jsonb_build_object(
+               'id', r.id_region,
+               'name', r.nom_region
+       ) AS region,
        -- Pays
-       p.nom_pays          AS pays,
+       jsonb_build_object(
+               'id', p.id_pays,
+               'name', p.nom_pays
+       ) AS country,
        -- États de conservation
-       COALESCE(array_agg(DISTINCT bec.etat_conservation_type) FILTER (WHERE bec.etat_conservation_type IS NOT NULL),
-                '{}')      AS etats_conservation,
+       COALESCE(
+                       jsonb_agg(
+                       DISTINCT jsonb_build_object(
+                               'id', bec.id_etat_conservation,
+                               'name', bec.etat_conservation_type
+                                )
+                                ) FILTER (WHERE bec.id_etat_conservation IS NOT NULL),
+                       '[]'::jsonb
+       ) AS conservation,
        -- Matériaux
-       COALESCE(array_agg(DISTINCT bm.materiau_type) FILTER (WHERE bm.materiau_type IS NOT NULL),
-                '{}')      AS materiaux,
+       COALESCE(
+                       jsonb_agg(
+                       DISTINCT jsonb_build_object(
+                               'id', bm.id_materiau,
+                               'name', bm.materiau_type
+                                )
+                                ) FILTER (WHERE bm.id_materiau IS NOT NULL),
+                       '[]'::jsonb
+       ) AS materials,
        -- Techniques
-       COALESCE(array_agg(DISTINCT bmt.technique_type) FILTER (WHERE bmt.technique_type IS NOT NULL),
-                '{}')      AS techniques,
+       COALESCE(
+                       jsonb_agg(
+                       DISTINCT jsonb_build_object(
+                               'id', bmt.id_technique,
+                               'name', bmt.technique_type
+                                )
+                                ) FILTER (WHERE bmt.id_technique IS NOT NULL),
+                       '[]'::jsonb
+       ) AS techniques,
        -- Natures
-       COALESCE(array_agg(DISTINCT bmn.nature_type) FILTER (WHERE bmn.nature_type IS NOT NULL),
-                '{}')      AS natures,
+       COALESCE(
+                       jsonb_agg(
+                       DISTINCT jsonb_build_object(
+                               'id', bmn.id_nature,
+                               'name', bmn.nature_type
+                                )
+                                ) FILTER (WHERE bmn.id_nature IS NOT NULL),
+                       '[]'::jsonb
+       ) AS natures,
        -- Médias
        COALESCE(
                        jsonb_agg(
@@ -112,19 +159,33 @@ SELECT m.id_mobilier_image AS id,
        COALESCE(array_agg(DISTINCT cpp.pers_physique_id) FILTER (WHERE cpp.pers_physique_id IS NOT NULL),
                 '{}')      AS personnes_physiques_liees,
        -- Siècles
-       COALESCE(array_agg(DISTINCT bs.siecle_list) FILTER (WHERE bs.siecle_list IS NOT NULL),
-                '{}')      AS siecles,
+       COALESCE(
+                       jsonb_agg(
+                       DISTINCT jsonb_build_object(
+                               'id', bs.id_siecle,
+                               'name', bs.siecle_list
+                                )
+                                ) FILTER (WHERE bs.id_siecle IS NOT NULL),
+                       '[]'::jsonb
+       ) AS centuries,
        -- Themes
-       COALESCE(array_agg(DISTINCT t.theme_type) FILTER (WHERE t.theme_type IS NOT NULL),
-                '{}')      AS themes,
+       COALESCE(
+                       jsonb_agg(
+                       DISTINCT jsonb_build_object(
+                               'id', t.id_theme,
+                               'name', t.theme_type
+                                )
+                                ) FILTER (WHERE t.id_theme IS NOT NULL),
+                       '[]'::jsonb
+       ) AS themes,
        publication_status,
        parent_id
 FROM t_mobiliers_images m
          LEFT JOIN cor_auteur_fiche_mob_img caf ON m.id_mobilier_image = caf.mobilier_image_id
          LEFT JOIN bib_auteurs baf ON caf.auteur_fiche_mob_img_id = baf.id_auteur_fiche
          LEFT JOIN loc_communes c ON m.id_commune = c.id_commune
-         LEFT JOIN loc_departements d ON c.id_departement = d.id_departement
-         LEFT JOIN loc_regions r ON d.id_region = r.id_region
+         LEFT JOIN loc_departements d ON d.id_departement = COALESCE(m.id_departement, c.id_departement)
+         LEFT JOIN loc_regions r ON r.id_region = COALESCE(m.id_region, d.id_region)
          LEFT JOIN loc_pays p ON r.id_pays = p.id_pays
          LEFT JOIN cor_techniques_mob_img ctm ON m.id_mobilier_image = ctm.mobilier_image_id
          LEFT JOIN bib_mob_img_techniques bmt ON bmt.id_technique = ctm.technique_id
@@ -145,10 +206,10 @@ FROM t_mobiliers_images m
          LEFT JOIN t_themes t ON t.id_theme = ctmi.theme_id
 WHERE m.id_mobilier_image = $1
 GROUP BY m.id_mobilier_image,
-         c.nom_commune,
-         d.nom_departement,
-         r.nom_region,
-         p.nom_pays;
+         c.id_commune, c.nom_commune,
+         d.id_departement, d.nom_departement,
+         r.id_region, r.nom_region,
+         p.id_pays, p.nom_pays;
 
 -- name: GetPendingMobiliersImages :many
 SELECT m.id_mobilier_image    AS id,
@@ -245,8 +306,7 @@ FROM t_mobiliers_images m
          LEFT JOIN bib_siecle bs ON csl.siecle_mob_img_id = bs.id_siecle
          LEFT JOIN cor_themes_mob_img ctmi ON m.id_mobilier_image = ctmi.mob_img_id
          LEFT JOIN t_themes t ON t.id_theme = ctmi.theme_id
-WHERE m.publication_status = 'DRAFT'
-   OR m.publication_status = 'PENDING'
+WHERE m.publication_status = 'PENDING'
 GROUP BY m.id_mobilier_image;
 
 -- name: ValidatePendingMobilierImage :exec
@@ -254,12 +314,20 @@ UPDATE t_mobiliers_images
 SET publication_status = 'PUBLISHED',
     publie             = true,
     parent_id          = NULL
-WHERE id_mobilier_image = $1;
+WHERE id_mobilier_image = $1
+AND publication_status = 'PENDING';
 
 -- name: DeletePendingMobilierImage :exec
 DELETE
 FROM t_mobiliers_images
-WHERE id_mobilier_image = $1;
+WHERE id_mobilier_image = $1
+AND publication_status = 'PENDING';
+
+-- name: SubmitDraftMobilierImage :exec
+UPDATE t_mobiliers_images
+SET publication_status = 'PENDING'
+WHERE id_mobilier_image = $1
+AND publication_status = 'DRAFT';
 
 -- name: CreateMobilierImage :one
 INSERT INTO t_mobiliers_images
@@ -297,7 +365,7 @@ VALUES (sqlc.arg(titre_mob_img),
         sqlc.arg(id_commune),
         sqlc.arg(id_pays),
         false,
-        'DRAFT',
+        sqlc.arg(publication_status),
         sqlc.arg(parent_id))
 RETURNING id_mobilier_image;
 

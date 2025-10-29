@@ -7,6 +7,7 @@ package api
 
 import (
 	"context"
+	stderrors "errors"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -65,28 +66,28 @@ type MobilierImage struct {
 	OriginPlace string `json:"origin_place,omitempty"`
 
 	// entry authors
-	Authors []string `json:"authors"`
+	Authors []*BasicFilter `json:"authors"`
 
 	// city of the mobilier image
-	City string `json:"city,omitempty"`
+	City *BasicFilter `json:"city,omitempty"`
 
 	// department of the mobilier image
-	Department string `json:"department,omitempty"`
+	Department *BasicFilter `json:"department,omitempty"`
 
 	// region of the mobilier image
-	Region string `json:"region,omitempty"`
+	Region *BasicFilter `json:"region,omitempty"`
 
 	// country of the mobilier image
-	Country string `json:"country,omitempty"`
+	Country *BasicFilter `json:"country,omitempty"`
 
 	// conservation states
-	Conservation []string `json:"conservation"`
+	Conservation []*BasicFilter `json:"conservation"`
 
 	// materials used for the monument lieu
-	Materials []string `json:"materials"`
+	Materials []*BasicFilter `json:"materials"`
 
 	// natures of the monument lieu
-	Natures []string `json:"natures"`
+	Natures []*BasicFilter `json:"natures"`
 
 	// images ID of the monument lieu
 	Medias []*Media `json:"medias"`
@@ -95,10 +96,10 @@ type MobilierImage struct {
 	Sources string `json:"sources,omitempty"`
 
 	// time period of the monument lieu
-	Centuries []string `json:"centuries"`
+	Centuries []*BasicFilter `json:"centuries"`
 
 	// techniques
-	Techniques []string `json:"techniques"`
+	Techniques []*BasicFilter `json:"techniques"`
 
 	// linked monuments places
 	LinkedMonumentsPlaces []int32 `json:"linked_monuments_places"`
@@ -110,7 +111,7 @@ type MobilierImage struct {
 	LinkedLegalEntities []int32 `json:"linked_legal_entities"`
 
 	// themes
-	Themes []string `json:"themes"`
+	Themes []*BasicFilter `json:"themes"`
 }
 
 // Validate validates this mobilier image
@@ -125,7 +126,51 @@ func (m *MobilierImage) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateAuthors(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateCity(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateDepartment(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateRegion(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateCountry(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateConservation(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateMaterials(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateNatures(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateMedias(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateCenturies(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateTechniques(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateThemes(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -159,6 +204,218 @@ func (m *MobilierImage) validateUpdateDate(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *MobilierImage) validateAuthors(formats strfmt.Registry) error {
+	if swag.IsZero(m.Authors) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Authors); i++ {
+		if swag.IsZero(m.Authors[i]) { // not required
+			continue
+		}
+
+		if m.Authors[i] != nil {
+			if err := m.Authors[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("authors" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("authors" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *MobilierImage) validateCity(formats strfmt.Registry) error {
+	if swag.IsZero(m.City) { // not required
+		return nil
+	}
+
+	if m.City != nil {
+		if err := m.City.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("city")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("city")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *MobilierImage) validateDepartment(formats strfmt.Registry) error {
+	if swag.IsZero(m.Department) { // not required
+		return nil
+	}
+
+	if m.Department != nil {
+		if err := m.Department.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("department")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("department")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *MobilierImage) validateRegion(formats strfmt.Registry) error {
+	if swag.IsZero(m.Region) { // not required
+		return nil
+	}
+
+	if m.Region != nil {
+		if err := m.Region.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("region")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("region")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *MobilierImage) validateCountry(formats strfmt.Registry) error {
+	if swag.IsZero(m.Country) { // not required
+		return nil
+	}
+
+	if m.Country != nil {
+		if err := m.Country.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("country")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("country")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *MobilierImage) validateConservation(formats strfmt.Registry) error {
+	if swag.IsZero(m.Conservation) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Conservation); i++ {
+		if swag.IsZero(m.Conservation[i]) { // not required
+			continue
+		}
+
+		if m.Conservation[i] != nil {
+			if err := m.Conservation[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("conservation" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("conservation" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *MobilierImage) validateMaterials(formats strfmt.Registry) error {
+	if swag.IsZero(m.Materials) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Materials); i++ {
+		if swag.IsZero(m.Materials[i]) { // not required
+			continue
+		}
+
+		if m.Materials[i] != nil {
+			if err := m.Materials[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("materials" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("materials" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *MobilierImage) validateNatures(formats strfmt.Registry) error {
+	if swag.IsZero(m.Natures) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Natures); i++ {
+		if swag.IsZero(m.Natures[i]) { // not required
+			continue
+		}
+
+		if m.Natures[i] != nil {
+			if err := m.Natures[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("natures" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("natures" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
 func (m *MobilierImage) validateMedias(formats strfmt.Registry) error {
 	if swag.IsZero(m.Medias) { // not required
 		return nil
@@ -171,11 +428,105 @@ func (m *MobilierImage) validateMedias(formats strfmt.Registry) error {
 
 		if m.Medias[i] != nil {
 			if err := m.Medias[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
 					return ve.ValidateName("medias" + "." + strconv.Itoa(i))
-				} else if ce, ok := err.(*errors.CompositeError); ok {
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
 					return ce.ValidateName("medias" + "." + strconv.Itoa(i))
 				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *MobilierImage) validateCenturies(formats strfmt.Registry) error {
+	if swag.IsZero(m.Centuries) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Centuries); i++ {
+		if swag.IsZero(m.Centuries[i]) { // not required
+			continue
+		}
+
+		if m.Centuries[i] != nil {
+			if err := m.Centuries[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("centuries" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("centuries" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *MobilierImage) validateTechniques(formats strfmt.Registry) error {
+	if swag.IsZero(m.Techniques) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Techniques); i++ {
+		if swag.IsZero(m.Techniques[i]) { // not required
+			continue
+		}
+
+		if m.Techniques[i] != nil {
+			if err := m.Techniques[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("techniques" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("techniques" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *MobilierImage) validateThemes(formats strfmt.Registry) error {
+	if swag.IsZero(m.Themes) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Themes); i++ {
+		if swag.IsZero(m.Themes[i]) { // not required
+			continue
+		}
+
+		if m.Themes[i] != nil {
+			if err := m.Themes[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("themes" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("themes" + "." + strconv.Itoa(i))
+				}
+
 				return err
 			}
 		}
@@ -189,13 +540,273 @@ func (m *MobilierImage) validateMedias(formats strfmt.Registry) error {
 func (m *MobilierImage) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateAuthors(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateCity(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateDepartment(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateRegion(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateCountry(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateConservation(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateMaterials(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateNatures(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateMedias(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateCenturies(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateTechniques(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateThemes(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *MobilierImage) contextValidateAuthors(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Authors); i++ {
+
+		if m.Authors[i] != nil {
+
+			if swag.IsZero(m.Authors[i]) { // not required
+				return nil
+			}
+
+			if err := m.Authors[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("authors" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("authors" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *MobilierImage) contextValidateCity(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.City != nil {
+
+		if swag.IsZero(m.City) { // not required
+			return nil
+		}
+
+		if err := m.City.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("city")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("city")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *MobilierImage) contextValidateDepartment(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Department != nil {
+
+		if swag.IsZero(m.Department) { // not required
+			return nil
+		}
+
+		if err := m.Department.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("department")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("department")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *MobilierImage) contextValidateRegion(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Region != nil {
+
+		if swag.IsZero(m.Region) { // not required
+			return nil
+		}
+
+		if err := m.Region.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("region")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("region")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *MobilierImage) contextValidateCountry(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Country != nil {
+
+		if swag.IsZero(m.Country) { // not required
+			return nil
+		}
+
+		if err := m.Country.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("country")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("country")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *MobilierImage) contextValidateConservation(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Conservation); i++ {
+
+		if m.Conservation[i] != nil {
+
+			if swag.IsZero(m.Conservation[i]) { // not required
+				return nil
+			}
+
+			if err := m.Conservation[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("conservation" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("conservation" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *MobilierImage) contextValidateMaterials(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Materials); i++ {
+
+		if m.Materials[i] != nil {
+
+			if swag.IsZero(m.Materials[i]) { // not required
+				return nil
+			}
+
+			if err := m.Materials[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("materials" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("materials" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *MobilierImage) contextValidateNatures(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Natures); i++ {
+
+		if m.Natures[i] != nil {
+
+			if swag.IsZero(m.Natures[i]) { // not required
+				return nil
+			}
+
+			if err := m.Natures[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("natures" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("natures" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 
@@ -210,11 +821,102 @@ func (m *MobilierImage) contextValidateMedias(ctx context.Context, formats strfm
 			}
 
 			if err := m.Medias[i].ContextValidate(ctx, formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
 					return ve.ValidateName("medias" + "." + strconv.Itoa(i))
-				} else if ce, ok := err.(*errors.CompositeError); ok {
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
 					return ce.ValidateName("medias" + "." + strconv.Itoa(i))
 				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *MobilierImage) contextValidateCenturies(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Centuries); i++ {
+
+		if m.Centuries[i] != nil {
+
+			if swag.IsZero(m.Centuries[i]) { // not required
+				return nil
+			}
+
+			if err := m.Centuries[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("centuries" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("centuries" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *MobilierImage) contextValidateTechniques(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Techniques); i++ {
+
+		if m.Techniques[i] != nil {
+
+			if swag.IsZero(m.Techniques[i]) { // not required
+				return nil
+			}
+
+			if err := m.Techniques[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("techniques" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("techniques" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *MobilierImage) contextValidateThemes(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Themes); i++ {
+
+		if m.Themes[i] != nil {
+
+			if swag.IsZero(m.Themes[i]) { // not required
+				return nil
+			}
+
+			if err := m.Themes[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("themes" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("themes" + "." + strconv.Itoa(i))
+				}
+
 				return err
 			}
 		}

@@ -137,6 +137,11 @@ func (b *BusinessService) GetMobilierImage(w http.ResponseWriter, r *http.Reques
 		})
 	}
 
+	city, department, region, country, err := parseLocation(mobilier.City, mobilier.Department, mobilier.Region, mobilier.Country)
+	if err != nil {
+		return _http.ErrInternalError.Msg("error while parsing location").Err(err)
+	}
+
 	return _http.WriteJSONResponse(w, http.StatusOK, api.MobilierImage{
 		ID:                    mobilier.ID,
 		Title:                 mobilier.Title,
@@ -153,20 +158,20 @@ func (b *BusinessService) GetMobilierImage(w http.ResponseWriter, r *http.Reques
 		ProtectionComment:     mobilier.ProtectionCommentaires.String,
 		ConservationPlace:     mobilier.LieuConservation.String,
 		OriginPlace:           mobilier.LieuOrigine.String,
-		Authors:               collections.InterfaceToStringSlice(mobilier.Redacteurs),
-		City:                  mobilier.Commune.String,
-		Department:            mobilier.Departement.String,
-		Region:                mobilier.Region.String,
-		Country:               mobilier.Pays.String,
-		Conservation:          collections.InterfaceToStringSlice(mobilier.EtatsConservation),
-		Materials:             collections.InterfaceToStringSlice(mobilier.Materiaux),
-		Natures:               collections.InterfaceToStringSlice(mobilier.Natures),
+		Authors:               interfaceSliceToBasicFilterSlice(mobilier.Authors.([]any)),
+		City:                  city,
+		Department:            department,
+		Region:                region,
+		Country:               country,
+		Conservation:          interfaceSliceToBasicFilterSlice(mobilier.Conservation.([]any)),
+		Materials:             interfaceSliceToBasicFilterSlice(mobilier.Materials.([]any)),
+		Natures:               interfaceSliceToBasicFilterSlice(mobilier.Natures.([]any)),
 		Medias:                medias,
-		Centuries:             collections.InterfaceToStringSlice(mobilier.Siecles),
-		Techniques:            collections.InterfaceToStringSlice(mobilier.Techniques),
+		Centuries:             interfaceSliceToBasicFilterSlice(mobilier.Centuries.([]any)),
+		Techniques:            interfaceSliceToBasicFilterSlice(mobilier.Techniques.([]any)),
 		LinkedMonumentsPlaces: collections.InterfaceToInt32Slice(mobilier.MonumentsLieuxLiees),
 		LinkedIndividuals:     collections.InterfaceToInt32Slice(mobilier.PersonnesPhysiquesLiees),
 		LinkedLegalEntities:   collections.InterfaceToInt32Slice(mobilier.PersonnesMoralesLiees),
-		Themes:                collections.InterfaceToStringSlice(mobilier.Themes),
+		Themes:                interfaceSliceToBasicFilterSlice(mobilier.Themes.([]any)),
 	})
 }

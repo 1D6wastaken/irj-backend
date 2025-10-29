@@ -137,6 +137,11 @@ func (b *BusinessService) GetPersonneMorale(w http.ResponseWriter, r *http.Reque
 		})
 	}
 
+	city, department, region, country, err := parseLocation(pmo.City, pmo.Department, pmo.Region, pmo.Country)
+	if err != nil {
+		return _http.ErrInternalError.Msg("error while parsing location").Err(err)
+	}
+
 	return _http.WriteJSONResponse(w, http.StatusOK, api.PersonneMorale{
 		ID:                    pmo.ID,
 		Title:                 pmo.Title.String,
@@ -153,17 +158,17 @@ func (b *BusinessService) GetPersonneMorale(w http.ResponseWriter, r *http.Reque
 		Published:             pmo.Publie.Bool,
 		Contributors:          pmo.Contributeurs.String,
 		Comment:               pmo.Commentaires.String,
-		Authors:               collections.InterfaceToStringSlice(pmo.Redacteurs),
-		City:                  pmo.Commune.String,
-		Department:            pmo.Departement.String,
-		Region:                pmo.Region.String,
-		Country:               pmo.Pays.String,
-		Natures:               collections.InterfaceToStringSlice(pmo.Natures),
+		Authors:               interfaceSliceToBasicFilterSlice(pmo.Authors.([]any)),
+		City:                  city,
+		Department:            department,
+		Region:                region,
+		Country:               country,
+		Natures:               interfaceSliceToBasicFilterSlice(pmo.Natures.([]any)),
 		Medias:                medias,
-		Centuries:             collections.InterfaceToStringSlice(pmo.Siecles),
+		Centuries:             interfaceSliceToBasicFilterSlice(pmo.Centuries.([]any)),
 		LinkedMonumentsPlaces: collections.InterfaceToInt32Slice(pmo.MonumentsLieuxLiees),
 		LinkedIndividuals:     collections.InterfaceToInt32Slice(pmo.PersonnesPhysiquesLiees),
 		LinkedFurnitureImages: collections.InterfaceToInt32Slice(pmo.MobiliersImagesLiees),
-		Themes:                collections.InterfaceToStringSlice(pmo.Themes),
+		Themes:                interfaceSliceToBasicFilterSlice(pmo.Themes.([]any)),
 	})
 }

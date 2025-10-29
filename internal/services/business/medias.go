@@ -163,13 +163,9 @@ func (b *BusinessService) UploadImage(w http.ResponseWriter, r *http.Request) *_
 		return _http.ErrInternalError.Msg("Erreur copie fichier").Err(err)
 	}
 
-	mimeType := fileHeader.Header.Get("Content-Type")
-	if !strings.HasPrefix(mimeType, "image/") && mimeType != "" {
-		return _http.ErrBadRequest.Msg("Type de fichier non autorisé (jpeg, png, webp uniquement)")
-	}
-
-	if mimeType == "" {
-		mimeType = "application/octet-stream"
+	mimeType, apiError := extractMimeType(fileHeader)
+	if apiError != nil {
+		return apiError
 	}
 
 	title := r.FormValue("title")
@@ -194,4 +190,17 @@ func (b *BusinessService) UploadImage(w http.ResponseWriter, r *http.Request) *_
 		ID:    &id,
 		Title: &title,
 	})
+}
+
+func extractMimeType(fileHeader *multipart.FileHeader) (string, *_http.APIError) {
+	mimeType := fileHeader.Header.Get("Content-Type")
+	if !strings.HasPrefix(mimeType, "image/") && mimeType != "" {
+		return "", _http.ErrBadRequest.Msg("Type de fichier non autorisé (jpeg, png, webp uniquement)")
+	}
+
+	if mimeType == "" {
+		mimeType = "application/octet-stream"
+	}
+
+	return mimeType, nil
 }

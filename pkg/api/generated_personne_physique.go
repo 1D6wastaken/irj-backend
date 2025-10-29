@@ -7,6 +7,7 @@ package api
 
 import (
 	"context"
+	stderrors "errors"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -36,7 +37,7 @@ type PersonnePhysique struct {
 	Attestation string `json:"attestation,omitempty"`
 
 	// historical period
-	HistoricalPeriod []string `json:"historical_period"`
+	HistoricalPeriod []*BasicFilter `json:"historical_period"`
 
 	// bibliography of the individual
 	Bibliography string `json:"bibliography,omitempty"`
@@ -71,25 +72,25 @@ type PersonnePhysique struct {
 	Comment string `json:"comment,omitempty"`
 
 	// entry authors
-	Authors []string `json:"authors"`
+	Authors []*BasicFilter `json:"authors"`
 
 	// city of the individual
-	City string `json:"city,omitempty"`
+	City *BasicFilter `json:"city,omitempty"`
 
 	// department of the individual
-	Department string `json:"department,omitempty"`
+	Department *BasicFilter `json:"department,omitempty"`
 
 	// region of the individual
-	Region string `json:"region,omitempty"`
+	Region *BasicFilter `json:"region,omitempty"`
 
 	// country of the individual
-	Country string `json:"country,omitempty"`
+	Country *BasicFilter `json:"country,omitempty"`
 
 	// travels
-	Travels []string `json:"travels"`
+	Travels []*BasicFilter `json:"travels"`
 
 	// professions
-	Professions []string `json:"professions"`
+	Professions []*BasicFilter `json:"professions"`
 
 	// event nature
 	EventNature string `json:"event_nature,omitempty"`
@@ -98,7 +99,7 @@ type PersonnePhysique struct {
 	Medias []*Media `json:"medias"`
 
 	// time period of the monument lieu
-	Centuries []string `json:"centuries"`
+	Centuries []*BasicFilter `json:"centuries"`
 
 	// linked monuments places
 	LinkedMonumentsPlaces []int32 `json:"linked_monuments_places"`
@@ -110,12 +111,16 @@ type PersonnePhysique struct {
 	LinkedFurnitureImages []int32 `json:"linked_furniture_images"`
 
 	// themes
-	Themes []string `json:"themes"`
+	Themes []*BasicFilter `json:"themes"`
 }
 
 // Validate validates this personne physique
 func (m *PersonnePhysique) Validate(formats strfmt.Registry) error {
 	var res []error
+
+	if err := m.validateHistoricalPeriod(formats); err != nil {
+		res = append(res, err)
+	}
 
 	if err := m.validateCreationDate(formats); err != nil {
 		res = append(res, err)
@@ -125,13 +130,79 @@ func (m *PersonnePhysique) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateAuthors(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateCity(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateDepartment(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateRegion(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateCountry(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateTravels(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateProfessions(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateMedias(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateCenturies(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateThemes(formats); err != nil {
 		res = append(res, err)
 	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *PersonnePhysique) validateHistoricalPeriod(formats strfmt.Registry) error {
+	if swag.IsZero(m.HistoricalPeriod) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.HistoricalPeriod); i++ {
+		if swag.IsZero(m.HistoricalPeriod[i]) { // not required
+			continue
+		}
+
+		if m.HistoricalPeriod[i] != nil {
+			if err := m.HistoricalPeriod[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("historical_period" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("historical_period" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 
@@ -159,6 +230,188 @@ func (m *PersonnePhysique) validateUpdateDate(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *PersonnePhysique) validateAuthors(formats strfmt.Registry) error {
+	if swag.IsZero(m.Authors) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Authors); i++ {
+		if swag.IsZero(m.Authors[i]) { // not required
+			continue
+		}
+
+		if m.Authors[i] != nil {
+			if err := m.Authors[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("authors" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("authors" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *PersonnePhysique) validateCity(formats strfmt.Registry) error {
+	if swag.IsZero(m.City) { // not required
+		return nil
+	}
+
+	if m.City != nil {
+		if err := m.City.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("city")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("city")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PersonnePhysique) validateDepartment(formats strfmt.Registry) error {
+	if swag.IsZero(m.Department) { // not required
+		return nil
+	}
+
+	if m.Department != nil {
+		if err := m.Department.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("department")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("department")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PersonnePhysique) validateRegion(formats strfmt.Registry) error {
+	if swag.IsZero(m.Region) { // not required
+		return nil
+	}
+
+	if m.Region != nil {
+		if err := m.Region.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("region")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("region")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PersonnePhysique) validateCountry(formats strfmt.Registry) error {
+	if swag.IsZero(m.Country) { // not required
+		return nil
+	}
+
+	if m.Country != nil {
+		if err := m.Country.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("country")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("country")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PersonnePhysique) validateTravels(formats strfmt.Registry) error {
+	if swag.IsZero(m.Travels) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Travels); i++ {
+		if swag.IsZero(m.Travels[i]) { // not required
+			continue
+		}
+
+		if m.Travels[i] != nil {
+			if err := m.Travels[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("travels" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("travels" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *PersonnePhysique) validateProfessions(formats strfmt.Registry) error {
+	if swag.IsZero(m.Professions) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Professions); i++ {
+		if swag.IsZero(m.Professions[i]) { // not required
+			continue
+		}
+
+		if m.Professions[i] != nil {
+			if err := m.Professions[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("professions" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("professions" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
 func (m *PersonnePhysique) validateMedias(formats strfmt.Registry) error {
 	if swag.IsZero(m.Medias) { // not required
 		return nil
@@ -171,11 +424,75 @@ func (m *PersonnePhysique) validateMedias(formats strfmt.Registry) error {
 
 		if m.Medias[i] != nil {
 			if err := m.Medias[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
 					return ve.ValidateName("medias" + "." + strconv.Itoa(i))
-				} else if ce, ok := err.(*errors.CompositeError); ok {
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
 					return ce.ValidateName("medias" + "." + strconv.Itoa(i))
 				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *PersonnePhysique) validateCenturies(formats strfmt.Registry) error {
+	if swag.IsZero(m.Centuries) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Centuries); i++ {
+		if swag.IsZero(m.Centuries[i]) { // not required
+			continue
+		}
+
+		if m.Centuries[i] != nil {
+			if err := m.Centuries[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("centuries" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("centuries" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *PersonnePhysique) validateThemes(formats strfmt.Registry) error {
+	if swag.IsZero(m.Themes) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Themes); i++ {
+		if swag.IsZero(m.Themes[i]) { // not required
+			continue
+		}
+
+		if m.Themes[i] != nil {
+			if err := m.Themes[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("themes" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("themes" + "." + strconv.Itoa(i))
+				}
+
 				return err
 			}
 		}
@@ -189,13 +506,269 @@ func (m *PersonnePhysique) validateMedias(formats strfmt.Registry) error {
 func (m *PersonnePhysique) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateHistoricalPeriod(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateAuthors(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateCity(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateDepartment(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateRegion(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateCountry(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateTravels(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateProfessions(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateMedias(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateCenturies(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateThemes(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *PersonnePhysique) contextValidateHistoricalPeriod(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.HistoricalPeriod); i++ {
+
+		if m.HistoricalPeriod[i] != nil {
+
+			if swag.IsZero(m.HistoricalPeriod[i]) { // not required
+				return nil
+			}
+
+			if err := m.HistoricalPeriod[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("historical_period" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("historical_period" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *PersonnePhysique) contextValidateAuthors(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Authors); i++ {
+
+		if m.Authors[i] != nil {
+
+			if swag.IsZero(m.Authors[i]) { // not required
+				return nil
+			}
+
+			if err := m.Authors[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("authors" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("authors" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *PersonnePhysique) contextValidateCity(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.City != nil {
+
+		if swag.IsZero(m.City) { // not required
+			return nil
+		}
+
+		if err := m.City.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("city")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("city")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PersonnePhysique) contextValidateDepartment(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Department != nil {
+
+		if swag.IsZero(m.Department) { // not required
+			return nil
+		}
+
+		if err := m.Department.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("department")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("department")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PersonnePhysique) contextValidateRegion(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Region != nil {
+
+		if swag.IsZero(m.Region) { // not required
+			return nil
+		}
+
+		if err := m.Region.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("region")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("region")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PersonnePhysique) contextValidateCountry(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Country != nil {
+
+		if swag.IsZero(m.Country) { // not required
+			return nil
+		}
+
+		if err := m.Country.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("country")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("country")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PersonnePhysique) contextValidateTravels(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Travels); i++ {
+
+		if m.Travels[i] != nil {
+
+			if swag.IsZero(m.Travels[i]) { // not required
+				return nil
+			}
+
+			if err := m.Travels[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("travels" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("travels" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *PersonnePhysique) contextValidateProfessions(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Professions); i++ {
+
+		if m.Professions[i] != nil {
+
+			if swag.IsZero(m.Professions[i]) { // not required
+				return nil
+			}
+
+			if err := m.Professions[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("professions" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("professions" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 
@@ -210,11 +783,73 @@ func (m *PersonnePhysique) contextValidateMedias(ctx context.Context, formats st
 			}
 
 			if err := m.Medias[i].ContextValidate(ctx, formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
 					return ve.ValidateName("medias" + "." + strconv.Itoa(i))
-				} else if ce, ok := err.(*errors.CompositeError); ok {
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
 					return ce.ValidateName("medias" + "." + strconv.Itoa(i))
 				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *PersonnePhysique) contextValidateCenturies(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Centuries); i++ {
+
+		if m.Centuries[i] != nil {
+
+			if swag.IsZero(m.Centuries[i]) { // not required
+				return nil
+			}
+
+			if err := m.Centuries[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("centuries" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("centuries" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *PersonnePhysique) contextValidateThemes(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Themes); i++ {
+
+		if m.Themes[i] != nil {
+
+			if swag.IsZero(m.Themes[i]) { // not required
+				return nil
+			}
+
+			if err := m.Themes[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("themes" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("themes" + "." + strconv.Itoa(i))
+				}
+
 				return err
 			}
 		}

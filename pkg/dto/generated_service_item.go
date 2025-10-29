@@ -45,7 +45,7 @@ func (m *ServiceItem) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-var serviceItemTypeStatusPropEnum []interface{}
+var serviceItemTypeStatusPropEnum []any
 
 func init() {
 	var res []string

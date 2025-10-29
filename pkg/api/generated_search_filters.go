@@ -7,6 +7,7 @@ package api
 
 import (
 	"context"
+	stderrors "errors"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -79,11 +80,15 @@ func (m *SearchFilters) validateMobiliersImages(formats strfmt.Registry) error {
 
 	if m.MobiliersImages != nil {
 		if err := m.MobiliersImages.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("mobiliers_images")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("mobiliers_images")
 			}
+
 			return err
 		}
 	}
@@ -98,11 +103,15 @@ func (m *SearchFilters) validateMonumentsLieux(formats strfmt.Registry) error {
 
 	if m.MonumentsLieux != nil {
 		if err := m.MonumentsLieux.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("monuments_lieux")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("monuments_lieux")
 			}
+
 			return err
 		}
 	}
@@ -117,11 +126,15 @@ func (m *SearchFilters) validatePersMorales(formats strfmt.Registry) error {
 
 	if m.PersMorales != nil {
 		if err := m.PersMorales.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("pers_morales")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("pers_morales")
 			}
+
 			return err
 		}
 	}
@@ -136,11 +149,15 @@ func (m *SearchFilters) validatePersPhysiques(formats strfmt.Registry) error {
 
 	if m.PersPhysiques != nil {
 		if err := m.PersPhysiques.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("pers_physiques")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("pers_physiques")
 			}
+
 			return err
 		}
 	}
@@ -183,11 +200,15 @@ func (m *SearchFilters) contextValidateMobiliersImages(ctx context.Context, form
 		}
 
 		if err := m.MobiliersImages.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("mobiliers_images")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("mobiliers_images")
 			}
+
 			return err
 		}
 	}
@@ -204,11 +225,15 @@ func (m *SearchFilters) contextValidateMonumentsLieux(ctx context.Context, forma
 		}
 
 		if err := m.MonumentsLieux.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("monuments_lieux")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("monuments_lieux")
 			}
+
 			return err
 		}
 	}
@@ -225,11 +250,15 @@ func (m *SearchFilters) contextValidatePersMorales(ctx context.Context, formats 
 		}
 
 		if err := m.PersMorales.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("pers_morales")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("pers_morales")
 			}
+
 			return err
 		}
 	}
@@ -246,11 +275,15 @@ func (m *SearchFilters) contextValidatePersPhysiques(ctx context.Context, format
 		}
 
 		if err := m.PersPhysiques.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("pers_physiques")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("pers_physiques")
 			}
+
 			return err
 		}
 	}

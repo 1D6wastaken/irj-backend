@@ -6,7 +6,7 @@ toolchain go1.24.6
 
 require (
 	github.com/go-co-op/gocron v1.37.0
-	github.com/go-jose/go-jose/v4 v4.1.2
+	github.com/go-jose/go-jose/v4 v4.1.0
 	github.com/go-openapi/errors v0.22.2
 	github.com/go-openapi/strfmt v0.23.0
 	github.com/go-openapi/swag v0.23.1
@@ -17,8 +17,8 @@ require (
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/rs/zerolog v1.34.0
-	golang.org/x/crypto v0.41.0
-	golang.org/x/exp v0.0.0-20250819193227-8b4c13bb791b
+	golang.org/x/crypto v0.38.0
+	golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -42,7 +42,7 @@ require (
 	github.com/rogpeppe/go-internal v1.13.1 // indirect
 	go.mongodb.org/mongo-driver v1.17.4 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
-	golang.org/x/sync v0.16.0 // indirect
-	golang.org/x/sys v0.35.0 // indirect
-	golang.org/x/text v0.28.0 // indirect
+	golang.org/x/sync v0.17.0 // indirect
+	golang.org/x/sys v0.37.0 // indirect
+	golang.org/x/text v0.25.0 // indirect
 )

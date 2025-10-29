@@ -250,9 +250,15 @@ func addAuteurToPersonnePhysique(ctx context.Context, s *BusinessService, exData
 	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			id, err = s.postgresService.Queries.CreateAuteur(ctx, pgtype.Text{
-				String: user.Prenom + " " + user.Nom,
-				Valid:  true,
+			id, err = s.postgresService.Queries.CreateAuteur(ctx, queries.CreateAuteurParams{
+				Name: pgtype.Text{
+					String: user.Prenom + " " + user.Nom,
+					Valid:  true,
+				},
+				UserID: pgtype.Text{
+					String: exData.token.ID,
+					Valid:  true,
+				},
 			})
 			if err != nil {
 				exData.logger.Error().Err(err).Msg("failed to create author")

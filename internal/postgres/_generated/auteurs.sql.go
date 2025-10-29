@@ -12,20 +12,25 @@ import (
 )
 
 const createAuteur = `-- name: CreateAuteur :one
-INSERT INTO bib_auteurs (auteur_fiche_nom)
-VALUES ($1)
+INSERT INTO bib_auteurs (auteur_fiche_nom, user_id)
+VALUES ($1, $2)
 RETURNING id_auteur_fiche
 `
 
-func (q *Queries) CreateAuteur(ctx context.Context, name pgtype.Text) (int32, error) {
-	row := q.db.QueryRow(ctx, createAuteur, name)
+type CreateAuteurParams struct {
+	Name   pgtype.Text
+	UserID pgtype.Text
+}
+
+func (q *Queries) CreateAuteur(ctx context.Context, arg CreateAuteurParams) (int32, error) {
+	row := q.db.QueryRow(ctx, createAuteur, arg.Name, arg.UserID)
 	var id_auteur_fiche int32
 	err := row.Scan(&id_auteur_fiche)
 	return id_auteur_fiche, err
 }
 
 const getAuteurByName = `-- name: GetAuteurByName :one
-SELECT id_auteur_fiche, auteur_fiche_nom
+SELECT id_auteur_fiche, auteur_fiche_nom, user_id
 FROM bib_auteurs
 WHERE auteur_fiche_nom = $1
 `
@@ -33,6 +38,19 @@ WHERE auteur_fiche_nom = $1
 func (q *Queries) GetAuteurByName(ctx context.Context, auteurFicheNom pgtype.Text) (BibAuteur, error) {
 	row := q.db.QueryRow(ctx, getAuteurByName, auteurFicheNom)
 	var i BibAuteur
-	err := row.Scan(&i.IDAuteurFiche, &i.AuteurFicheNom)
+	err := row.Scan(&i.IDAuteurFiche, &i.AuteurFicheNom, &i.UserID)
+	return i, err
+}
+
+const getAuteurByUserID = `-- name: GetAuteurByUserID :one
+SELECT id_auteur_fiche, auteur_fiche_nom, user_id
+FROM bib_auteurs
+WHERE user_id = $1
+`
+
+func (q *Queries) GetAuteurByUserID(ctx context.Context, userID pgtype.Text) (BibAuteur, error) {
+	row := q.db.QueryRow(ctx, getAuteurByUserID, userID)
+	var i BibAuteur
+	err := row.Scan(&i.IDAuteurFiche, &i.AuteurFicheNom, &i.UserID)
 	return i, err
 }

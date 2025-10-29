@@ -7,6 +7,7 @@ package api
 
 import (
 	"context"
+	stderrors "errors"
 	"strconv"
 
 	"github.com/go-openapi/errors"
@@ -112,11 +113,15 @@ func (m *ListItem) validateMedias(formats strfmt.Registry) error {
 
 		if m.Medias[i] != nil {
 			if err := m.Medias[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
 					return ve.ValidateName("medias" + "." + strconv.Itoa(i))
-				} else if ce, ok := err.(*errors.CompositeError); ok {
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
 					return ce.ValidateName("medias" + "." + strconv.Itoa(i))
 				}
+
 				return err
 			}
 		}
@@ -151,11 +156,15 @@ func (m *ListItem) contextValidateMedias(ctx context.Context, formats strfmt.Reg
 			}
 
 			if err := m.Medias[i].ContextValidate(ctx, formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
 					return ve.ValidateName("medias" + "." + strconv.Itoa(i))
-				} else if ce, ok := err.(*errors.CompositeError); ok {
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
 					return ce.ValidateName("medias" + "." + strconv.Itoa(i))
 				}
+
 				return err
 			}
 		}

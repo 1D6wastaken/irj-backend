@@ -10,92 +10,70 @@ import (
 )
 
 const searchGlobal = `-- name: SearchGlobal :many
-WITH
+WITH query AS (SELECT unnest(string_to_array(lower($1), ' ')) AS term),
 
-query AS (SELECT unnest(string_to_array(lower($1), ' ')) AS term),
+     in_communes AS (SELECT unnest(coalesce($5::int[], ARRAY []::int[])) AS id_commune),
+     in_departements AS (SELECT unnest(coalesce($6::int[], ARRAY []::int[])) AS id_departement),
+     in_regions AS (SELECT unnest(coalesce($7::int[], ARRAY []::int[])) AS id_region),
+     in_pays AS (SELECT unnest(coalesce($4::int[], ARRAY []::int[])) AS id_pays),
 
-in_communes AS (
-    SELECT unnest(coalesce($5::int[], ARRAY[]::int[])) AS id_commune
-),
-in_departements AS (
-    SELECT unnest(coalesce($6::int[], ARRAY[]::int[])) AS id_departement
-),
-in_regions AS (
-    SELECT unnest(coalesce($7::int[], ARRAY[]::int[])) AS id_region
-),
-in_pays AS (
-    SELECT unnest(coalesce($4::int[], ARRAY[]::int[])) AS id_pays
-),
+     depts_from_communes AS (SELECT DISTINCT c.id_departement
+                             FROM loc_communes c
+                             WHERE c.id_commune IN (SELECT id_commune FROM in_communes)),
 
-depts_from_communes AS (
-    SELECT DISTINCT c.id_departement
-    FROM loc_communes c
-    WHERE c.id_commune IN (SELECT id_commune FROM in_communes)
-),
+     regions_from_communes AS (SELECT DISTINCT d.id_region
+                               FROM loc_departements d
+                               WHERE d.id_departement IN (SELECT id_departement FROM depts_from_communes)),
 
-regions_from_communes AS (
-    SELECT DISTINCT d.id_region
-    FROM loc_departements d
-    WHERE d.id_departement IN (SELECT id_departement FROM depts_from_communes)
-),
+     regions_from_departements AS (SELECT DISTINCT d.id_region
+                                   FROM loc_departements d
+                                   WHERE d.id_departement IN (SELECT id_departement FROM in_departements)),
 
-regions_from_departements AS (
-    SELECT DISTINCT d.id_region
-    FROM loc_departements d
-    WHERE d.id_departement IN (SELECT id_departement FROM in_departements)
-),
+     regions_covered AS (SELECT id_region
+                         FROM regions_from_communes
+                         UNION
+                         SELECT id_region
+                         FROM regions_from_departements),
 
-regions_covered AS (
-    SELECT id_region FROM regions_from_communes
-    UNION
-    SELECT id_region FROM regions_from_departements
-),
+     effective_communes AS (SELECT id_commune
+                            FROM in_communes),
+     effective_departements AS (SELECT id_departement
+                                FROM in_departements
+                                EXCEPT
+                                SELECT id_departement
+                                FROM depts_from_communes),
+     effective_regions AS (SELECT id_region
+                           FROM in_regions
+                           EXCEPT
+                           SELECT id_region
+                           FROM regions_covered),
 
-effective_communes AS (
-    SELECT id_commune FROM in_communes
-),
-effective_departements AS (
-    SELECT id_departement FROM in_departements
-    EXCEPT
-    SELECT id_departement FROM depts_from_communes
-),
-effective_regions AS (
-    SELECT id_region FROM in_regions
-    EXCEPT
-    SELECT id_region FROM regions_covered
-),
+     countries_from_communes AS (SELECT DISTINCT r.id_pays
+                                 FROM loc_departements d
+                                          JOIN loc_regions r ON d.id_region = r.id_region
+                                 WHERE d.id_departement IN (SELECT id_departement FROM depts_from_communes)),
+     countries_from_departements AS (SELECT DISTINCT r.id_pays
+                                     FROM loc_departements d
+                                              JOIN loc_regions r ON d.id_region = r.id_region
+                                     WHERE d.id_departement IN (SELECT id_departement FROM in_departements)),
+     countries_from_regions AS (SELECT DISTINCT r.id_pays
+                                FROM loc_regions r
+                                WHERE r.id_region IN (SELECT id_region FROM in_regions)),
 
-countries_from_communes AS (
-    SELECT DISTINCT r.id_pays
-    FROM loc_departements d
-             JOIN loc_regions r ON d.id_region = r.id_region
-    WHERE d.id_departement IN (SELECT id_departement FROM depts_from_communes)
-),
-countries_from_departements AS (
-    SELECT DISTINCT r.id_pays
-    FROM loc_departements d
-             JOIN loc_regions r ON d.id_region = r.id_region
-    WHERE d.id_departement IN (SELECT id_departement FROM in_departements)
-),
-countries_from_regions AS (
-    SELECT DISTINCT r.id_pays
-    FROM loc_regions r
-    WHERE r.id_region IN (SELECT id_region FROM in_regions)
-),
+     countries_covered AS (SELECT id_pays
+                           FROM countries_from_communes
+                           UNION
+                           SELECT id_pays
+                           FROM countries_from_departements
+                           UNION
+                           SELECT id_pays
+                           FROM countries_from_regions),
 
-countries_covered AS (
-    SELECT id_pays FROM countries_from_communes
-    UNION
-    SELECT id_pays FROM countries_from_departements
-    UNION
-    SELECT id_pays FROM countries_from_regions
-),
-
-effective_countries AS (
-    SELECT id_pays FROM in_pays
-    EXCEPT
-    SELECT id_pays FROM countries_covered
-)
+     effective_countries AS (SELECT id_pays
+                             FROM in_pays
+                             EXCEPT
+                             SELECT id_pays
+                             FROM countries_covered)
 
 SELECT id, title, siecles, natures, medias, professions, source, score, COUNT(*) OVER () AS total_count
 FROM (
@@ -132,8 +110,8 @@ FROM (
                 similarity(m.titre_monu_lieu, $1) AS score
          FROM t_monuments_lieux m
                   LEFT JOIN loc_communes mc ON mc.id_commune = m.id_commune
-                  LEFT JOIN loc_departements md ON md.id_departement = mc.id_departement
-                  LEFT JOIN loc_regions mr ON mr.id_region = md.id_region
+                  LEFT JOIN loc_departements md ON md.id_departement = COALESCE(m.id_departement, mc.id_departement)
+                  LEFT JOIN loc_regions mr ON mr.id_region = COALESCE(m.id_region, md.id_region)
                   LEFT JOIN loc_pays mp ON mp.id_pays = m.id_pays
                   LEFT JOIN cor_siecles_monu_lieu csm ON csm.monument_lieu_id = m.id_monument_lieu
                   LEFT JOIN bib_siecle bs ON bs.id_siecle = csm.siecle_monu_lieu_id
@@ -159,28 +137,41 @@ FROM (
                  OR
                  -- correspond à un département sélectionné (via la commune associée)
              (EXISTS (SELECT 1 FROM effective_departements)
-                 AND m.id_commune IN (SELECT id_commune FROM loc_communes WHERE id_departement IN (SELECT id_departement FROM effective_departements)))
+                 AND (
+                  m.id_departement IN (SELECT id_departement FROM effective_departements)
+                      OR m.id_commune IN (SELECT id_commune
+                                          FROM loc_communes
+                                          WHERE id_departement IN (SELECT id_departement FROM effective_departements))
+                  ))
                  OR
                  -- correspond à une région sélectionnée (via la chaine commune->departement->region)
              (EXISTS (SELECT 1 FROM effective_regions)
-                 AND m.id_commune IN (
-                     SELECT c.id_commune
-                     FROM loc_communes c
-                              JOIN loc_departements d ON c.id_departement = d.id_departement
-                     WHERE d.id_region IN (SELECT id_region FROM effective_regions)
-                 ))
+                 AND (
+                  m.id_region IN (SELECT id_region FROM effective_regions)
+                      OR m.id_departement IN (SELECT id_departement
+                                              FROM loc_departements
+                                              WHERE id_region IN (SELECT id_region FROM effective_regions))
+                      OR m.id_commune IN (SELECT c.id_commune
+                                          FROM loc_communes c
+                                                   JOIN loc_departements d ON c.id_departement = d.id_departement
+                                          WHERE d.id_region IN (SELECT id_region FROM effective_regions))
+                  ))
                  OR
                  -- correspond à un pays sélectionné (soit id_pays renseigné sur l'enregistrement, soit via la commune -> dept -> region -> pays)
              (EXISTS (SELECT 1 FROM effective_countries)
                  AND (
                   m.id_pays IN (SELECT id_pays FROM effective_countries)
-                      OR m.id_commune IN (
-                      SELECT c.id_commune
-                      FROM loc_communes c
-                               JOIN loc_departements d ON c.id_departement = d.id_departement
-                               JOIN loc_regions r ON d.id_region = r.id_region
-                      WHERE r.id_pays IN (SELECT id_pays FROM effective_countries)
-                  )
+                      OR m.id_region IN
+                         (SELECT id_region FROM loc_regions WHERE id_pays IN (SELECT id_pays FROM effective_countries))
+                      OR m.id_departement IN (SELECT id_departement
+                                              FROM loc_departements d
+                                                       JOIN loc_regions r ON d.id_region = r.id_region
+                                              WHERE r.id_pays IN (SELECT id_pays FROM effective_countries))
+                      OR m.id_commune IN (SELECT c.id_commune
+                                          FROM loc_communes c
+                                                   JOIN loc_departements d ON c.id_departement = d.id_departement
+                                                   JOIN loc_regions r ON d.id_region = r.id_region
+                                          WHERE r.id_pays IN (SELECT id_pays FROM effective_countries))
                   ))
              )
            AND ($8::int[] IS NULL OR cardinality($8::int[]) = 0 OR
@@ -227,8 +218,9 @@ FROM (
                 similarity(mob.titre_mob_img, $1) AS score
          FROM t_mobiliers_images mob
                   LEFT JOIN loc_communes mobc ON mobc.id_commune = mob.id_commune
-                  LEFT JOIN loc_departements mobd ON mobd.id_departement = mobc.id_departement
-                  LEFT JOIN loc_regions mobr ON mobr.id_region = mobd.id_region
+                  LEFT JOIN loc_departements mobd
+                            ON mobd.id_departement = COALESCE(mob.id_departement, mobc.id_departement)
+                  LEFT JOIN loc_regions mobr ON mobr.id_region = COALESCE(mob.id_region, mobd.id_region)
                   LEFT JOIN loc_pays mobp ON mobp.id_pays = mob.id_pays
                   LEFT JOIN cor_siecles_mob_img csm ON csm.mobilier_image_id = mob.id_mobilier_image
                   LEFT JOIN bib_siecle bs ON bs.id_siecle = csm.siecle_mob_img_id
@@ -251,32 +243,46 @@ FROM (
                  AND COALESCE(cardinality($7::int[]), 0) = 0)
                  OR
                  -- correspond à une commune explicitement sélectionnée
-             (EXISTS (SELECT 1 FROM effective_communes) AND mob.id_commune IN (SELECT id_commune FROM effective_communes))
+             (EXISTS (SELECT 1 FROM effective_communes) AND
+              mob.id_commune IN (SELECT id_commune FROM effective_communes))
                  OR
                  -- correspond à un département sélectionné (via la commune associée)
              (EXISTS (SELECT 1 FROM effective_departements)
-                 AND mob.id_commune IN (SELECT id_commune FROM loc_communes WHERE id_departement IN (SELECT id_departement FROM effective_departements)))
+                 AND (
+                  mob.id_departement IN (SELECT id_departement FROM effective_departements)
+                      OR mob.id_commune IN (SELECT id_commune
+                                            FROM loc_communes
+                                            WHERE id_departement IN (SELECT id_departement FROM effective_departements))
+                  ))
                  OR
                  -- correspond à une région sélectionnée (via la chaine commune->departement->region)
              (EXISTS (SELECT 1 FROM effective_regions)
-                 AND mob.id_commune IN (
-                     SELECT c.id_commune
-                     FROM loc_communes c
-                              JOIN loc_departements d ON c.id_departement = d.id_departement
-                     WHERE d.id_region IN (SELECT id_region FROM effective_regions)
-                 ))
+                 AND (
+                  mob.id_region IN (SELECT id_region FROM effective_regions)
+                      OR mob.id_departement IN (SELECT id_departement
+                                                FROM loc_departements
+                                                WHERE id_region IN (SELECT id_region FROM effective_regions))
+                      OR mob.id_commune IN (SELECT c.id_commune
+                                            FROM loc_communes c
+                                                     JOIN loc_departements d ON c.id_departement = d.id_departement
+                                            WHERE d.id_region IN (SELECT id_region FROM effective_regions))
+                  ))
                  OR
                  -- correspond à un pays sélectionné (soit id_pays renseigné sur l'enregistrement, soit via la commune -> dept -> region -> pays)
              (EXISTS (SELECT 1 FROM effective_countries)
                  AND (
                   mob.id_pays IN (SELECT id_pays FROM effective_countries)
-                      OR mob.id_commune IN (
-                      SELECT c.id_commune
-                      FROM loc_communes c
-                               JOIN loc_departements d ON c.id_departement = d.id_departement
-                               JOIN loc_regions r ON d.id_region = r.id_region
-                      WHERE r.id_pays IN (SELECT id_pays FROM effective_countries)
-                  )
+                      OR mob.id_region IN
+                         (SELECT id_region FROM loc_regions WHERE id_pays IN (SELECT id_pays FROM effective_countries))
+                      OR mob.id_departement IN (SELECT id_departement
+                                                FROM loc_departements d
+                                                         JOIN loc_regions r ON d.id_region = r.id_region
+                                                WHERE r.id_pays IN (SELECT id_pays FROM effective_countries))
+                      OR mob.id_commune IN (SELECT c.id_commune
+                                            FROM loc_communes c
+                                                     JOIN loc_departements d ON c.id_departement = d.id_departement
+                                                     JOIN loc_regions r ON d.id_region = r.id_region
+                                            WHERE r.id_pays IN (SELECT id_pays FROM effective_countries))
                   ))
              )
            AND ($12::int[] IS NULL OR cardinality($12::int[]) = 0 OR
@@ -325,8 +331,8 @@ FROM (
                 similarity(pm.titre_pers_mo, $1) AS score
          FROM t_pers_morales pm
                   LEFT JOIN loc_communes pmc ON pmc.id_commune = pm.id_commune
-                  LEFT JOIN loc_departements pmd ON pmd.id_departement = pmc.id_departement
-                  LEFT JOIN loc_regions pmr ON pmr.id_region = pmd.id_region
+                  LEFT JOIN loc_departements pmd ON pmd.id_departement = COALESCE(pm.id_departement, pmc.id_departement)
+                  LEFT JOIN loc_regions pmr ON pmr.id_region = COALESCE(pm.id_region, pmd.id_region)
                   LEFT JOIN loc_pays pmp ON pmp.id_pays = pm.id_pays
                   LEFT JOIN cor_siecles_pers_mo csp ON csp.pers_morale_id = pm.id_pers_morale
                   LEFT JOIN bib_siecle bs ON bs.id_siecle = csp.siecle_pers_mo_id
@@ -346,32 +352,46 @@ FROM (
                  AND COALESCE(cardinality($7::int[]), 0) = 0)
                  OR
                  -- correspond à une commune explicitement sélectionnée
-             (EXISTS (SELECT 1 FROM effective_communes) AND pm.id_commune IN (SELECT id_commune FROM effective_communes))
+             (EXISTS (SELECT 1 FROM effective_communes) AND
+              pm.id_commune IN (SELECT id_commune FROM effective_communes))
                  OR
                  -- correspond à un département sélectionné (via la commune associée)
              (EXISTS (SELECT 1 FROM effective_departements)
-                 AND pm.id_commune IN (SELECT id_commune FROM loc_communes WHERE id_departement IN (SELECT id_departement FROM effective_departements)))
+                 AND (
+                  pm.id_departement IN (SELECT id_departement FROM effective_departements)
+                      OR pm.id_commune IN (SELECT id_commune
+                                           FROM loc_communes
+                                           WHERE id_departement IN (SELECT id_departement FROM effective_departements))
+                  ))
                  OR
                  -- correspond à une région sélectionnée (via la chaine commune->departement->region)
              (EXISTS (SELECT 1 FROM effective_regions)
-                 AND pm.id_commune IN (
-                     SELECT c.id_commune
-                     FROM loc_communes c
-                              JOIN loc_departements d ON c.id_departement = d.id_departement
-                     WHERE d.id_region IN (SELECT id_region FROM effective_regions)
-                 ))
+                 AND (
+                  pm.id_region IN (SELECT id_region FROM effective_regions)
+                      OR pm.id_departement IN (SELECT id_departement
+                                               FROM loc_departements
+                                               WHERE id_region IN (SELECT id_region FROM effective_regions))
+                      OR pm.id_commune IN (SELECT c.id_commune
+                                           FROM loc_communes c
+                                                    JOIN loc_departements d ON c.id_departement = d.id_departement
+                                           WHERE d.id_region IN (SELECT id_region FROM effective_regions))
+                  ))
                  OR
                  -- correspond à un pays sélectionné (soit id_pays renseigné sur l'enregistrement, soit via la commune -> dept -> region -> pays)
              (EXISTS (SELECT 1 FROM effective_countries)
                  AND (
                   pm.id_pays IN (SELECT id_pays FROM effective_countries)
-                      OR pm.id_commune IN (
-                      SELECT c.id_commune
-                      FROM loc_communes c
-                               JOIN loc_departements d ON c.id_departement = d.id_departement
-                               JOIN loc_regions r ON d.id_region = r.id_region
-                      WHERE r.id_pays IN (SELECT id_pays FROM effective_countries)
-                  )
+                      OR pm.id_region IN
+                         (SELECT id_region FROM loc_regions WHERE id_pays IN (SELECT id_pays FROM effective_countries))
+                      OR pm.id_departement IN (SELECT id_departement
+                                               FROM loc_departements d
+                                                        JOIN loc_regions r ON d.id_region = r.id_region
+                                               WHERE r.id_pays IN (SELECT id_pays FROM effective_countries))
+                      OR pm.id_commune IN (SELECT c.id_commune
+                                           FROM loc_communes c
+                                                    JOIN loc_departements d ON c.id_departement = d.id_departement
+                                                    JOIN loc_regions r ON d.id_region = r.id_region
+                                           WHERE r.id_pays IN (SELECT id_pays FROM effective_countries))
                   ))
              )
            AND ($17::int[] IS NULL OR cardinality($17::int[]) = 0 OR
@@ -414,8 +434,8 @@ FROM (
                 similarity(pp.prenom_nom_pers_phy, $1) AS score
          FROM t_pers_physiques pp
                   LEFT JOIN loc_communes ppc ON ppc.id_commune = pp.id_commune
-                  LEFT JOIN loc_departements ppd ON ppd.id_departement = ppc.id_departement
-                  LEFT JOIN loc_regions ppr ON ppr.id_region = ppd.id_region
+                  LEFT JOIN loc_departements ppd ON ppd.id_departement = COALESCE(pp.id_departement, ppc.id_departement)
+                  LEFT JOIN loc_regions ppr ON ppr.id_region = COALESCE(pp.id_region, ppd.id_region)
                   LEFT JOIN loc_pays ppp ON ppp.id_pays = pp.id_pays
                   LEFT JOIN cor_siecles_pers_phy csp ON csp.pers_physique_id = pp.id_pers_physique
                   LEFT JOIN bib_siecle bs ON bs.id_siecle = csp.siecle_pers_phy_id
@@ -436,32 +456,46 @@ FROM (
                  AND COALESCE(cardinality($7::int[]), 0) = 0)
                  OR
                  -- correspond à une commune explicitement sélectionnée
-             (EXISTS (SELECT 1 FROM effective_communes) AND pp.id_commune IN (SELECT id_commune FROM effective_communes))
+             (EXISTS (SELECT 1 FROM effective_communes) AND
+              pp.id_commune IN (SELECT id_commune FROM effective_communes))
                  OR
                  -- correspond à un département sélectionné (via la commune associée)
              (EXISTS (SELECT 1 FROM effective_departements)
-                 AND pp.id_commune IN (SELECT id_commune FROM loc_communes WHERE id_departement IN (SELECT id_departement FROM effective_departements)))
+                 AND (
+                  pp.id_departement IN (SELECT id_departement FROM effective_departements)
+                      OR pp.id_commune IN (SELECT id_commune
+                                           FROM loc_communes
+                                           WHERE id_departement IN (SELECT id_departement FROM effective_departements))
+                  ))
                  OR
                  -- correspond à une région sélectionnée (via la chaine commune->departement->region)
              (EXISTS (SELECT 1 FROM effective_regions)
-                 AND pp.id_commune IN (
-                     SELECT c.id_commune
-                     FROM loc_communes c
-                              JOIN loc_departements d ON c.id_departement = d.id_departement
-                     WHERE d.id_region IN (SELECT id_region FROM effective_regions)
-                 ))
+                 AND (
+                  pp.id_region IN (SELECT id_region FROM effective_regions)
+                      OR pp.id_departement IN (SELECT id_departement
+                                               FROM loc_departements
+                                               WHERE id_region IN (SELECT id_region FROM effective_regions))
+                      OR pp.id_commune IN (SELECT c.id_commune
+                                           FROM loc_communes c
+                                                    JOIN loc_departements d ON c.id_departement = d.id_departement
+                                           WHERE d.id_region IN (SELECT id_region FROM effective_regions))
+                  ))
                  OR
                  -- correspond à un pays sélectionné (soit id_pays renseigné sur l'enregistrement, soit via la commune -> dept -> region -> pays)
              (EXISTS (SELECT 1 FROM effective_countries)
                  AND (
                   pp.id_pays IN (SELECT id_pays FROM effective_countries)
-                      OR pp.id_commune IN (
-                      SELECT c.id_commune
-                      FROM loc_communes c
-                               JOIN loc_departements d ON c.id_departement = d.id_departement
-                               JOIN loc_regions r ON d.id_region = r.id_region
-                      WHERE r.id_pays IN (SELECT id_pays FROM effective_countries)
-                  )
+                      OR pp.id_region IN
+                         (SELECT id_region FROM loc_regions WHERE id_pays IN (SELECT id_pays FROM effective_countries))
+                      OR pp.id_departement IN (SELECT id_departement
+                                               FROM loc_departements d
+                                                        JOIN loc_regions r ON d.id_region = r.id_region
+                                               WHERE r.id_pays IN (SELECT id_pays FROM effective_countries))
+                      OR pp.id_commune IN (SELECT c.id_commune
+                                           FROM loc_communes c
+                                                    JOIN loc_departements d ON c.id_departement = d.id_departement
+                                                    JOIN loc_regions r ON d.id_region = r.id_region
+                                           WHERE r.id_pays IN (SELECT id_pays FROM effective_countries))
                   ))
              )
            AND ($19::int[] IS NULL OR cardinality($19::int[]) = 0 OR
@@ -577,88 +611,68 @@ func (q *Queries) SearchGlobal(ctx context.Context, arg SearchGlobalParams) ([]S
 
 const searchGlobalNoText = `-- name: SearchGlobalNoText :many
 WITH
-in_communes AS (
-    SELECT unnest(coalesce($4::int[], ARRAY[]::int[])) AS id_commune
-),
-in_departements AS (
-    SELECT unnest(coalesce($5::int[], ARRAY[]::int[])) AS id_departement
-),
-in_regions AS (
-    SELECT unnest(coalesce($6::int[], ARRAY[]::int[])) AS id_region
-),
-in_pays AS (
-    SELECT unnest(coalesce($3::int[], ARRAY[]::int[])) AS id_pays
-),
+in_communes AS (SELECT unnest(coalesce($4::int[], ARRAY []::int[])) AS id_commune),
+in_departements AS (SELECT unnest(coalesce($5::int[], ARRAY []::int[])) AS id_departement),
+in_regions AS (SELECT unnest(coalesce($6::int[], ARRAY []::int[])) AS id_region),
+in_pays AS (SELECT unnest(coalesce($3::int[], ARRAY []::int[])) AS id_pays),
 
-depts_from_communes AS (
-    SELECT DISTINCT c.id_departement
-    FROM loc_communes c
-    WHERE c.id_commune IN (SELECT id_commune FROM in_communes)
-),
+depts_from_communes AS (SELECT DISTINCT c.id_departement
+                        FROM loc_communes c
+                        WHERE c.id_commune IN (SELECT id_commune FROM in_communes)),
 
-regions_from_communes AS (
-    SELECT DISTINCT d.id_region
-    FROM loc_departements d
-    WHERE d.id_departement IN (SELECT id_departement FROM depts_from_communes)
-),
+regions_from_communes AS (SELECT DISTINCT d.id_region
+                          FROM loc_departements d
+                          WHERE d.id_departement IN (SELECT id_departement FROM depts_from_communes)),
 
-regions_from_departements AS (
-    SELECT DISTINCT d.id_region
-    FROM loc_departements d
-    WHERE d.id_departement IN (SELECT id_departement FROM in_departements)
-),
+regions_from_departements AS (SELECT DISTINCT d.id_region
+                              FROM loc_departements d
+                              WHERE d.id_departement IN (SELECT id_departement FROM in_departements)),
 
-regions_covered AS (
-    SELECT id_region FROM regions_from_communes
-    UNION
-    SELECT id_region FROM regions_from_departements
-),
+regions_covered AS (SELECT id_region
+                    FROM regions_from_communes
+                    UNION
+                    SELECT id_region
+                    FROM regions_from_departements),
 
-effective_communes AS (
-    SELECT id_commune FROM in_communes
-),
-effective_departements AS (
-    SELECT id_departement FROM in_departements
-    EXCEPT
-    SELECT id_departement FROM depts_from_communes
-),
-effective_regions AS (
-    SELECT id_region FROM in_regions
-    EXCEPT
-    SELECT id_region FROM regions_covered
-),
+effective_communes AS (SELECT id_commune
+                       FROM in_communes),
+effective_departements AS (SELECT id_departement
+                           FROM in_departements
+                           EXCEPT
+                           SELECT id_departement
+                           FROM depts_from_communes),
+effective_regions AS (SELECT id_region
+                      FROM in_regions
+                      EXCEPT
+                      SELECT id_region
+                      FROM regions_covered),
 
-countries_from_communes AS (
-    SELECT DISTINCT r.id_pays
-    FROM loc_departements d
-             JOIN loc_regions r ON d.id_region = r.id_region
-    WHERE d.id_departement IN (SELECT id_departement FROM depts_from_communes)
-),
-countries_from_departements AS (
-    SELECT DISTINCT r.id_pays
-    FROM loc_departements d
-             JOIN loc_regions r ON d.id_region = r.id_region
-    WHERE d.id_departement IN (SELECT id_departement FROM in_departements)
-),
-countries_from_regions AS (
-    SELECT DISTINCT r.id_pays
-    FROM loc_regions r
-    WHERE r.id_region IN (SELECT id_region FROM in_regions)
-),
+countries_from_communes AS (SELECT DISTINCT r.id_pays
+                            FROM loc_departements d
+                                     JOIN loc_regions r ON d.id_region = r.id_region
+                            WHERE d.id_departement IN (SELECT id_departement FROM depts_from_communes)),
+countries_from_departements AS (SELECT DISTINCT r.id_pays
+                                FROM loc_departements d
+                                         JOIN loc_regions r ON d.id_region = r.id_region
+                                WHERE d.id_departement IN (SELECT id_departement FROM in_departements)),
+countries_from_regions AS (SELECT DISTINCT r.id_pays
+                           FROM loc_regions r
+                           WHERE r.id_region IN (SELECT id_region FROM in_regions)),
 
-countries_covered AS (
-    SELECT id_pays FROM countries_from_communes
-    UNION
-    SELECT id_pays FROM countries_from_departements
-    UNION
-    SELECT id_pays FROM countries_from_regions
-),
+countries_covered AS (SELECT id_pays
+                      FROM countries_from_communes
+                      UNION
+                      SELECT id_pays
+                      FROM countries_from_departements
+                      UNION
+                      SELECT id_pays
+                      FROM countries_from_regions),
 
-effective_countries AS (
-    SELECT id_pays FROM in_pays
-    EXCEPT
-    SELECT id_pays FROM countries_covered
-)
+effective_countries AS (SELECT id_pays
+                        FROM in_pays
+                        EXCEPT
+                        SELECT id_pays
+                        FROM countries_covered)
 
 SELECT id, title, siecles, natures, medias, professions, source, COUNT(*) OVER () AS total_count
 FROM (
@@ -694,8 +708,8 @@ FROM (
                 'monuments_lieux'  AS source
          FROM t_monuments_lieux m
                   LEFT JOIN loc_communes mc ON mc.id_commune = m.id_commune
-                  LEFT JOIN loc_departements md ON md.id_departement = mc.id_departement
-                  LEFT JOIN loc_regions mr ON mr.id_region = md.id_region
+                  LEFT JOIN loc_departements md ON md.id_departement = COALESCE(m.id_departement, mc.id_departement)
+                  LEFT JOIN loc_regions mr ON mr.id_region = COALESCE(m.id_region, md.id_region)
                   LEFT JOIN loc_pays mp ON mp.id_pays = m.id_pays
                   LEFT JOIN cor_siecles_monu_lieu csm ON csm.monument_lieu_id = m.id_monument_lieu
                   LEFT JOIN bib_siecle bs ON bs.id_siecle = csm.siecle_monu_lieu_id
@@ -720,38 +734,51 @@ FROM (
                  OR
                  -- correspond à un département sélectionné (via la commune associée)
              (EXISTS (SELECT 1 FROM effective_departements)
-                 AND m.id_commune IN (SELECT id_commune FROM loc_communes WHERE id_departement IN (SELECT id_departement FROM effective_departements)))
+                 AND (
+                  m.id_departement IN (SELECT id_departement FROM effective_departements)
+                      OR m.id_commune IN (SELECT id_commune
+                                          FROM loc_communes
+                                          WHERE id_departement IN (SELECT id_departement FROM effective_departements))
+                  ))
                  OR
                  -- correspond à une région sélectionnée (via la chaine commune->departement->region)
              (EXISTS (SELECT 1 FROM effective_regions)
-                 AND m.id_commune IN (
-                     SELECT c.id_commune
-                     FROM loc_communes c
-                              JOIN loc_departements d ON c.id_departement = d.id_departement
-                     WHERE d.id_region IN (SELECT id_region FROM effective_regions)
-                 ))
+                 AND (
+                  m.id_region IN (SELECT id_region FROM effective_regions)
+                      OR m.id_departement IN (SELECT id_departement
+                                              FROM loc_departements
+                                              WHERE id_region IN (SELECT id_region FROM effective_regions))
+                      OR m.id_commune IN (SELECT c.id_commune
+                                          FROM loc_communes c
+                                                   JOIN loc_departements d ON c.id_departement = d.id_departement
+                                          WHERE d.id_region IN (SELECT id_region FROM effective_regions))
+                  ))
                  OR
                  -- correspond à un pays sélectionné (soit id_pays renseigné sur l'enregistrement, soit via la commune -> dept -> region -> pays)
              (EXISTS (SELECT 1 FROM effective_countries)
                  AND (
                   m.id_pays IN (SELECT id_pays FROM effective_countries)
-                      OR m.id_commune IN (
-                      SELECT c.id_commune
-                      FROM loc_communes c
-                               JOIN loc_departements d ON c.id_departement = d.id_departement
-                               JOIN loc_regions r ON d.id_region = r.id_region
-                      WHERE r.id_pays IN (SELECT id_pays FROM effective_countries)
-                  )
+                      OR m.id_region IN
+                         (SELECT id_region FROM loc_regions WHERE id_pays IN (SELECT id_pays FROM effective_countries))
+                      OR m.id_departement IN (SELECT id_departement
+                                              FROM loc_departements d
+                                                       JOIN loc_regions r ON d.id_region = r.id_region
+                                              WHERE r.id_pays IN (SELECT id_pays FROM effective_countries))
+                      OR m.id_commune IN (SELECT c.id_commune
+                                          FROM loc_communes c
+                                                   JOIN loc_departements d ON c.id_departement = d.id_departement
+                                                   JOIN loc_regions r ON d.id_region = r.id_region
+                                          WHERE r.id_pays IN (SELECT id_pays FROM effective_countries))
                   ))
              )
-                 AND ($7::int[] IS NULL OR cardinality($7::int[]) = 0 OR
-                      cnm.monu_lieu_nature_id = ANY ($7::int[]))
-                 AND ($8::int[] IS NULL OR cardinality($8::int[]) = 0 OR
-                      cnm.monu_lieu_nature_id = ANY ($8::int[]))
-                 AND ($9::int[] IS NULL OR cardinality($9::int[]) = 0 OR
-                      cnm.monu_lieu_nature_id = ANY ($9::int[]))
-                 AND m.publie = true
-                 AND m.publication_status = 'PUBLISHED'
+           AND ($7::int[] IS NULL OR cardinality($7::int[]) = 0 OR
+                cnm.monu_lieu_nature_id = ANY ($7::int[]))
+           AND ($8::int[] IS NULL OR cardinality($8::int[]) = 0 OR
+                cnm.monu_lieu_nature_id = ANY ($8::int[]))
+           AND ($9::int[] IS NULL OR cardinality($9::int[]) = 0 OR
+                cnm.monu_lieu_nature_id = ANY ($9::int[]))
+           AND m.publie = true
+           AND m.publication_status = 'PUBLISHED'
          GROUP BY m.id_monument_lieu
 
          UNION ALL
@@ -787,8 +814,9 @@ FROM (
                 'mobiliers_images'    AS source
          FROM t_mobiliers_images mob
                   LEFT JOIN loc_communes mobc ON mobc.id_commune = mob.id_commune
-                  LEFT JOIN loc_departements mobd ON mobd.id_departement = mobc.id_departement
-                  LEFT JOIN loc_regions mobr ON mobr.id_region = mobd.id_region
+                  LEFT JOIN loc_departements mobd
+                            ON mobd.id_departement = COALESCE(mob.id_departement, mobc.id_departement)
+                  LEFT JOIN loc_regions mobr ON mobr.id_region = COALESCE(mob.id_region, mobd.id_region)
                   LEFT JOIN loc_pays mobp ON mobp.id_pays = mob.id_pays
                   LEFT JOIN cor_siecles_mob_img csm ON csm.mobilier_image_id = mob.id_mobilier_image
                   LEFT JOIN bib_siecle bs ON bs.id_siecle = csm.siecle_mob_img_id
@@ -810,32 +838,46 @@ FROM (
                  AND COALESCE(cardinality($6::int[]), 0) = 0)
                  OR
                  -- correspond à une commune explicitement sélectionnée
-             (EXISTS (SELECT 1 FROM effective_communes) AND mob.id_commune IN (SELECT id_commune FROM effective_communes))
+             (EXISTS (SELECT 1 FROM effective_communes) AND
+              mob.id_commune IN (SELECT id_commune FROM effective_communes))
                  OR
                  -- correspond à un département sélectionné (via la commune associée)
              (EXISTS (SELECT 1 FROM effective_departements)
-                 AND mob.id_commune IN (SELECT id_commune FROM loc_communes WHERE id_departement IN (SELECT id_departement FROM effective_departements)))
+                 AND (
+                  mob.id_departement IN (SELECT id_departement FROM effective_departements)
+                      OR mob.id_commune IN (SELECT id_commune
+                                            FROM loc_communes
+                                            WHERE id_departement IN (SELECT id_departement FROM effective_departements))
+                  ))
                  OR
                  -- correspond à une région sélectionnée (via la chaine commune->departement->region)
              (EXISTS (SELECT 1 FROM effective_regions)
-                 AND mob.id_commune IN (
-                     SELECT c.id_commune
-                     FROM loc_communes c
-                              JOIN loc_departements d ON c.id_departement = d.id_departement
-                     WHERE d.id_region IN (SELECT id_region FROM effective_regions)
-                 ))
+                 AND (
+                  mob.id_region IN (SELECT id_region FROM effective_regions)
+                      OR mob.id_departement IN (SELECT id_departement
+                                                FROM loc_departements
+                                                WHERE id_region IN (SELECT id_region FROM effective_regions))
+                      OR mob.id_commune IN (SELECT c.id_commune
+                                            FROM loc_communes c
+                                                     JOIN loc_departements d ON c.id_departement = d.id_departement
+                                            WHERE d.id_region IN (SELECT id_region FROM effective_regions))
+                  ))
                  OR
                  -- correspond à un pays sélectionné (soit id_pays renseigné sur l'enregistrement, soit via la commune -> dept -> region -> pays)
              (EXISTS (SELECT 1 FROM effective_countries)
                  AND (
                   mob.id_pays IN (SELECT id_pays FROM effective_countries)
-                      OR mob.id_commune IN (
-                      SELECT c.id_commune
-                      FROM loc_communes c
-                               JOIN loc_departements d ON c.id_departement = d.id_departement
-                               JOIN loc_regions r ON d.id_region = r.id_region
-                      WHERE r.id_pays IN (SELECT id_pays FROM effective_countries)
-                  )
+                      OR mob.id_region IN
+                         (SELECT id_region FROM loc_regions WHERE id_pays IN (SELECT id_pays FROM effective_countries))
+                      OR mob.id_departement IN (SELECT id_departement
+                                                FROM loc_departements d
+                                                         JOIN loc_regions r ON d.id_region = r.id_region
+                                                WHERE r.id_pays IN (SELECT id_pays FROM effective_countries))
+                      OR mob.id_commune IN (SELECT c.id_commune
+                                            FROM loc_communes c
+                                                     JOIN loc_departements d ON c.id_departement = d.id_departement
+                                                     JOIN loc_regions r ON d.id_region = r.id_region
+                                            WHERE r.id_pays IN (SELECT id_pays FROM effective_countries))
                   ))
              )
            AND ($11::int[] IS NULL OR cardinality($11::int[]) = 0 OR
@@ -883,8 +925,8 @@ FROM (
                 'personnes_morales' AS source
          FROM t_pers_morales pm
                   LEFT JOIN loc_communes pmc ON pmc.id_commune = pm.id_commune
-                  LEFT JOIN loc_departements pmd ON pmd.id_departement = pmc.id_departement
-                  LEFT JOIN loc_regions pmr ON pmr.id_region = pmd.id_region
+                  LEFT JOIN loc_departements pmd ON pmd.id_departement = COALESCE(pm.id_departement, pmc.id_departement)
+                  LEFT JOIN loc_regions pmr ON pmr.id_region = COALESCE(pm.id_region, pmd.id_region)
                   LEFT JOIN loc_pays pmp ON pmp.id_pays = pm.id_pays
                   LEFT JOIN cor_siecles_pers_mo csp ON csp.pers_morale_id = pm.id_pers_morale
                   LEFT JOIN bib_siecle bs ON bs.id_siecle = csp.siecle_pers_mo_id
@@ -903,32 +945,46 @@ FROM (
                  AND COALESCE(cardinality($6::int[]), 0) = 0)
                  OR
                  -- correspond à une commune explicitement sélectionnée
-             (EXISTS (SELECT 1 FROM effective_communes) AND pm.id_commune IN (SELECT id_commune FROM effective_communes))
+             (EXISTS (SELECT 1 FROM effective_communes) AND
+              pm.id_commune IN (SELECT id_commune FROM effective_communes))
                  OR
                  -- correspond à un département sélectionné (via la commune associée)
              (EXISTS (SELECT 1 FROM effective_departements)
-                 AND pm.id_commune IN (SELECT id_commune FROM loc_communes WHERE id_departement IN (SELECT id_departement FROM effective_departements)))
+                 AND (
+                  pm.id_departement IN (SELECT id_departement FROM effective_departements)
+                      OR pm.id_commune IN (SELECT id_commune
+                                           FROM loc_communes
+                                           WHERE id_departement IN (SELECT id_departement FROM effective_departements))
+                  ))
                  OR
                  -- correspond à une région sélectionnée (via la chaine commune->departement->region)
              (EXISTS (SELECT 1 FROM effective_regions)
-                 AND pm.id_commune IN (
-                     SELECT c.id_commune
-                     FROM loc_communes c
-                              JOIN loc_departements d ON c.id_departement = d.id_departement
-                     WHERE d.id_region IN (SELECT id_region FROM effective_regions)
-                 ))
+                 AND (
+                  pm.id_region IN (SELECT id_region FROM effective_regions)
+                      OR pm.id_departement IN (SELECT id_departement
+                                               FROM loc_departements
+                                               WHERE id_region IN (SELECT id_region FROM effective_regions))
+                      OR pm.id_commune IN (SELECT c.id_commune
+                                           FROM loc_communes c
+                                                    JOIN loc_departements d ON c.id_departement = d.id_departement
+                                           WHERE d.id_region IN (SELECT id_region FROM effective_regions))
+                  ))
                  OR
                  -- correspond à un pays sélectionné (soit id_pays renseigné sur l'enregistrement, soit via la commune -> dept -> region -> pays)
              (EXISTS (SELECT 1 FROM effective_countries)
                  AND (
                   pm.id_pays IN (SELECT id_pays FROM effective_countries)
-                      OR pm.id_commune IN (
-                      SELECT c.id_commune
-                      FROM loc_communes c
-                               JOIN loc_departements d ON c.id_departement = d.id_departement
-                               JOIN loc_regions r ON d.id_region = r.id_region
-                      WHERE r.id_pays IN (SELECT id_pays FROM effective_countries)
-                  )
+                      OR pm.id_region IN
+                         (SELECT id_region FROM loc_regions WHERE id_pays IN (SELECT id_pays FROM effective_countries))
+                      OR pm.id_departement IN (SELECT id_departement
+                                               FROM loc_departements d
+                                                        JOIN loc_regions r ON d.id_region = r.id_region
+                                               WHERE r.id_pays IN (SELECT id_pays FROM effective_countries))
+                      OR pm.id_commune IN (SELECT c.id_commune
+                                           FROM loc_communes c
+                                                    JOIN loc_departements d ON c.id_departement = d.id_departement
+                                                    JOIN loc_regions r ON d.id_region = r.id_region
+                                           WHERE r.id_pays IN (SELECT id_pays FROM effective_countries))
                   ))
              )
            AND ($16::int[] IS NULL OR cardinality($16::int[]) = 0 OR
@@ -970,8 +1026,8 @@ FROM (
                 'personnes_physiques'  AS source
          FROM t_pers_physiques pp
                   LEFT JOIN loc_communes ppc ON ppc.id_commune = pp.id_commune
-                  LEFT JOIN loc_departements ppd ON ppd.id_departement = ppc.id_departement
-                  LEFT JOIN loc_regions ppr ON ppr.id_region = ppd.id_region
+                  LEFT JOIN loc_departements ppd ON ppd.id_departement = COALESCE(pp.id_departement, ppc.id_departement)
+                  LEFT JOIN loc_regions ppr ON ppr.id_region = COALESCE(pp.id_region, ppd.id_region)
                   LEFT JOIN loc_pays ppp ON ppp.id_pays = pp.id_pays
                   LEFT JOIN cor_siecles_pers_phy csp ON csp.pers_physique_id = pp.id_pers_physique
                   LEFT JOIN bib_siecle bs ON bs.id_siecle = csp.siecle_pers_phy_id
@@ -991,32 +1047,46 @@ FROM (
                  AND COALESCE(cardinality($6::int[]), 0) = 0)
                  OR
                  -- correspond à une commune explicitement sélectionnée
-             (EXISTS (SELECT 1 FROM effective_communes) AND pp.id_commune IN (SELECT id_commune FROM effective_communes))
+             (EXISTS (SELECT 1 FROM effective_communes) AND
+              pp.id_commune IN (SELECT id_commune FROM effective_communes))
                  OR
                  -- correspond à un département sélectionné (via la commune associée)
              (EXISTS (SELECT 1 FROM effective_departements)
-                 AND pp.id_commune IN (SELECT id_commune FROM loc_communes WHERE id_departement IN (SELECT id_departement FROM effective_departements)))
+                 AND (
+                  pp.id_departement IN (SELECT id_departement FROM effective_departements)
+                      OR pp.id_commune IN (SELECT id_commune
+                                           FROM loc_communes
+                                           WHERE id_departement IN (SELECT id_departement FROM effective_departements))
+                  ))
                  OR
                  -- correspond à une région sélectionnée (via la chaine commune->departement->region)
              (EXISTS (SELECT 1 FROM effective_regions)
-                 AND pp.id_commune IN (
-                     SELECT c.id_commune
-                     FROM loc_communes c
-                              JOIN loc_departements d ON c.id_departement = d.id_departement
-                     WHERE d.id_region IN (SELECT id_region FROM effective_regions)
-                 ))
+                 AND (
+                  pp.id_region IN (SELECT id_region FROM effective_regions)
+                      OR pp.id_departement IN (SELECT id_departement
+                                               FROM loc_departements
+                                               WHERE id_region IN (SELECT id_region FROM effective_regions))
+                      OR pp.id_commune IN (SELECT c.id_commune
+                                           FROM loc_communes c
+                                                    JOIN loc_departements d ON c.id_departement = d.id_departement
+                                           WHERE d.id_region IN (SELECT id_region FROM effective_regions))
+                  ))
                  OR
                  -- correspond à un pays sélectionné (soit id_pays renseigné sur l'enregistrement, soit via la commune -> dept -> region -> pays)
              (EXISTS (SELECT 1 FROM effective_countries)
                  AND (
                   pp.id_pays IN (SELECT id_pays FROM effective_countries)
-                      OR pp.id_commune IN (
-                      SELECT c.id_commune
-                      FROM loc_communes c
-                               JOIN loc_departements d ON c.id_departement = d.id_departement
-                               JOIN loc_regions r ON d.id_region = r.id_region
-                      WHERE r.id_pays IN (SELECT id_pays FROM effective_countries)
-                  )
+                      OR pp.id_region IN
+                         (SELECT id_region FROM loc_regions WHERE id_pays IN (SELECT id_pays FROM effective_countries))
+                      OR pp.id_departement IN (SELECT id_departement
+                                               FROM loc_departements d
+                                                        JOIN loc_regions r ON d.id_region = r.id_region
+                                               WHERE r.id_pays IN (SELECT id_pays FROM effective_countries))
+                      OR pp.id_commune IN (SELECT c.id_commune
+                                           FROM loc_communes c
+                                                    JOIN loc_departements d ON c.id_departement = d.id_departement
+                                                    JOIN loc_regions r ON d.id_region = r.id_region
+                                           WHERE r.id_pays IN (SELECT id_pays FROM effective_countries))
                   ))
              )
            AND ($18::int[] IS NULL OR cardinality($18::int[]) = 0 OR

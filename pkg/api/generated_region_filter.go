@@ -7,6 +7,7 @@ package api
 
 import (
 	"context"
+	stderrors "errors"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -94,11 +95,15 @@ func (m *RegionFilter) validatePays(formats strfmt.Registry) error {
 
 	if m.Pays != nil {
 		if err := m.Pays.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("pays")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("pays")
 			}
+
 			return err
 		}
 	}
@@ -134,11 +139,15 @@ func (m *RegionFilter) contextValidatePays(ctx context.Context, formats strfmt.R
 		}
 
 		if err := m.Pays.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("pays")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("pays")
 			}
+
 			return err
 		}
 	}

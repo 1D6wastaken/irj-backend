@@ -149,7 +149,7 @@ func (m *PostUsersBody) validatePhone(formats strfmt.Registry) error {
 	return nil
 }
 
-var postUsersBodyTypeDomainPropEnum []interface{}
+var postUsersBodyTypeDomainPropEnum []any
 
 func init() {
 	var res []string
