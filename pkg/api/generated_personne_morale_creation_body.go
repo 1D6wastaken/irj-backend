@@ -88,6 +88,9 @@ type PersonneMoraleCreationBody struct {
 
 	// linked pers physiques
 	LinkedPersPhysiques []int32 `json:"linkedPersPhysiques"`
+
+	// draft
+	Draft bool `json:"draft,omitempty"`
 }
 
 // Validate validates this personne morale creation body

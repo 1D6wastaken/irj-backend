@@ -26,9 +26,16 @@ func (b *BusinessService) UpdateMonumentLieu(w http.ResponseWriter, r *http.Requ
 		return _http.ErrUnauthorized.Msg("invalid token")
 	}
 
-	req, err := _http.DecodeAndValidateJSONBody[*api.MonumentsLieuxCreationBody](r)
+	req, err := _http.DecodeJSONBody[*api.MonumentsLieuxCreationBody](r)
 	if err != nil {
 		return _http.ErrBadRequest.Msg("unable to decode request body").Err(err)
+	}
+
+	if !req.Draft {
+		err = req.Validate(nil)
+		if err != nil {
+			return _http.ErrBadRequest.Msg("unable to decode request body").Err(err)
+		}
 	}
 
 	id := httprouter.ParamsFromContext(r.Context()).ByName("id")
@@ -53,11 +60,12 @@ func (b *BusinessService) UpdateMonumentLieu(w http.ResponseWriter, r *http.Requ
 }
 
 type updateMonumentLieuExchangeData struct {
-	logger *zerolog.Logger
-	err    error
-	id     int32
-	params *api.MonumentsLieuxCreationBody
-	token  *jwt.SessionInfo
+	logger   *zerolog.Logger
+	err      error
+	parentID int32
+	id       int32
+	params   *api.MonumentsLieuxCreationBody
+	token    *jwt.SessionInfo
 }
 
 type updateMonumentLieuState func(ctx context.Context, s *BusinessService, data *updateMonumentLieuExchangeData) updateMonumentLieuState
@@ -103,6 +111,11 @@ func processUpdateMonumentLieu(ctx context.Context, s *BusinessService, token *j
 }
 
 func updateMonumentLieu(ctx context.Context, s *BusinessService, exData *updateMonumentLieuExchangeData) updateMonumentLieuState {
+	publicationStatus := "PENDING"
+	if exData.params.Draft {
+		publicationStatus = "DRAFT"
+	}
+
 	id, err := s.postgresService.Queries.CreateMonumentLieu(ctx, queries.CreateMonumentLieuParams{
 		TitreMonuLieu: *exData.params.Title,
 		Description:   pgtype.Text{String: *exData.params.Description, Valid: true},
@@ -123,11 +136,24 @@ func updateMonumentLieu(ctx context.Context, s *BusinessService, exData *updateM
 			Int32: exData.params.City,
 			Valid: exData.params.City != 0,
 		},
+		IDDepartement: pgtype.Int4{
+			Int32: exData.params.Department,
+			Valid: exData.params.Department != 0,
+		},
+		IDRegion: pgtype.Int4{
+			Int32: exData.params.Region,
+			Valid: exData.params.Region != 0,
+		},
 		IDPays: pgtype.Int4{
 			Int32: exData.params.Country,
 			Valid: exData.params.Country != 0,
 		},
-		ParentID: pgtype.Int4{Int32: exData.id, Valid: true},
+		PublicationStatus: queries.PublicationStatus(publicationStatus),
+		ParentID:          pgtype.Int4{Int32: exData.id, Valid: true},
+		UserID: pgtype.Text{
+			String: exData.token.ID,
+			Valid:  true,
+		},
 	})
 	if err != nil {
 		exData.logger.Error().Err(err).Msg("failed to insert monument lieu")
@@ -137,6 +163,8 @@ func updateMonumentLieu(ctx context.Context, s *BusinessService, exData *updateM
 	}
 
 	exData.logger.Info().Int32("id", id).Msg("updated monument lieu created")
+
+	exData.parentID = exData.id
 
 	exData.id = id
 
@@ -221,6 +249,31 @@ func linkUpdatedMonumentLieu(ctx context.Context, s *BusinessService, exData *up
 
 //nolint:lll
 func addAuteurToUpdatedMonumentLieu(ctx context.Context, s *BusinessService, exData *updateMonumentLieuExchangeData) updateMonumentLieuState {
+	auteurID, err := s.postgresService.Queries.GetAuteurIDByMonuLieu(ctx, exData.parentID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			exData.logger.Warn().Msg("no author found for the original monument lieu, adding a new one")
+
+			return linkNewAuteurToMonumentLieu
+		}
+
+		exData.logger.Error().Err(err).Int32("id", exData.parentID).Msg("failed to get author by previous monument lieu")
+
+		return storeMonuLieuxDocumentUpdateEvent
+	}
+
+	err = s.postgresService.Queries.AttachAuthorToMonuLieu(ctx, queries.AttachAuthorToMonuLieuParams{
+		AuteurID: auteurID,
+		ID:       exData.id,
+	})
+	if err != nil {
+		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to attach author to updated monument lieu")
+	}
+
+	return storeMonuLieuxDocumentUpdateEvent
+}
+
+func linkNewAuteurToMonumentLieu(ctx context.Context, s *BusinessService, exData *updateMonumentLieuExchangeData) updateMonumentLieuState {
 	user, err := s.postgresService.Queries.GetUserByID(ctx, exData.token.ID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

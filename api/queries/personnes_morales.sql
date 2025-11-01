@@ -264,11 +264,10 @@ SET publication_status = 'PUBLISHED',
 WHERE id_pers_morale = $1
 AND publication_status = 'PENDING';
 
--- name: DeletePendingPersonneMorale :exec
+-- name: DeletePersonneMorale :exec
 DELETE
 FROM t_pers_morales
-WHERE id_pers_morale = $1
-AND publication_status = 'PENDING';
+WHERE id_pers_morale = $1;
 
 -- name: SubmitDraftPersonneMorale :exec
 UPDATE t_pers_morales
@@ -293,10 +292,13 @@ INSERT INTO t_pers_morales
  date_maj,
  contributeurs,
  id_commune,
+ id_departement,
+ id_region,
  id_pays,
  publie,
  publication_status,
- parent_id)
+ parent_id,
+ user_id)
 VALUES (sqlc.arg(title),
         sqlc.arg(comment),
         sqlc.arg(historique),
@@ -312,10 +314,13 @@ VALUES (sqlc.arg(title),
         NOW(),
         sqlc.arg(contributeurs),
         sqlc.arg(id_commune),
+        sqlc.arg(id_departement),
+        sqlc.arg(id_region),
         sqlc.arg(id_pays),
         false,
         sqlc.arg(publication_status),
-        sqlc.arg(parent_id))
+        sqlc.arg(parent_id),
+        sqlc.arg(user_id))
 RETURNING id_pers_morale;
 
 -- name: AttachSieclesToPersMo :exec

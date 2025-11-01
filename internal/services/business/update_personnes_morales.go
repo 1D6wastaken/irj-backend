@@ -25,9 +25,16 @@ func (b *BusinessService) UpdatePersonneMorale(w http.ResponseWriter, r *http.Re
 		return _http.ErrUnauthorized.Msg("invalid token")
 	}
 
-	req, err := _http.DecodeAndValidateJSONBody[*api.PersonneMoraleCreationBody](r)
+	req, err := _http.DecodeJSONBody[*api.PersonneMoraleCreationBody](r)
 	if err != nil {
 		return _http.ErrBadRequest.Msg("unable to decode request body").Err(err)
+	}
+
+	if !req.Draft {
+		err = req.Validate(nil)
+		if err != nil {
+			return _http.ErrBadRequest.Msg("unable to decode request body").Err(err)
+		}
 	}
 
 	id := httprouter.ParamsFromContext(r.Context()).ByName("id")
@@ -52,11 +59,12 @@ func (b *BusinessService) UpdatePersonneMorale(w http.ResponseWriter, r *http.Re
 }
 
 type updatePersonneMoraleExchangeData struct {
-	logger *zerolog.Logger
-	err    error
-	id     int32
-	params *api.PersonneMoraleCreationBody
-	token  *jwt.SessionInfo
+	logger   *zerolog.Logger
+	err      error
+	parentID int32
+	id       int32
+	params   *api.PersonneMoraleCreationBody
+	token    *jwt.SessionInfo
 }
 
 //nolint:lll
@@ -103,6 +111,11 @@ func processUpdatePersonneMorale(ctx context.Context, s *BusinessService, token 
 }
 
 func updatePersonneMorale(ctx context.Context, s *BusinessService, exData *updatePersonneMoraleExchangeData) updatePersonneMoraleState {
+	publicationStatus := "PENDING"
+	if exData.params.Draft {
+		publicationStatus = "DRAFT"
+	}
+
 	id, err := s.postgresService.Queries.CreatePersMorale(ctx, queries.CreatePersMoraleParams{
 		Title:      pgtype.Text{String: *exData.params.Title, Valid: true},
 		Comment:    pgtype.Text{String: exData.params.Comment, Valid: exData.params.Comment != ""},
@@ -129,11 +142,24 @@ func updatePersonneMorale(ctx context.Context, s *BusinessService, exData *updat
 			Int32: exData.params.City,
 			Valid: exData.params.City != 0,
 		},
+		IDDepartement: pgtype.Int4{
+			Int32: exData.params.Department,
+			Valid: exData.params.Department != 0,
+		},
+		IDRegion: pgtype.Int4{
+			Int32: exData.params.Region,
+			Valid: exData.params.Region != 0,
+		},
 		IDPays: pgtype.Int4{
 			Int32: exData.params.Country,
 			Valid: exData.params.Country != 0,
 		},
-		ParentID: pgtype.Int4{Int32: exData.id, Valid: true},
+		PublicationStatus: queries.PublicationStatus(publicationStatus),
+		ParentID:          pgtype.Int4{Int32: exData.id, Valid: true},
+		UserID: pgtype.Text{
+			String: exData.token.ID,
+			Valid:  true,
+		},
 	})
 	if err != nil {
 		exData.logger.Error().Err(err).Msg("failed to insert personne morale")
@@ -143,6 +169,8 @@ func updatePersonneMorale(ctx context.Context, s *BusinessService, exData *updat
 	}
 
 	exData.logger.Info().Int32("id", id).Msg("personne morale created")
+
+	exData.parentID = exData.id
 
 	exData.id = id
 
@@ -212,6 +240,31 @@ func linkUpdatedPersonneMorale(ctx context.Context, s *BusinessService, exData *
 
 //nolint:lll
 func addAuteurToUpdatedPersonneMorale(ctx context.Context, s *BusinessService, exData *updatePersonneMoraleExchangeData) updatePersonneMoraleState {
+	auteurID, err := s.postgresService.Queries.GetAuteurIDByPersMoID(ctx, exData.parentID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			exData.logger.Warn().Msg("no author found for the original personne morale, adding a new one")
+
+			return linkNewAuteurToPersoMo
+		}
+
+		exData.logger.Error().Err(err).Int32("id", exData.parentID).Msg("failed to get author by personne morale id")
+
+		return storePersMoDocumentUpdateEvent
+	}
+
+	err = s.postgresService.Queries.AttachAuthorToPersMo(ctx, queries.AttachAuthorToPersMoParams{
+		AuteurID: auteurID,
+		ID:       exData.id,
+	})
+	if err != nil {
+		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to attach author to personne morale")
+	}
+
+	return storePersMoDocumentUpdateEvent
+}
+
+func linkNewAuteurToPersoMo(ctx context.Context, s *BusinessService, exData *updatePersonneMoraleExchangeData) updatePersonneMoraleState {
 	user, err := s.postgresService.Queries.GetUserByID(ctx, exData.token.ID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -254,7 +307,7 @@ func addAuteurToUpdatedPersonneMorale(ctx context.Context, s *BusinessService, e
 		ID:       exData.id,
 	})
 	if err != nil {
-		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to attach author to updated personne morale")
+		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to attach author to personne morale")
 	}
 
 	return storePersMoDocumentUpdateEvent

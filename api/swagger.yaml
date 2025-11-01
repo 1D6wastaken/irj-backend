@@ -1677,6 +1677,8 @@ definitions:
         items:
           type: integer
           format: int32
+      draft:
+        type: boolean
   PersonnesPhysiquesListFilters:
     type: object
     properties:
@@ -1943,6 +1945,8 @@ definitions:
         items:
           type: integer
           format: int32
+      draft:
+        type: boolean
   PersonnesMoralesListFilters:
     type: object
     properties:
@@ -2229,6 +2233,8 @@ definitions:
         items:
           type: integer
           format: int32
+      draft:
+        type: boolean
   MobiliersImagesListFilters:
     type: object
     properties:

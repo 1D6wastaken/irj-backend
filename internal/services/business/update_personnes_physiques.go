@@ -25,9 +25,16 @@ func (b *BusinessService) UpdatePersonnePhysique(w http.ResponseWriter, r *http.
 		return _http.ErrUnauthorized.Msg("invalid token")
 	}
 
-	req, err := _http.DecodeAndValidateJSONBody[*api.PersonnePhysiqueCreationBody](r)
+	req, err := _http.DecodeJSONBody[*api.PersonnePhysiqueCreationBody](r)
 	if err != nil {
 		return _http.ErrBadRequest.Msg("unable to decode request body").Err(err)
+	}
+
+	if !req.Draft {
+		err = req.Validate(nil)
+		if err != nil {
+			return _http.ErrBadRequest.Msg("unable to decode request body").Err(err)
+		}
 	}
 
 	id := httprouter.ParamsFromContext(r.Context()).ByName("id")
@@ -52,11 +59,12 @@ func (b *BusinessService) UpdatePersonnePhysique(w http.ResponseWriter, r *http.
 }
 
 type updatePersonnePhysiqueExchangeData struct {
-	logger *zerolog.Logger
-	err    error
-	id     int32
-	params *api.PersonnePhysiqueCreationBody
-	token  *jwt.SessionInfo
+	logger   *zerolog.Logger
+	err      error
+	parentID int32
+	id       int32
+	params   *api.PersonnePhysiqueCreationBody
+	token    *jwt.SessionInfo
 }
 
 //nolint:lll
@@ -104,6 +112,11 @@ func processUpdatePersonnePhysique(ctx context.Context, s *BusinessService, toke
 
 //nolint:lll
 func updatePersonnePhysique(ctx context.Context, s *BusinessService, exData *updatePersonnePhysiqueExchangeData) updatePersonnePhysiqueState {
+	publicationStatus := "PENDING"
+	if exData.params.Draft {
+		publicationStatus = "DRAFT"
+	}
+
 	id, err := s.postgresService.Queries.CreatePersPhysique(ctx, queries.CreatePersPhysiqueParams{
 		PrenomNomPersPhy:      pgtype.Text{String: *exData.params.Title, Valid: true},
 		Commentaires:          pgtype.Text{String: exData.params.Comment, Valid: exData.params.Comment != ""},
@@ -121,11 +134,24 @@ func updatePersonnePhysique(ctx context.Context, s *BusinessService, exData *upd
 			Int32: exData.params.City,
 			Valid: exData.params.City != 0,
 		},
+		IDDepartement: pgtype.Int4{
+			Int32: exData.params.Department,
+			Valid: exData.params.Department != 0,
+		},
+		IDRegion: pgtype.Int4{
+			Int32: exData.params.Region,
+			Valid: exData.params.Region != 0,
+		},
 		IDPays: pgtype.Int4{
 			Int32: exData.params.Country,
 			Valid: exData.params.Country != 0,
 		},
-		ParentID: pgtype.Int4{Int32: exData.id, Valid: true},
+		PublicationStatus: queries.PublicationStatus(publicationStatus),
+		ParentID:          pgtype.Int4{Int32: exData.id, Valid: true},
+		UserID: pgtype.Text{
+			String: exData.token.ID,
+			Valid:  true,
+		},
 	})
 	if err != nil {
 		exData.logger.Error().Err(err).Msg("failed to insert personne physique")
@@ -135,6 +161,8 @@ func updatePersonnePhysique(ctx context.Context, s *BusinessService, exData *upd
 	}
 
 	exData.logger.Info().Int32("id", id).Msg("personne physique created")
+
+	exData.parentID = exData.id
 
 	exData.id = id
 
@@ -220,6 +248,32 @@ func linkUpdatedPersonnePhysique(ctx context.Context, s *BusinessService, exData
 
 //nolint:lll
 func addAuteurToUpdatedPersonnePhysique(ctx context.Context, s *BusinessService, exData *updatePersonnePhysiqueExchangeData) updatePersonnePhysiqueState {
+	auteurID, err := s.postgresService.Queries.GetAuteurIDByPersPhyID(ctx, exData.parentID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			exData.logger.Warn().Msg("no author found for the original personne physique, adding a new one")
+
+			return linkNewAuteurToPersPhy
+		}
+
+		exData.logger.Error().Err(err).Int32("id", exData.parentID).Msg("failed to get author by personne physique id")
+
+		return storePersPhyDocumentUpdateEvent
+	}
+
+	err = s.postgresService.Queries.AttachAuthorToPersPhy(ctx, queries.AttachAuthorToPersPhyParams{
+		AuteurID: auteurID,
+		ID:       exData.id,
+	})
+	if err != nil {
+		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to attach author to personne physique")
+	}
+
+	return storePersPhyDocumentUpdateEvent
+}
+
+//nolint:lll
+func linkNewAuteurToPersPhy(ctx context.Context, s *BusinessService, exData *updatePersonnePhysiqueExchangeData) updatePersonnePhysiqueState {
 	user, err := s.postgresService.Queries.GetUserByID(ctx, exData.token.ID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

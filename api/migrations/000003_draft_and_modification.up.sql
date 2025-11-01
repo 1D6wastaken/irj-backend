@@ -2,18 +2,22 @@ BEGIN;
 
 
 ALTER TABLE t_mobiliers_images
+    ADD COLUMN user_id TEXT NULL REFERENCES t_app_users(id),
     ADD COLUMN id_departement INTEGER NULL REFERENCES loc_departements(id_departement),
     ADD COLUMN id_region INTEGER NULL REFERENCES loc_regions(id_region);
 
 ALTER TABLE t_monuments_lieux
+    ADD COLUMN user_id TEXT NULL REFERENCES t_app_users(id),
     ADD COLUMN id_departement INTEGER NULL REFERENCES loc_departements(id_departement),
     ADD COLUMN id_region INTEGER NULL REFERENCES loc_regions(id_region);
 
 ALTER TABLE t_pers_morales
+    ADD COLUMN user_id TEXT NULL REFERENCES t_app_users(id),
     ADD COLUMN id_departement INTEGER NULL REFERENCES loc_departements(id_departement),
     ADD COLUMN id_region INTEGER NULL REFERENCES loc_regions(id_region);
 
 ALTER TABLE t_pers_physiques
+    ADD COLUMN user_id TEXT NULL REFERENCES t_app_users(id),
     ADD COLUMN id_departement INTEGER NULL REFERENCES loc_departements(id_departement),
     ADD COLUMN id_region INTEGER NULL REFERENCES loc_regions(id_region);
 

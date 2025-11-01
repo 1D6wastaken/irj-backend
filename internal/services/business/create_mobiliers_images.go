@@ -24,9 +24,16 @@ func (b *BusinessService) CreateMobilierImage(w http.ResponseWriter, r *http.Req
 		return _http.ErrUnauthorized.Msg("invalid token")
 	}
 
-	req, err := _http.DecodeAndValidateJSONBody[*api.MobilierImageCreationBody](r)
+	req, err := _http.DecodeJSONBody[*api.MobilierImageCreationBody](r)
 	if err != nil {
 		return _http.ErrBadRequest.Msg("unable to decode request body").Err(err)
+	}
+
+	if !req.Draft {
+		err = req.Validate(nil)
+		if err != nil {
+			return _http.ErrBadRequest.Msg("unable to decode request body").Err(err)
+		}
 	}
 
 	if err := processCreateMobilierImage(r.Context(), b, &token, req); err != nil {
@@ -89,6 +96,11 @@ func processCreateMobilierImage(ctx context.Context, s *BusinessService, token *
 }
 
 func createMobilierImage(ctx context.Context, s *BusinessService, exData *createMobilierImageExchangeData) createMobilierImageState {
+	publicationStatus := "PENDING"
+	if exData.params.Draft {
+		publicationStatus = "DRAFT"
+	}
+
 	id, err := s.postgresService.Queries.CreateMobilierImage(ctx, queries.CreateMobilierImageParams{
 		TitreMobImg:   *exData.params.Title,
 		Description:   pgtype.Text{String: *exData.params.Description, Valid: true},
@@ -108,12 +120,24 @@ func createMobilierImage(ctx context.Context, s *BusinessService, exData *create
 			Int32: exData.params.City,
 			Valid: exData.params.City != 0,
 		},
+		IDDepartement: pgtype.Int4{
+			Int32: exData.params.Department,
+			Valid: exData.params.Department != 0,
+		},
+		IDRegion: pgtype.Int4{
+			Int32: exData.params.Region,
+			Valid: exData.params.Region != 0,
+		},
 		IDPays: pgtype.Int4{
 			Int32: exData.params.Country,
 			Valid: exData.params.Country != 0,
 		},
-		PublicationStatus: "PENDING",
+		PublicationStatus: queries.PublicationStatus(publicationStatus),
 		ParentID:          pgtype.Int4{},
+		UserID: pgtype.Text{
+			String: exData.token.ID,
+			Valid:  true,
+		},
 	})
 	if err != nil {
 		exData.logger.Error().Err(err).Msg("failed to insert mobilier image")

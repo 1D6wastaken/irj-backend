@@ -243,7 +243,7 @@ func rejectMobilierImage(ctx context.Context, s *BusinessService, exData *approv
 		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to detach author from mobilier image")
 	}
 
-	if err = s.postgresService.Queries.DeletePendingMobilierImage(ctx, exData.id); err != nil {
+	if err = s.postgresService.Queries.DeleteMobilierImage(ctx, exData.id); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			exData.logger.Warn().Msg("document not found and therefore can not be approved")
 

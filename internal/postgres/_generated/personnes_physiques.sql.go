@@ -136,10 +136,13 @@ INSERT INTO t_pers_physiques
  date_maj,
  contributeurs,
  id_commune,
+ id_departement,
+ id_region,
  id_pays,
  publie,
  publication_status,
- parent_id)
+ parent_id,
+ user_id)
 VALUES ($1,
         $2,
         $3,
@@ -156,9 +159,12 @@ VALUES ($1,
         $12,
         $13,
         $14,
-        false,
         $15,
-        $16)
+        $16,
+        false,
+        $17,
+        $18,
+        $19)
 RETURNING id_pers_physique
 `
 
@@ -176,9 +182,12 @@ type CreatePersPhysiqueParams struct {
 	Sources               pgtype.Text
 	Contributeurs         pgtype.Text
 	IDCommune             pgtype.Int4
+	IDDepartement         pgtype.Int4
+	IDRegion              pgtype.Int4
 	IDPays                pgtype.Int4
 	PublicationStatus     PublicationStatus
 	ParentID              pgtype.Int4
+	UserID                pgtype.Text
 }
 
 func (q *Queries) CreatePersPhysique(ctx context.Context, arg CreatePersPhysiqueParams) (int32, error) {
@@ -196,24 +205,26 @@ func (q *Queries) CreatePersPhysique(ctx context.Context, arg CreatePersPhysique
 		arg.Sources,
 		arg.Contributeurs,
 		arg.IDCommune,
+		arg.IDDepartement,
+		arg.IDRegion,
 		arg.IDPays,
 		arg.PublicationStatus,
 		arg.ParentID,
+		arg.UserID,
 	)
 	var id_pers_physique int32
 	err := row.Scan(&id_pers_physique)
 	return id_pers_physique, err
 }
 
-const deletePendingPersonnePhysique = `-- name: DeletePendingPersonnePhysique :exec
+const deletePersonnePhysique = `-- name: DeletePersonnePhysique :exec
 DELETE
 FROM t_pers_physiques
 WHERE id_pers_physique = $1
-  AND publication_status = 'PENDING'
 `
 
-func (q *Queries) DeletePendingPersonnePhysique(ctx context.Context, idPersPhysique int32) error {
-	_, err := q.db.Exec(ctx, deletePendingPersonnePhysique, idPersPhysique)
+func (q *Queries) DeletePersonnePhysique(ctx context.Context, idPersPhysique int32) error {
+	_, err := q.db.Exec(ctx, deletePersonnePhysique, idPersPhysique)
 	return err
 }
 

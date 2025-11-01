@@ -135,10 +135,13 @@ INSERT INTO t_monuments_lieux
  date_maj,
  contributeurs,
  id_commune,
+ id_departement,
+ id_region,
  id_pays,
  publie,
  publication_status,
- parent_id)
+ parent_id,
+ user_id)
 VALUES ($1,
         $2,
         $3,
@@ -152,9 +155,12 @@ VALUES ($1,
         $9,
         $10,
         $11,
-        false,
         $12,
-        $13)
+        $13,
+        false,
+        $14,
+        $15,
+        $16)
 RETURNING id_monument_lieu
 `
 
@@ -169,9 +175,12 @@ type CreateMonumentLieuParams struct {
 	Source                 pgtype.Text
 	Contributeurs          pgtype.Text
 	IDCommune              pgtype.Int4
+	IDDepartement          pgtype.Int4
+	IDRegion               pgtype.Int4
 	IDPays                 pgtype.Int4
 	PublicationStatus      PublicationStatus
 	ParentID               pgtype.Int4
+	UserID                 pgtype.Text
 }
 
 func (q *Queries) CreateMonumentLieu(ctx context.Context, arg CreateMonumentLieuParams) (int32, error) {
@@ -186,24 +195,26 @@ func (q *Queries) CreateMonumentLieu(ctx context.Context, arg CreateMonumentLieu
 		arg.Source,
 		arg.Contributeurs,
 		arg.IDCommune,
+		arg.IDDepartement,
+		arg.IDRegion,
 		arg.IDPays,
 		arg.PublicationStatus,
 		arg.ParentID,
+		arg.UserID,
 	)
 	var id_monument_lieu int32
 	err := row.Scan(&id_monument_lieu)
 	return id_monument_lieu, err
 }
 
-const deletePendingMonumentLieu = `-- name: DeletePendingMonumentLieu :exec
+const deleteMonumentLieu = `-- name: DeleteMonumentLieu :exec
 DELETE
 FROM t_monuments_lieux
 WHERE id_monument_lieu = $1
-  AND publication_status = 'PENDING'
 `
 
-func (q *Queries) DeletePendingMonumentLieu(ctx context.Context, idMonumentLieu int32) error {
-	_, err := q.db.Exec(ctx, deletePendingMonumentLieu, idMonumentLieu)
+func (q *Queries) DeleteMonumentLieu(ctx context.Context, idMonumentLieu int32) error {
+	_, err := q.db.Exec(ctx, deleteMonumentLieu, idMonumentLieu)
 	return err
 }
 

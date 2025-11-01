@@ -25,9 +25,16 @@ func (b *BusinessService) CreateMonumentLieu(w http.ResponseWriter, r *http.Requ
 		return _http.ErrUnauthorized.Msg("invalid token")
 	}
 
-	req, err := _http.DecodeAndValidateJSONBody[*api.MonumentsLieuxCreationBody](r)
+	req, err := _http.DecodeJSONBody[*api.MonumentsLieuxCreationBody](r)
 	if err != nil {
 		return _http.ErrBadRequest.Msg("unable to decode request body").Err(err)
+	}
+
+	if !req.Draft {
+		err = req.Validate(nil)
+		if err != nil {
+			return _http.ErrBadRequest.Msg("unable to decode request body").Err(err)
+		}
 	}
 
 	if err := processCreateMonumentLieu(r.Context(), b, &token, req); err != nil {
@@ -90,6 +97,11 @@ func processCreateMonumentLieu(ctx context.Context, s *BusinessService, token *j
 }
 
 func createMonumentLieu(ctx context.Context, s *BusinessService, exData *createMonumentLieuExchangeData) createMonumentLieuState {
+	publicationStatus := "PENDING"
+	if exData.params.Draft {
+		publicationStatus = "DRAFT"
+	}
+
 	id, err := s.postgresService.Queries.CreateMonumentLieu(ctx, queries.CreateMonumentLieuParams{
 		TitreMonuLieu: *exData.params.Title,
 		Description:   pgtype.Text{String: *exData.params.Description, Valid: true},
@@ -110,12 +122,24 @@ func createMonumentLieu(ctx context.Context, s *BusinessService, exData *createM
 			Int32: exData.params.City,
 			Valid: exData.params.City != 0,
 		},
+		IDDepartement: pgtype.Int4{
+			Int32: exData.params.Department,
+			Valid: exData.params.Department != 0,
+		},
+		IDRegion: pgtype.Int4{
+			Int32: exData.params.Region,
+			Valid: exData.params.Region != 0,
+		},
 		IDPays: pgtype.Int4{
 			Int32: exData.params.Country,
 			Valid: exData.params.Country != 0,
 		},
-		PublicationStatus: "PENDING",
+		PublicationStatus: queries.PublicationStatus(publicationStatus),
 		ParentID:          pgtype.Int4{},
+		UserID: pgtype.Text{
+			String: exData.token.ID,
+			Valid:  true,
+		},
 	})
 	if err != nil {
 		exData.logger.Error().Err(err).Msg("failed to insert monument lieu")

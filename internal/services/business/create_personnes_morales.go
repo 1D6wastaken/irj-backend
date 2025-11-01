@@ -24,9 +24,16 @@ func (b *BusinessService) CreatePersonneMorale(w http.ResponseWriter, r *http.Re
 		return _http.ErrUnauthorized.Msg("invalid token")
 	}
 
-	req, err := _http.DecodeAndValidateJSONBody[*api.PersonneMoraleCreationBody](r)
+	req, err := _http.DecodeJSONBody[*api.PersonneMoraleCreationBody](r)
 	if err != nil {
 		return _http.ErrBadRequest.Msg("unable to decode request body").Err(err)
+	}
+
+	if !req.Draft {
+		err = req.Validate(nil)
+		if err != nil {
+			return _http.ErrBadRequest.Msg("unable to decode request body").Err(err)
+		}
 	}
 
 	if err := processCreatePersonneMorale(r.Context(), b, &token, req); err != nil {
@@ -91,6 +98,11 @@ func processCreatePersonneMorale(ctx context.Context, s *BusinessService, token 
 }
 
 func createPersonneMorale(ctx context.Context, s *BusinessService, exData *createPersonneMoraleExchangeData) createPersonneMoraleState {
+	publicationStatus := "PENDING"
+	if exData.params.Draft {
+		publicationStatus = "DRAFT"
+	}
+
 	id, err := s.postgresService.Queries.CreatePersMorale(ctx, queries.CreatePersMoraleParams{
 		Title:      pgtype.Text{String: *exData.params.Title, Valid: true},
 		Comment:    pgtype.Text{String: exData.params.Comment, Valid: exData.params.Comment != ""},
@@ -117,12 +129,24 @@ func createPersonneMorale(ctx context.Context, s *BusinessService, exData *creat
 			Int32: exData.params.City,
 			Valid: exData.params.City != 0,
 		},
+		IDDepartement: pgtype.Int4{
+			Int32: exData.params.Department,
+			Valid: exData.params.Department != 0,
+		},
+		IDRegion: pgtype.Int4{
+			Int32: exData.params.Region,
+			Valid: exData.params.Region != 0,
+		},
 		IDPays: pgtype.Int4{
 			Int32: exData.params.Country,
 			Valid: exData.params.Country != 0,
 		},
-		PublicationStatus: "PENDING",
+		PublicationStatus: queries.PublicationStatus(publicationStatus),
 		ParentID:          pgtype.Int4{},
+		UserID: pgtype.Text{
+			String: exData.token.ID,
+			Valid:  true,
+		},
 	})
 	if err != nil {
 		exData.logger.Error().Err(err).Msg("failed to insert personne morale")

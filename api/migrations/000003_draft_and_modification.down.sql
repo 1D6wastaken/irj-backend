@@ -13,18 +13,22 @@ ALTER TABLE bib_auteurs
     DROP COLUMN IF EXISTS user_id;
 
 ALTER TABLE t_mobiliers_images
+    DROP COLUMN IF EXISTS user_id,
     DROP COLUMN IF EXISTS id_departement,
     DROP COLUMN IF EXISTS id_region;
 
 ALTER TABLE t_monuments_lieux
+    DROP COLUMN IF EXISTS user_id,
     DROP COLUMN IF EXISTS id_departement,
     DROP COLUMN IF EXISTS id_region;
 
 ALTER TABLE t_pers_morales
+    DROP COLUMN IF EXISTS user_id,
     DROP COLUMN IF EXISTS id_departement,
     DROP COLUMN IF EXISTS id_region;
 
 ALTER TABLE t_pers_physiques
+    DROP COLUMN IF EXISTS user_id,
     DROP COLUMN IF EXISTS id_departement,
     DROP COLUMN IF EXISTS id_region;
 

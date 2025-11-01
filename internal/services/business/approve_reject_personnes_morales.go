@@ -228,7 +228,7 @@ func rejectPersonneMorale(ctx context.Context, s *BusinessService, exData *appro
 		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to detach author from personne morale")
 	}
 
-	if err := s.postgresService.Queries.DeletePendingPersonneMorale(ctx, exData.id); err != nil {
+	if err := s.postgresService.Queries.DeletePersonneMorale(ctx, exData.id); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			exData.logger.Warn().Msg("document not found and therefore can not be approved")
 

@@ -317,11 +317,10 @@ SET publication_status = 'PUBLISHED',
 WHERE id_mobilier_image = $1
 AND publication_status = 'PENDING';
 
--- name: DeletePendingMobilierImage :exec
+-- name: DeleteMobilierImage :exec
 DELETE
 FROM t_mobiliers_images
-WHERE id_mobilier_image = $1
-AND publication_status = 'PENDING';
+WHERE id_mobilier_image = $1;
 
 -- name: SubmitDraftMobilierImage :exec
 UPDATE t_mobiliers_images
@@ -345,10 +344,13 @@ INSERT INTO t_mobiliers_images
  date_maj,
  contributeurs,
  id_commune,
+ id_departement,
+ id_region,
  id_pays,
  publie,
  publication_status,
- parent_id)
+ parent_id,
+ user_id)
 VALUES (sqlc.arg(titre_mob_img),
         sqlc.arg(description),
         sqlc.arg(historique),
@@ -363,10 +365,13 @@ VALUES (sqlc.arg(titre_mob_img),
         NOW(),
         sqlc.arg(contributors),
         sqlc.arg(id_commune),
+        sqlc.arg(id_departement),
+        sqlc.arg(id_region),
         sqlc.arg(id_pays),
         false,
         sqlc.arg(publication_status),
-        sqlc.arg(parent_id))
+        sqlc.arg(parent_id),
+        sqlc.arg(user_id))
 RETURNING id_mobilier_image;
 
 -- name: AttachSieclesToMobImg :exec

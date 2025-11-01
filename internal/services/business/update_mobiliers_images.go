@@ -25,9 +25,16 @@ func (b *BusinessService) UpdateMobilierImage(w http.ResponseWriter, r *http.Req
 		return _http.ErrUnauthorized.Msg("invalid token")
 	}
 
-	req, err := _http.DecodeAndValidateJSONBody[*api.MobilierImageCreationBody](r)
+	req, err := _http.DecodeJSONBody[*api.MobilierImageCreationBody](r)
 	if err != nil {
 		return _http.ErrBadRequest.Msg("unable to decode request body").Err(err)
+	}
+
+	if !req.Draft {
+		err = req.Validate(nil)
+		if err != nil {
+			return _http.ErrBadRequest.Msg("unable to decode request body").Err(err)
+		}
 	}
 
 	id := httprouter.ParamsFromContext(r.Context()).ByName("id")
@@ -52,11 +59,12 @@ func (b *BusinessService) UpdateMobilierImage(w http.ResponseWriter, r *http.Req
 }
 
 type updateMobilierImageExchangeData struct {
-	logger *zerolog.Logger
-	err    error
-	id     int32
-	params *api.MobilierImageCreationBody
-	token  *jwt.SessionInfo
+	logger   *zerolog.Logger
+	err      error
+	parentID int32
+	id       int32
+	params   *api.MobilierImageCreationBody
+	token    *jwt.SessionInfo
 }
 
 type updateMobilierImageState func(ctx context.Context, s *BusinessService, data *updateMobilierImageExchangeData) updateMobilierImageState
@@ -102,6 +110,11 @@ func processUpdateMobilierImage(ctx context.Context, s *BusinessService, token *
 }
 
 func updateMobilierImage(ctx context.Context, s *BusinessService, exData *updateMobilierImageExchangeData) updateMobilierImageState {
+	publicationStatus := "PENDING"
+	if exData.params.Draft {
+		publicationStatus = "DRAFT"
+	}
+
 	id, err := s.postgresService.Queries.CreateMobilierImage(ctx, queries.CreateMobilierImageParams{
 		TitreMobImg:   *exData.params.Title,
 		Description:   pgtype.Text{String: *exData.params.Description, Valid: true},
@@ -121,11 +134,24 @@ func updateMobilierImage(ctx context.Context, s *BusinessService, exData *update
 			Int32: exData.params.City,
 			Valid: exData.params.City != 0,
 		},
+		IDDepartement: pgtype.Int4{
+			Int32: exData.params.Department,
+			Valid: exData.params.Department != 0,
+		},
+		IDRegion: pgtype.Int4{
+			Int32: exData.params.Region,
+			Valid: exData.params.Region != 0,
+		},
 		IDPays: pgtype.Int4{
 			Int32: exData.params.Country,
 			Valid: exData.params.Country != 0,
 		},
-		ParentID: pgtype.Int4{Int32: exData.id, Valid: true},
+		PublicationStatus: queries.PublicationStatus(publicationStatus),
+		ParentID:          pgtype.Int4{Int32: exData.id, Valid: true},
+		UserID: pgtype.Text{
+			String: exData.token.ID,
+			Valid:  true,
+		},
 	})
 	if err != nil {
 		exData.logger.Error().Err(err).Msg("failed to insert mobilier image")
@@ -135,6 +161,8 @@ func updateMobilierImage(ctx context.Context, s *BusinessService, exData *update
 	}
 
 	exData.logger.Info().Int32("id", id).Msg("mobilier image created")
+
+	exData.parentID = exData.id
 
 	exData.id = id
 
@@ -223,11 +251,37 @@ func linkUpdatedMobilierImage(ctx context.Context, s *BusinessService, exData *u
 		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to link personnes physiques document to mobilier image")
 	}
 
-	return addAuteurToUpdatedMobilierImage
+	return addAuteursToUpdatedMobilierImage
 }
 
 //nolint:lll
-func addAuteurToUpdatedMobilierImage(ctx context.Context, s *BusinessService, exData *updateMobilierImageExchangeData) updateMobilierImageState {
+func addAuteursToUpdatedMobilierImage(ctx context.Context, s *BusinessService, exData *updateMobilierImageExchangeData) updateMobilierImageState {
+	auteurID, err := s.postgresService.Queries.GetAuteurIDByMobImg(ctx, exData.parentID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			exData.logger.Warn().Msg("no auteur id found for the original mobilier image, adding a new one")
+
+			return linkNewAuteurToMobilierImage
+		}
+
+		exData.logger.Error().Err(err).Int32("id", exData.parentID).Msg("failed to get author by mobilier image")
+
+		return storeMobImgDocumentUpdateEvent
+	}
+
+	err = s.postgresService.Queries.AttachAuthorToMobImg(ctx, queries.AttachAuthorToMobImgParams{
+		AuteurID: auteurID,
+		ID:       exData.id,
+	})
+	if err != nil {
+		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to attach author to updated mobilier image")
+	}
+
+	return storeMobImgDocumentUpdateEvent
+}
+
+//nolint:lll
+func linkNewAuteurToMobilierImage(ctx context.Context, s *BusinessService, exData *updateMobilierImageExchangeData) updateMobilierImageState {
 	user, err := s.postgresService.Queries.GetUserByID(ctx, exData.token.ID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -263,6 +317,14 @@ func addAuteurToUpdatedMobilierImage(ctx context.Context, s *BusinessService, ex
 		}
 	} else {
 		id = auteurs.IDAuteurFiche
+	}
+
+	err = s.postgresService.Queries.AttachAuthorToMobImg(ctx, queries.AttachAuthorToMobImgParams{
+		AuteurID: id,
+		ID:       exData.id,
+	})
+	if err != nil {
+		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to attach author to updated mobilier image")
 	}
 
 	err = s.postgresService.Queries.AttachAuthorToMobImg(ctx, queries.AttachAuthorToMobImgParams{

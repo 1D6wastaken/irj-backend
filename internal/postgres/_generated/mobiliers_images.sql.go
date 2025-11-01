@@ -153,10 +153,13 @@ INSERT INTO t_mobiliers_images
  date_maj,
  contributeurs,
  id_commune,
+ id_departement,
+ id_region,
  id_pays,
  publie,
  publication_status,
- parent_id)
+ parent_id,
+ user_id)
 VALUES ($1,
         $2,
         $3,
@@ -172,9 +175,12 @@ VALUES ($1,
         $11,
         $12,
         $13,
-        false,
         $14,
-        $15)
+        $15,
+        false,
+        $16,
+        $17,
+        $18)
 RETURNING id_mobilier_image
 `
 
@@ -191,9 +197,12 @@ type CreateMobilierImageParams struct {
 	Source            pgtype.Text
 	Contributors      pgtype.Text
 	IDCommune         pgtype.Int4
+	IDDepartement     pgtype.Int4
+	IDRegion          pgtype.Int4
 	IDPays            pgtype.Int4
 	PublicationStatus PublicationStatus
 	ParentID          pgtype.Int4
+	UserID            pgtype.Text
 }
 
 func (q *Queries) CreateMobilierImage(ctx context.Context, arg CreateMobilierImageParams) (int32, error) {
@@ -210,24 +219,26 @@ func (q *Queries) CreateMobilierImage(ctx context.Context, arg CreateMobilierIma
 		arg.Source,
 		arg.Contributors,
 		arg.IDCommune,
+		arg.IDDepartement,
+		arg.IDRegion,
 		arg.IDPays,
 		arg.PublicationStatus,
 		arg.ParentID,
+		arg.UserID,
 	)
 	var id_mobilier_image int32
 	err := row.Scan(&id_mobilier_image)
 	return id_mobilier_image, err
 }
 
-const deletePendingMobilierImage = `-- name: DeletePendingMobilierImage :exec
+const deleteMobilierImage = `-- name: DeleteMobilierImage :exec
 DELETE
 FROM t_mobiliers_images
 WHERE id_mobilier_image = $1
-AND publication_status = 'PENDING'
 `
 
-func (q *Queries) DeletePendingMobilierImage(ctx context.Context, idMobilierImage int32) error {
-	_, err := q.db.Exec(ctx, deletePendingMobilierImage, idMobilierImage)
+func (q *Queries) DeleteMobilierImage(ctx context.Context, idMobilierImage int32) error {
+	_, err := q.db.Exec(ctx, deleteMobilierImage, idMobilierImage)
 	return err
 }
 

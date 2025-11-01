@@ -54,3 +54,55 @@ func (q *Queries) GetAuteurByUserID(ctx context.Context, userID pgtype.Text) (Bi
 	err := row.Scan(&i.IDAuteurFiche, &i.AuteurFicheNom, &i.UserID)
 	return i, err
 }
+
+const getAuteurIDByMobImg = `-- name: GetAuteurIDByMobImg :one
+SELECT auteur_fiche_mob_img_id
+FROM cor_auteur_fiche_mob_img
+WHERE mobilier_image_id = $1
+`
+
+func (q *Queries) GetAuteurIDByMobImg(ctx context.Context, mobilierImageID int32) (int32, error) {
+	row := q.db.QueryRow(ctx, getAuteurIDByMobImg, mobilierImageID)
+	var auteur_fiche_mob_img_id int32
+	err := row.Scan(&auteur_fiche_mob_img_id)
+	return auteur_fiche_mob_img_id, err
+}
+
+const getAuteurIDByMonuLieu = `-- name: GetAuteurIDByMonuLieu :one
+SELECT auteur_fiche_monu_lieu_id
+FROM cor_auteur_fiche_monu_lieu
+WHERE monument_lieu_id = $1
+`
+
+func (q *Queries) GetAuteurIDByMonuLieu(ctx context.Context, monumentLieuID int32) (int32, error) {
+	row := q.db.QueryRow(ctx, getAuteurIDByMonuLieu, monumentLieuID)
+	var auteur_fiche_monu_lieu_id int32
+	err := row.Scan(&auteur_fiche_monu_lieu_id)
+	return auteur_fiche_monu_lieu_id, err
+}
+
+const getAuteurIDByPersMoID = `-- name: GetAuteurIDByPersMoID :one
+SELECT auteur_fiche_pers_mo_id
+FROM cor_auteur_fiche_pers_mo
+WHERE pers_morale_id = $1
+`
+
+func (q *Queries) GetAuteurIDByPersMoID(ctx context.Context, persMoraleID int32) (int32, error) {
+	row := q.db.QueryRow(ctx, getAuteurIDByPersMoID, persMoraleID)
+	var auteur_fiche_pers_mo_id int32
+	err := row.Scan(&auteur_fiche_pers_mo_id)
+	return auteur_fiche_pers_mo_id, err
+}
+
+const getAuteurIDByPersPhyID = `-- name: GetAuteurIDByPersPhyID :one
+SELECT auteur_fiche_pers_phy_id
+FROM cor_auteur_fiche_pers_phy
+WHERE pers_physique_id = $1
+`
+
+func (q *Queries) GetAuteurIDByPersPhyID(ctx context.Context, persPhysiqueID int32) (int32, error) {
+	row := q.db.QueryRow(ctx, getAuteurIDByPersPhyID, persPhysiqueID)
+	var auteur_fiche_pers_phy_id int32
+	err := row.Scan(&auteur_fiche_pers_phy_id)
+	return auteur_fiche_pers_phy_id, err
+}

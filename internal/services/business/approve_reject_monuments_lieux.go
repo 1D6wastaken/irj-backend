@@ -238,7 +238,7 @@ func rejectMonumentLieu(ctx context.Context, s *BusinessService, exData *approve
 		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to detach author from monument lieu")
 	}
 
-	if err := s.postgresService.Queries.DeletePendingMonumentLieu(ctx, exData.id); err != nil {
+	if err := s.postgresService.Queries.DeleteMonumentLieu(ctx, exData.id); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			exData.logger.Warn().Msg("document not found and therefore can not be approved")
 

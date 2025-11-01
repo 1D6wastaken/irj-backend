@@ -238,14 +238,14 @@ func rejectPersonnePhysique(ctx context.Context, s *BusinessService, exData *app
 		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to detach author from personne physique")
 	}
 
-	if err := s.postgresService.Queries.DeletePendingPersonnePhysique(ctx, exData.id); err != nil {
+	if err := s.postgresService.Queries.DeletePersonnePhysique(ctx, exData.id); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			exData.logger.Warn().Msg("document not found and therefore can not be approved")
+			exData.logger.Warn().Msg("document not found and therefore can not be rejected")
 
 			return nil
 		}
 
-		exData.logger.Error().Err(err).Msg("failed to approve document")
+		exData.logger.Error().Err(err).Msg("failed to reject document")
 		exData.err = catalogs.ErrUnexpectedError
 	}
 
