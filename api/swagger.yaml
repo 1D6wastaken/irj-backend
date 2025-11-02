@@ -281,22 +281,6 @@ paths:
           description: "Invalid field"
           schema:
             $ref: "#/definitions/error"
-  /monuments_lieux/draft:
-    get:
-      tags:
-        - private
-      summary: "Get draft monuments lieux"
-      security:
-        - Bearer: [ ]
-      produces:
-        - "application/json"
-      responses:
-        "200":
-          description: "OK"
-          schema:
-            type: array
-            items:
-              $ref: "#/definitions/PendingDocuments"
   /monuments_lieux/{id}:
     get:
       tags:
@@ -417,22 +401,6 @@ paths:
           description: "Invalid field"
           schema:
             $ref: "#/definitions/error"
-  /mobiliers_images/draft:
-    get:
-      tags:
-        - private
-      summary: "Get draft mobiliers images"
-      security:
-        - Bearer: [ ]
-      produces:
-        - "application/json"
-      responses:
-        "200":
-          description: "OK"
-          schema:
-            type: array
-            items:
-              $ref: "#/definitions/PendingDocuments"
   /mobiliers_images/{id}:
     get:
       tags:
@@ -553,22 +521,6 @@ paths:
           description: "Invalid field"
           schema:
             $ref: "#/definitions/error"
-  /personnes_morales/draft:
-    get:
-      tags:
-        - private
-      summary: "Get draft personnes morales"
-      security:
-        - Bearer: [ ]
-      produces:
-        - "application/json"
-      responses:
-        "200":
-          description: "OK"
-          schema:
-            type: array
-            items:
-              $ref: "#/definitions/PendingDocuments"
   /personnes_morales/{id}:
     get:
       tags:
@@ -689,22 +641,6 @@ paths:
           description: "Invalid field"
           schema:
             $ref: "#/definitions/error"
-  /personnes_physiques/draft:
-    get:
-      tags:
-        - private
-      summary: "Get draft personnes physiques"
-      security:
-        - Bearer: [ ]
-      produces:
-        - "application/json"
-      responses:
-        "200":
-          description: "OK"
-          schema:
-            type: array
-            items:
-              $ref: "#/definitions/PendingDocuments"
   /personnes_physiques/{id}:
     get:
       tags:
@@ -824,6 +760,71 @@ paths:
           schema:
             $ref: "#/definitions/SearchResult"
 
+  /draft/monuments_lieux:
+    get:
+      tags:
+        - private
+      summary: "Get draft monuments lieux"
+      security:
+        - Bearer: [ ]
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/PendingDocuments"
+  /draft/mobiliers_images:
+    get:
+      tags:
+        - private
+      summary: "Get draft mobiliers images"
+      security:
+        - Bearer: [ ]
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/PendingDocuments"
+  /draft/personnes_morales:
+    get:
+      tags:
+        - private
+      summary: "Get draft personnes morales"
+      security:
+        - Bearer: [ ]
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/PendingDocuments"
+  /draft/personnes_physiques:
+    get:
+      tags:
+        - private
+      summary: "Get draft personnes physiques"
+      security:
+        - Bearer: [ ]
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/PendingDocuments"
+
   ## USERS ##
   /users:
     post:
@@ -915,7 +916,7 @@ paths:
         - private
       summary: "Update user profile"
       security:
-        - Bearer: []
+        - Bearer: [ ]
       parameters:
         - in: path
           name: id
@@ -1047,8 +1048,8 @@ paths:
           description: "Already confirmed"
           schema:
             $ref: "#/definitions/error"
-      
-      
+
+
 
   ## LOGIN ##
   /login:
@@ -1171,12 +1172,12 @@ definitions:
       - code
       - message
     properties:
-        code:
-          type: integer
-        message:
-          type: string
-        description:
-          type: string
+      code:
+        type: integer
+      message:
+        type: string
+      description:
+        type: string
 
   media:
     type: object
@@ -1234,7 +1235,7 @@ definitions:
       - password
   UserLogin:
     type: object
-    properties: 
+    properties:
       token:
         type: string
         format: jwt
@@ -1248,7 +1249,7 @@ definitions:
       firstname:
         type: string
         description: First name
-    required: 
+    required:
       - token
       - token_type
       - expires_in
@@ -1465,7 +1466,7 @@ definitions:
             items:
               type: integer
               format: int32
-            
+
           materials:
             type: array
             items:

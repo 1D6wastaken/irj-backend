@@ -2,7 +2,7 @@ version: 3
 
 vars:
   # https://github.com/golangci/golangci-lint/releases
-  GOLANGCILINT_VERSION: 2.3.0
+  GOLANGCILINT_VERSION: 2.5.0
   # https://github.com/gotestyourself/gotestsum/releases
   GOTESTSUM_VERSION: 1.12.2
   # https://github.com/psampaz/go-mod-outdated/releases
