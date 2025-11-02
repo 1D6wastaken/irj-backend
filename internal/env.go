@@ -173,6 +173,11 @@ func (e *Env) Routes(router *httprouter.Router) {
 	router.HandlerFunc(http.MethodGet, "/api/v1/personnes_morales", protected(_http.HandlerMiddleware(e.BusinessService.GetPendingPersonnesMorales)))
 	router.HandlerFunc(http.MethodGet, "/api/v1/personnes_physiques", protected(_http.HandlerMiddleware(e.BusinessService.GetPendingPersonnesPhysiques)))
 
+	router.HandlerFunc(http.MethodGet, "/api/v1/monuments_lieux/draft", protected(_http.HandlerMiddleware(e.BusinessService.GetDraftMonumentsLieux)))
+	router.HandlerFunc(http.MethodGet, "/api/v1/mobiliers_images/draft", protected(_http.HandlerMiddleware(e.BusinessService.GetDraftMobiliersImages)))
+	router.HandlerFunc(http.MethodGet, "/api/v1/personnes_morales/draft", protected(_http.HandlerMiddleware(e.BusinessService.GetDraftPersonnesMorales)))
+	router.HandlerFunc(http.MethodGet, "/api/v1/personnes_physiques/draft", protected(_http.HandlerMiddleware(e.BusinessService.GetDraftPersonnesPhysiques)))
+
 	router.HandlerFunc(http.MethodPatch, "/api/v1/monuments_lieux/:id", protected(_http.HandlerMiddleware(e.BusinessService.ApproveRejectMonumentLieu)))
 	router.HandlerFunc(http.MethodPatch, "/api/v1/mobiliers_images/:id", protected(_http.HandlerMiddleware(e.BusinessService.ApproveRejectMobilierImage)))
 	router.HandlerFunc(http.MethodPatch, "/api/v1/personnes_morales/:id", protected(_http.HandlerMiddleware(e.BusinessService.ApproveRejectPersonneMorale)))

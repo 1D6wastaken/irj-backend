@@ -295,6 +295,177 @@ func (q *Queries) DetachThemesFromMonuLieu(ctx context.Context, id int32) error 
 	return err
 }
 
+const getDraftMonumentsLieux = `-- name: GetDraftMonumentsLieux :many
+SELECT m.id_monument_lieu     AS id,
+       m.titre_monu_lieu      AS title,
+       m.description,
+       m.histoire,
+       m.geolocalisation,
+       m.bibliographie,
+       m.date_creation,
+       m.date_maj,
+       m.publie,
+       m.contributeurs,
+       m.protection,
+       m.protection_commentaires,
+       m.source,
+       -- Redacteurs (auteurs fiche)
+       COALESCE(array_agg(DISTINCT baf.auteur_fiche_nom) FILTER (WHERE baf.auteur_fiche_nom IS NOT NULL),
+                '{}')         AS redacteurs,
+       -- Commune
+       MAX(c.nom_commune)     AS commune,
+       -- Département
+       MAX(d.nom_departement) AS departement,
+       -- Région
+       MAX(r.nom_region)      AS region,
+       -- Pays
+       MAX(p.nom_pays)        AS pays,
+       -- États de conservation
+       COALESCE(array_agg(DISTINCT bec.etat_conservation_type) FILTER (WHERE bec.etat_conservation_type IS NOT NULL),
+                '{}')         AS etats_conservation,
+       -- Matériaux
+       COALESCE(array_agg(DISTINCT bm.materiau_type) FILTER (WHERE bm.materiau_type IS NOT NULL),
+                '{}')         AS materiaux,
+       -- Natures
+       COALESCE(array_agg(DISTINCT bmn.monu_lieu_nature_type) FILTER (WHERE bmn.id_monu_lieu_nature IS NOT NULL),
+                '{}')         AS natures,
+       -- Médias
+       COALESCE(
+                       jsonb_agg(
+                       DISTINCT jsonb_build_object(
+                               'id', tm.id_media,
+                               'titre', tm.titre_media
+                                )
+                                ) FILTER (
+                           WHERE tm.chemin_media IS NOT NULL
+                       AND tm.chemin_media <> ''
+                       AND tm.chemin_media <> '[]'
+                       AND EXISTS (SELECT 1
+                                   FROM jsonb_array_elements(tm.chemin_media::jsonb) AS elem
+                                   WHERE COALESCE(elem ->> 'path', '') <> '')
+                           ),
+                       '[]'::jsonb
+       )                      AS medias,
+       -- Mobiliers images (IDs uniquement)
+       COALESCE(array_agg(DISTINCT cmi.mobilier_image_id) FILTER (WHERE cmi.mobilier_image_id IS NOT NULL),
+                '{}')         AS mobiliers_images_liees,
+       -- Personnes morales (IDs uniquement)
+       COALESCE(array_agg(DISTINCT cpm.pers_morale_id) FILTER (WHERE cpm.pers_morale_id IS NOT NULL),
+                '{}')         AS personnes_morales_liees,
+       -- Personnes physiques (IDs uniquement)
+       COALESCE(array_agg(DISTINCT cpp.pers_phy_id) FILTER (WHERE cpp.pers_phy_id IS NOT NULL),
+                '{}')         AS personnes_physiques_liees,
+       -- Siècles
+       COALESCE(array_agg(DISTINCT bs.siecle_list) FILTER (WHERE bs.siecle_list IS NOT NULL),
+                '{}')         AS siecles,
+       -- Themes
+       COALESCE(array_agg(DISTINCT t.theme_type) FILTER (WHERE t.theme_type IS NOT NULL),
+                '{}')         AS themes
+FROM t_monuments_lieux m
+         LEFT JOIN cor_auteur_fiche_monu_lieu caf ON m.id_monument_lieu = caf.monument_lieu_id
+         LEFT JOIN bib_auteurs baf ON caf.auteur_fiche_monu_lieu_id = baf.id_auteur_fiche
+         LEFT JOIN loc_communes c ON m.id_commune = c.id_commune
+         LEFT JOIN loc_departements d ON c.id_departement = d.id_departement
+         LEFT JOIN loc_regions r ON d.id_region = r.id_region
+         LEFT JOIN loc_pays p ON r.id_pays = p.id_pays
+         LEFT JOIN cor_etat_cons_monu_lieu cec ON m.id_monument_lieu = cec.monument_lieu_id
+         LEFT JOIN bib_etats_conservation bec ON cec.etat_cons_monu_lieu_id = bec.id_etat_conservation
+         LEFT JOIN cor_materiaux_monu_lieu cm ON m.id_monument_lieu = cm.monument_lieu_id
+         LEFT JOIN bib_materiaux bm ON cm.materiau_monu_lieu_id = bm.id_materiau
+         LEFT JOIN cor_medias_monu_lieu cmm ON m.id_monument_lieu = cmm.monument_lieu_id
+         LEFT JOIN cor_natures_monu_lieu cnm ON m.id_monument_lieu = cnm.monument_lieu_id
+         LEFT JOIN bib_monu_lieu_natures bmn ON cnm.monu_lieu_nature_id = bmn.id_monu_lieu_nature
+         LEFT JOIN t_medias tm ON cmm.media_monu_lieu_id = tm.id_media
+         LEFT JOIN cor_monu_lieu_mob_img cmi ON m.id_monument_lieu = cmi.monument_lieu_id
+         LEFT JOIN cor_monu_lieu_pers_mo cpm ON m.id_monument_lieu = cpm.monument_lieu_id
+         LEFT JOIN cor_monu_lieu_pers_phy cpp ON m.id_monument_lieu = cpp.monu_lieu_id
+         LEFT JOIN cor_siecles_monu_lieu csl ON m.id_monument_lieu = csl.monument_lieu_id
+         LEFT JOIN bib_siecle bs ON csl.siecle_monu_lieu_id = bs.id_siecle
+         LEFT JOIN cor_themes_monu_lieu ctml ON m.id_monument_lieu = ctml.monu_lieu_id
+         LEFT JOIN t_themes t ON t.id_theme = ctml.theme_id
+WHERE m.publication_status = 'DRAFT'
+and m.user_id = $1
+GROUP BY m.id_monument_lieu
+`
+
+type GetDraftMonumentsLieuxRow struct {
+	ID                      int32
+	Title                   string
+	Description             pgtype.Text
+	Histoire                pgtype.Text
+	Geolocalisation         pgtype.Text
+	Bibliographie           pgtype.Text
+	DateCreation            pgtype.Date
+	DateMaj                 pgtype.Date
+	Publie                  pgtype.Bool
+	Contributeurs           pgtype.Text
+	Protection              pgtype.Bool
+	ProtectionCommentaires  pgtype.Text
+	Source                  pgtype.Text
+	Redacteurs              interface{}
+	Commune                 interface{}
+	Departement             interface{}
+	Region                  interface{}
+	Pays                    interface{}
+	EtatsConservation       interface{}
+	Materiaux               interface{}
+	Natures                 interface{}
+	Medias                  interface{}
+	MobiliersImagesLiees    interface{}
+	PersonnesMoralesLiees   interface{}
+	PersonnesPhysiquesLiees interface{}
+	Siecles                 interface{}
+	Themes                  interface{}
+}
+
+func (q *Queries) GetDraftMonumentsLieux(ctx context.Context, userID pgtype.Text) ([]GetDraftMonumentsLieuxRow, error) {
+	rows, err := q.db.Query(ctx, getDraftMonumentsLieux, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetDraftMonumentsLieuxRow
+	for rows.Next() {
+		var i GetDraftMonumentsLieuxRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.Description,
+			&i.Histoire,
+			&i.Geolocalisation,
+			&i.Bibliographie,
+			&i.DateCreation,
+			&i.DateMaj,
+			&i.Publie,
+			&i.Contributeurs,
+			&i.Protection,
+			&i.ProtectionCommentaires,
+			&i.Source,
+			&i.Redacteurs,
+			&i.Commune,
+			&i.Departement,
+			&i.Region,
+			&i.Pays,
+			&i.EtatsConservation,
+			&i.Materiaux,
+			&i.Natures,
+			&i.Medias,
+			&i.MobiliersImagesLiees,
+			&i.PersonnesMoralesLiees,
+			&i.PersonnesPhysiquesLiees,
+			&i.Siecles,
+			&i.Themes,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getFilteredMonumentsLieux = `-- name: GetFilteredMonumentsLieux :many
 SELECT m.id_monument_lieu                                                                             AS id,
        m.titre_monu_lieu                                                                              AS title,

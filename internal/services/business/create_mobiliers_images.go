@@ -9,6 +9,7 @@ import (
 
 	"irj/internal/catalogs"
 	"irj/internal/jwt"
+	"irj/internal/postgres"
 	queries "irj/internal/postgres/_generated"
 	"irj/internal/smtp"
 	"irj/pkg/api"
@@ -96,9 +97,9 @@ func processCreateMobilierImage(ctx context.Context, s *BusinessService, token *
 }
 
 func createMobilierImage(ctx context.Context, s *BusinessService, exData *createMobilierImageExchangeData) createMobilierImageState {
-	publicationStatus := "PENDING"
+	publicationStatus := postgres.PendingPublicationStatus
 	if exData.params.Draft {
-		publicationStatus = "DRAFT"
+		publicationStatus = postgres.DraftPublicationStatus
 	}
 
 	id, err := s.postgresService.Queries.CreateMobilierImage(ctx, queries.CreateMobilierImageParams{
@@ -132,7 +133,7 @@ func createMobilierImage(ctx context.Context, s *BusinessService, exData *create
 			Int32: exData.params.Country,
 			Valid: exData.params.Country != 0,
 		},
-		PublicationStatus: queries.PublicationStatus(publicationStatus),
+		PublicationStatus: publicationStatus,
 		ParentID:          pgtype.Int4{},
 		UserID: pgtype.Text{
 			String: exData.token.ID,

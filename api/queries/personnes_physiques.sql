@@ -288,6 +288,101 @@ FROM t_pers_physiques p
 WHERE p.publication_status = 'PENDING'
 GROUP BY p.id_pers_physique;
 
+-- name: GetDraftPersonnesPhysiques :many
+SELECT p.id_pers_physique     AS id,
+       p.prenom_nom_pers_phy  AS firstname,
+       p.date_naissance,
+       p.date_deces,
+       p.attestation,
+       -- Periode historique
+       COALESCE(array_agg(DISTINCT bph.periode_historique_type) FILTER (WHERE bph.periode_historique_type IS NOT NULL),
+                '{}')         AS historical_period,
+       p.bibliographie,
+       p.elements_biographiques,
+       p.elements_pelerinage,
+       p.commutation_voeu,
+       p.sources,
+       p.date_creation,
+       p.date_maj,
+       p.publie,
+       p.contributeurs,
+       p.commentaires,
+       -- Redacteurs (auteurs fiche)
+       COALESCE(array_agg(DISTINCT baf.auteur_fiche_nom) FILTER (WHERE baf.auteur_fiche_nom IS NOT NULL),
+                '{}')         AS redacteurs,
+       -- Commune
+       MAX(c.nom_commune)     AS commune,
+       -- Département
+       MAX(d.nom_departement) AS departement,
+       -- Région
+       MAX(r.nom_region)      AS region,
+       -- Pays
+       MAX(pa.nom_pays)       AS pays,
+       -- Travels
+       COALESCE(array_agg(DISTINCT bmd.mode_deplacement_type) FILTER (WHERE bmd.mode_deplacement_type IS NOT NULL),
+                '{}')         AS travels,
+       -- Professions
+       COALESCE(array_agg(DISTINCT bpp.profession_type) FILTER (WHERE bpp.profession_type IS NOT NULL),
+                '{}')         AS professions,
+       p.nature_evenement,
+       -- Médias
+       COALESCE(
+                       jsonb_agg(
+                       DISTINCT jsonb_build_object(
+                               'id', tm.id_media,
+                               'titre', tm.titre_media
+                                )
+                                ) FILTER (
+                           WHERE tm.chemin_media IS NOT NULL
+                       AND tm.chemin_media <> ''
+                       AND tm.chemin_media <> '[]'
+                       AND EXISTS (SELECT 1
+                                   FROM jsonb_array_elements(tm.chemin_media::jsonb) AS elem
+                                   WHERE COALESCE(elem ->> 'path', '') <> '')
+                           ),
+                       '[]'::jsonb
+       )                      AS medias,
+       -- Monuments lieux (IDs uniquement)
+       COALESCE(array_agg(DISTINCT cml.monu_lieu_id) FILTER (WHERE cml.monu_lieu_id IS NOT NULL),
+                '{}')         AS monuments_lieux_liees,
+       -- Mobiliers images (IDs uniquement)
+       COALESCE(array_agg(DISTINCT cpm.mobilier_image_id) FILTER (WHERE cpm.mobilier_image_id IS NOT NULL),
+                '{}')         AS mobiliers_images_liees,
+       -- Personnes morales (IDs uniquement)
+       COALESCE(array_agg(DISTINCT cppmo.pers_morale_id) FILTER (WHERE cppmo.pers_morale_id IS NOT NULL),
+                '{}')         AS personnes_morales_liees,
+       -- Siècles
+       COALESCE(array_agg(DISTINCT bs.siecle_list) FILTER (WHERE bs.siecle_list IS NOT NULL),
+                '{}')         AS siecles,
+       -- Themes
+       COALESCE(array_agg(DISTINCT t.theme_type) FILTER (WHERE t.theme_type IS NOT NULL),
+                '{}')         AS themes
+FROM t_pers_physiques p
+         LEFT JOIN cor_auteur_fiche_pers_phy cap ON p.id_pers_physique = cap.pers_physique_id
+         LEFT JOIN bib_auteurs baf ON cap.auteur_fiche_pers_phy_id = baf.id_auteur_fiche
+         LEFT JOIN loc_communes c ON p.id_commune = c.id_commune
+         LEFT JOIN loc_departements d ON c.id_departement = d.id_departement
+         LEFT JOIN loc_regions r ON d.id_region = r.id_region
+         LEFT JOIN loc_pays pa ON r.id_pays = p.id_pays
+         LEFT JOIN cor_medias_pers_phy cmp ON p.id_pers_physique = cmp.pers_physique_id
+         LEFT JOIN t_medias tm ON cmp.media_pers_phy_id = tm.id_media
+         LEFT JOIN cor_periodes_historiques_pers_phy cph ON p.id_pers_physique = cph.pers_physique_id
+         LEFT JOIN bib_pers_phy_periodes_historiques bph ON cph.periode_historique_id = bph.id_periode_historique
+         LEFT JOIN cor_modes_deplacements_pers_phy cmd ON p.id_pers_physique = cmd.pers_physique_id
+         LEFT JOIN bib_pers_phy_modes_deplacements bmd ON cmd.mode_deplacement_id = bmd.id_mode_deplacement
+         LEFT JOIN cor_professions_pers_phy cpp ON p.id_pers_physique = cpp.pers_physique_id
+         LEFT JOIN bib_pers_phy_professions bpp ON cpp.profession_id = bpp.id_profession
+         LEFT JOIN cor_monu_lieu_pers_phy cml ON p.id_pers_physique = cml.pers_phy_id
+         LEFT JOIN cor_mob_img_pers_phy cpm ON p.id_pers_physique = cpm.pers_physique_id
+         LEFT JOIN cor_pers_phy_pers_mo cppmo ON p.id_pers_physique = cppmo.pers_physique_id
+         LEFT JOIN cor_siecles_pers_phy csp ON p.id_pers_physique = csp.pers_physique_id
+         LEFT JOIN bib_siecle bs ON csp.siecle_pers_phy_id = bs.id_siecle
+         LEFT JOIN cor_themes_pers_phy ctpp ON p.id_pers_physique = ctpp.pers_phy_id
+         LEFT JOIN t_themes t ON t.id_theme = ctpp.theme_id
+WHERE p.publication_status = 'DRAFT'
+and p.user_id = $1
+GROUP BY p.id_pers_physique;
+
 -- name: ValidatePendingPersonnePhysique :exec
 UPDATE t_pers_physiques
 SET publication_status = 'PUBLISHED',

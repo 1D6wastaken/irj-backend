@@ -256,6 +256,90 @@ FROM t_pers_morales p
 WHERE p.publication_status = 'PENDING'
 GROUP BY p.id_pers_morale;
 
+-- name: GetDraftPersonnesMorales :many
+SELECT p.id_pers_morale       AS id,
+       p.titre_pers_mo        AS title,
+       p.acte_fondation       AS foundation_deed,
+       p.historique,
+       p.bibliographie,
+       p.simple_mention,
+       p.fonctionnement,
+       p.participation_vie_soc,
+       p.objets,
+       p.sources,
+       p.date_creation,
+       p.date_maj,
+       p.publie,
+       p.contributeurs,
+       p.commentaires,
+       -- Redacteurs (auteurs fiche)
+       COALESCE(array_agg(DISTINCT baf.auteur_fiche_nom) FILTER (WHERE baf.auteur_fiche_nom IS NOT NULL),
+                '{}')         AS redacteurs,
+       -- Commune
+       MAX(c.nom_commune)     AS commune,
+       -- Département
+       MAX(d.nom_departement) AS departement,
+       -- Région
+       MAX(r.nom_region)      AS region,
+       -- Pays
+       MAX(pa.nom_pays)       AS pays,
+       -- Natures
+       COALESCE(array_agg(DISTINCT bpn.pers_mo_nature_type) FILTER (WHERE bpn.pers_mo_nature_type IS NOT NULL),
+                '{}')         AS natures,
+       -- Médias
+       COALESCE(
+                       jsonb_agg(
+                       DISTINCT jsonb_build_object(
+                               'id', tm.id_media,
+                               'titre', tm.titre_media
+                                )
+                                ) FILTER (
+                           WHERE tm.chemin_media IS NOT NULL
+                       AND tm.chemin_media <> ''
+                       AND tm.chemin_media <> '[]'
+                       AND EXISTS (SELECT 1
+                                   FROM jsonb_array_elements(tm.chemin_media::jsonb) AS elem
+                                   WHERE COALESCE(elem ->> 'path', '') <> '')
+                           ),
+                       '[]'::jsonb
+       )                      AS medias,
+       -- Monuments lieux (IDs uniquement)
+       COALESCE(array_agg(DISTINCT cml.monument_lieu_id) FILTER (WHERE cml.monument_lieu_id IS NOT NULL),
+                '{}')         AS monuments_lieux_liees,
+       -- Mobiliers images (IDs uniquement)
+       COALESCE(array_agg(DISTINCT cpm.mobilier_image_id) FILTER (WHERE cpm.mobilier_image_id IS NOT NULL),
+                '{}')         AS mobiliers_images_liees,
+       -- Personnes physiques (IDs uniquement)
+       COALESCE(array_agg(DISTINCT cpp.pers_physique_id) FILTER (WHERE cpp.pers_physique_id IS NOT NULL),
+                '{}')         AS personnes_physiques_liees,
+       -- Siècles
+       COALESCE(array_agg(DISTINCT bs.siecle_list) FILTER (WHERE bs.siecle_list IS NOT NULL),
+                '{}')         AS siecles,
+       -- Themes
+       COALESCE(array_agg(DISTINCT t.theme_type) FILTER (WHERE t.theme_type IS NOT NULL),
+                '{}')         AS themes
+FROM t_pers_morales p
+         LEFT JOIN cor_auteur_fiche_pers_mo cap ON p.id_pers_morale = cap.pers_morale_id
+         LEFT JOIN bib_auteurs baf ON cap.auteur_fiche_pers_mo_id = baf.id_auteur_fiche
+         LEFT JOIN loc_communes c ON p.id_commune = c.id_commune
+         LEFT JOIN loc_departements d ON c.id_departement = d.id_departement
+         LEFT JOIN loc_regions r ON d.id_region = r.id_region
+         LEFT JOIN loc_pays pa ON r.id_pays = p.id_pays
+         LEFT JOIN cor_medias_pers_mo cmp ON p.id_pers_morale = cmp.pers_morale_id
+         LEFT JOIN cor_natures_pers_mo cnp ON p.id_pers_morale = cnp.pers_morale_id
+         LEFT JOIN bib_pers_mo_natures bpn ON cnp.pers_mo_nature_id = bpn.id_pers_mo_nature
+         LEFT JOIN t_medias tm ON cmp.media_pers_mo_id = tm.id_media
+         LEFT JOIN cor_monu_lieu_pers_mo cml ON p.id_pers_morale = cml.pers_morale_id
+         LEFT JOIN cor_mob_img_pers_mo cpm ON p.id_pers_morale = cpm.pers_morale_id
+         LEFT JOIN cor_pers_phy_pers_mo cpp ON p.id_pers_morale = cpp.pers_morale_id
+         LEFT JOIN cor_siecles_pers_mo csp ON p.id_pers_morale = csp.pers_morale_id
+         LEFT JOIN bib_siecle bs ON csp.siecle_pers_mo_id = bs.id_siecle
+         LEFT JOIN cor_themes_pers_mo ctpm ON p.id_pers_morale = ctpm.pers_mo_id
+         LEFT JOIN t_themes t ON t.id_theme = ctpm.theme_id
+WHERE p.publication_status = 'DRAFT'
+and p.user_id = $1
+GROUP BY p.id_pers_morale;
+
 -- name: ValidatePendingPersonneMorales :exec
 UPDATE t_pers_morales
 SET publication_status = 'PUBLISHED',

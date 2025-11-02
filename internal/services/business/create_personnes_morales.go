@@ -9,6 +9,7 @@ import (
 
 	"irj/internal/catalogs"
 	"irj/internal/jwt"
+	"irj/internal/postgres"
 	queries "irj/internal/postgres/_generated"
 	"irj/internal/smtp"
 	"irj/pkg/api"
@@ -98,9 +99,9 @@ func processCreatePersonneMorale(ctx context.Context, s *BusinessService, token 
 }
 
 func createPersonneMorale(ctx context.Context, s *BusinessService, exData *createPersonneMoraleExchangeData) createPersonneMoraleState {
-	publicationStatus := "PENDING"
+	publicationStatus := postgres.PendingPublicationStatus
 	if exData.params.Draft {
-		publicationStatus = "DRAFT"
+		publicationStatus = postgres.DraftPublicationStatus
 	}
 
 	id, err := s.postgresService.Queries.CreatePersMorale(ctx, queries.CreatePersMoraleParams{
@@ -141,7 +142,7 @@ func createPersonneMorale(ctx context.Context, s *BusinessService, exData *creat
 			Int32: exData.params.Country,
 			Valid: exData.params.Country != 0,
 		},
-		PublicationStatus: queries.PublicationStatus(publicationStatus),
+		PublicationStatus: publicationStatus,
 		ParentID:          pgtype.Int4{},
 		UserID: pgtype.Text{
 			String: exData.token.ID,

@@ -10,6 +10,7 @@ import (
 
 	"irj/internal/catalogs"
 	"irj/internal/jwt"
+	"irj/internal/postgres"
 	queries "irj/internal/postgres/_generated"
 	"irj/internal/smtp"
 	"irj/pkg/api"
@@ -97,9 +98,9 @@ func processCreateMonumentLieu(ctx context.Context, s *BusinessService, token *j
 }
 
 func createMonumentLieu(ctx context.Context, s *BusinessService, exData *createMonumentLieuExchangeData) createMonumentLieuState {
-	publicationStatus := "PENDING"
+	publicationStatus := postgres.PendingPublicationStatus
 	if exData.params.Draft {
-		publicationStatus = "DRAFT"
+		publicationStatus = postgres.DraftPublicationStatus
 	}
 
 	id, err := s.postgresService.Queries.CreateMonumentLieu(ctx, queries.CreateMonumentLieuParams{
@@ -134,7 +135,7 @@ func createMonumentLieu(ctx context.Context, s *BusinessService, exData *createM
 			Int32: exData.params.Country,
 			Valid: exData.params.Country != 0,
 		},
-		PublicationStatus: queries.PublicationStatus(publicationStatus),
+		PublicationStatus: publicationStatus,
 		ParentID:          pgtype.Int4{},
 		UserID: pgtype.Text{
 			String: exData.token.ID,

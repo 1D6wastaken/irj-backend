@@ -16,6 +16,7 @@ import (
 	"irj/pkg/utils"
 
 	"github.com/go-openapi/strfmt"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/zerolog"
 )
@@ -41,7 +42,87 @@ func (b *BusinessService) GetPendingPersonnesPhysiques(w http.ResponseWriter, r 
 
 	persPhy, err := b.postgresService.Queries.GetPendingPersonnesPhysiques(ctx)
 	if err != nil {
-		logger.Error().Err(err).Msg("failed to get pending personnes morales")
+		logger.Error().Err(err).Msg("failed to get pending personnes physiques")
+
+		return _http.ErrInternalError.Msg("error while fetching data").Err(err)
+	}
+
+	items := make([]*api.PendingDocuments, 0, len(persPhy))
+
+	for i := range persPhy {
+		row := persPhy[i]
+
+		var (
+			medias      []*api.Media
+			commune     string
+			departement string
+			region      string
+			pays        string
+		)
+
+		nocoMedias, err := b.parseMedias(row.Medias)
+		if err == nil {
+			medias = collections.Map(nocoMedias, func(m NocoMedia) *api.Media {
+				return &api.Media{
+					ID:    &m.ID,
+					Title: &m.Title,
+				}
+			})
+		} else {
+			logger.Error().Err(err).Msg("failed to parse medias")
+		}
+
+		if row.Commune != nil {
+			commune = row.Commune.(string)
+		}
+
+		if row.Departement != nil {
+			departement = row.Departement.(string)
+		}
+
+		if row.Region != nil {
+			region = row.Region.(string)
+		}
+
+		if row.Pays != nil {
+			pays = row.Pays.(string)
+		}
+
+		items = append(items, &api.PendingDocuments{
+			ID:           &row.ID,
+			Title:        &row.Firstname.String,
+			CreationDate: utils.PtrTo(strfmt.Date(row.DateCreation.Time)),
+			Authors:      collections.InterfaceToStringSlice(row.Redacteurs),
+			City:         commune,
+			Department:   departement,
+			Region:       region,
+			Country:      pays,
+			Professions:  collections.InterfaceToStringSlice(row.Professions),
+			Medias:       medias,
+			Centuries:    collections.InterfaceToStringSlice(row.Siecles),
+		})
+	}
+
+	return _http.WriteJSONResponse(w, http.StatusOK, items)
+}
+
+func (b *BusinessService) GetDraftPersonnesPhysiques(w http.ResponseWriter, r *http.Request) *_http.APIError {
+	ctx, cancel := context.WithTimeout(r.Context(), defaultTimeOut)
+	defer cancel()
+
+	logger := zerolog.Ctx(ctx)
+
+	token, ok := r.Context().Value(catalogs.AccessToken).(jwt.SessionInfo)
+	if !ok {
+		return _http.ErrUnauthorized.Msg("invalid token")
+	}
+
+	persPhy, err := b.postgresService.Queries.GetDraftPersonnesPhysiques(ctx, pgtype.Text{
+		String: token.ID,
+		Valid:  true,
+	})
+	if err != nil {
+		logger.Error().Err(err).Msg("failed to get draft personnes physiques")
 
 		return _http.ErrInternalError.Msg("error while fetching data").Err(err)
 	}

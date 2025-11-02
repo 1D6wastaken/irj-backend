@@ -281,6 +281,22 @@ paths:
           description: "Invalid field"
           schema:
             $ref: "#/definitions/error"
+  /monuments_lieux/draft:
+    get:
+      tags:
+        - private
+      summary: "Get draft monuments lieux"
+      security:
+        - Bearer: [ ]
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/PendingDocuments"
   /monuments_lieux/{id}:
     get:
       tags:
@@ -401,6 +417,22 @@ paths:
           description: "Invalid field"
           schema:
             $ref: "#/definitions/error"
+  /mobiliers_images/draft:
+    get:
+      tags:
+        - private
+      summary: "Get draft mobiliers images"
+      security:
+        - Bearer: [ ]
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/PendingDocuments"
   /mobiliers_images/{id}:
     get:
       tags:
@@ -521,6 +553,22 @@ paths:
           description: "Invalid field"
           schema:
             $ref: "#/definitions/error"
+  /personnes_morales/draft:
+    get:
+      tags:
+        - private
+      summary: "Get draft personnes morales"
+      security:
+        - Bearer: [ ]
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/PendingDocuments"
   /personnes_morales/{id}:
     get:
       tags:
@@ -641,6 +689,22 @@ paths:
           description: "Invalid field"
           schema:
             $ref: "#/definitions/error"
+  /personnes_physiques/draft:
+    get:
+      tags:
+        - private
+      summary: "Get draft personnes physiques"
+      security:
+        - Bearer: [ ]
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/PendingDocuments"
   /personnes_physiques/{id}:
     get:
       tags:

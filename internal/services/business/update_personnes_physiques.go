@@ -10,6 +10,7 @@ import (
 
 	"irj/internal/catalogs"
 	"irj/internal/jwt"
+	"irj/internal/postgres"
 	queries "irj/internal/postgres/_generated"
 	"irj/pkg/api"
 	_http "irj/pkg/http"
@@ -112,9 +113,9 @@ func processUpdatePersonnePhysique(ctx context.Context, s *BusinessService, toke
 
 //nolint:lll
 func updatePersonnePhysique(ctx context.Context, s *BusinessService, exData *updatePersonnePhysiqueExchangeData) updatePersonnePhysiqueState {
-	publicationStatus := "PENDING"
+	publicationStatus := postgres.PendingPublicationStatus
 	if exData.params.Draft {
-		publicationStatus = "DRAFT"
+		publicationStatus = postgres.DraftPublicationStatus
 	}
 
 	id, err := s.postgresService.Queries.CreatePersPhysique(ctx, queries.CreatePersPhysiqueParams{
@@ -146,7 +147,7 @@ func updatePersonnePhysique(ctx context.Context, s *BusinessService, exData *upd
 			Int32: exData.params.Country,
 			Valid: exData.params.Country != 0,
 		},
-		PublicationStatus: queries.PublicationStatus(publicationStatus),
+		PublicationStatus: publicationStatus,
 		ParentID:          pgtype.Int4{Int32: exData.id, Valid: true},
 		UserID: pgtype.Text{
 			String: exData.token.ID,
