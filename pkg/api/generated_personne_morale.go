@@ -106,6 +106,9 @@ type PersonneMorale struct {
 
 	// themes
 	Themes []*BasicFilter `json:"themes"`
+
+	// parent id
+	ParentID int32 `json:"parent_id,omitempty"`
 }
 
 // Validate validates this personne morale

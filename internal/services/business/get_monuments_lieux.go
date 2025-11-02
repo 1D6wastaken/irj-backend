@@ -253,5 +253,6 @@ func (b *BusinessService) GetMonumentLieu(w http.ResponseWriter, r *http.Request
 		LinkedIndividuals:     collections.InterfaceToInt32Slice(monument.PersonnesPhysiquesLiees),
 		LinkedLegalEntities:   collections.InterfaceToInt32Slice(monument.PersonnesMoralesLiees),
 		Themes:                interfaceSliceToBasicFilterSlice(monument.Themes.([]any)),
+		ParentID:              monument.ParentID.Int32,
 	})
 }

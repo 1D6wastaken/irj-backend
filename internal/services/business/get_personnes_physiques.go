@@ -199,7 +199,7 @@ func (b *BusinessService) GetPersonnePhysique(w http.ResponseWriter, r *http.Req
 		return _http.ErrBadRequest.Msg("id path param is invalid").Err(err)
 	}
 
-	pmo, err := b.postgresService.Queries.GetPersonnePhysiqueByID(subCtx, int32(id))
+	ppy, err := b.postgresService.Queries.GetPersonnePhysiqueByID(subCtx, int32(id))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return _http.ErrNotFound.Msg("personne physique not found").Err(err)
@@ -210,7 +210,7 @@ func (b *BusinessService) GetPersonnePhysique(w http.ResponseWriter, r *http.Req
 
 	var medias []*api.Media
 
-	nocoMedias, err := b.parseMedias(pmo.Medias)
+	nocoMedias, err := b.parseMedias(ppy.Medias)
 	if err == nil {
 		medias = collections.Map(nocoMedias, func(m NocoMedia) *api.Media {
 			return &api.Media{
@@ -220,41 +220,42 @@ func (b *BusinessService) GetPersonnePhysique(w http.ResponseWriter, r *http.Req
 		})
 	}
 
-	city, department, region, country, err := parseLocation(pmo.City, pmo.Department, pmo.Region, pmo.Country)
+	city, department, region, country, err := parseLocation(ppy.City, ppy.Department, ppy.Region, ppy.Country)
 	if err != nil {
 		return _http.ErrInternalError.Msg("error while parsing location").Err(err)
 	}
 
 	return _http.WriteJSONResponse(w, http.StatusOK, api.PersonnePhysique{
-		ID:                    pmo.ID,
-		Firstname:             pmo.Firstname.String,
-		Birthdate:             pmo.DateNaissance.String,
-		Death:                 pmo.DateDeces.String,
-		Attestation:           pmo.Attestation.String,
-		HistoricalPeriod:      interfaceSliceToBasicFilterSlice(pmo.HistoricalPeriod.([]any)),
-		Bibliography:          pmo.Bibliographie.String,
-		BiographicalElements:  pmo.ElementsBiographiques.String,
-		PilgrimageElement:     pmo.ElementsPelerinage.String,
-		Commutation:           pmo.CommutationVoeu.String,
-		Sources:               pmo.Sources.String,
-		CreationDate:          strfmt.Date(pmo.DateCreation.Time),
-		UpdateDate:            strfmt.Date(pmo.DateMaj.Time),
-		Published:             pmo.Publie.Bool,
-		Contributors:          pmo.Contributeurs.String,
-		Comment:               pmo.Commentaires.String,
-		Authors:               interfaceSliceToBasicFilterSlice(pmo.Authors.([]any)),
+		ID:                    ppy.ID,
+		Firstname:             ppy.Firstname.String,
+		Birthdate:             ppy.DateNaissance.String,
+		Death:                 ppy.DateDeces.String,
+		Attestation:           ppy.Attestation.String,
+		HistoricalPeriod:      interfaceSliceToBasicFilterSlice(ppy.HistoricalPeriod.([]any)),
+		Bibliography:          ppy.Bibliographie.String,
+		BiographicalElements:  ppy.ElementsBiographiques.String,
+		PilgrimageElement:     ppy.ElementsPelerinage.String,
+		Commutation:           ppy.CommutationVoeu.String,
+		Sources:               ppy.Sources.String,
+		CreationDate:          strfmt.Date(ppy.DateCreation.Time),
+		UpdateDate:            strfmt.Date(ppy.DateMaj.Time),
+		Published:             ppy.Publie.Bool,
+		Contributors:          ppy.Contributeurs.String,
+		Comment:               ppy.Commentaires.String,
+		Authors:               interfaceSliceToBasicFilterSlice(ppy.Authors.([]any)),
 		City:                  city,
 		Department:            department,
 		Region:                region,
 		Country:               country,
-		Travels:               interfaceSliceToBasicFilterSlice(pmo.Travels.([]any)),
-		Professions:           interfaceSliceToBasicFilterSlice(pmo.Professions.([]any)),
-		EventNature:           pmo.NatureEvenement.String,
+		Travels:               interfaceSliceToBasicFilterSlice(ppy.Travels.([]any)),
+		Professions:           interfaceSliceToBasicFilterSlice(ppy.Professions.([]any)),
+		EventNature:           ppy.NatureEvenement.String,
 		Medias:                medias,
-		Centuries:             interfaceSliceToBasicFilterSlice(pmo.Centuries.([]any)),
-		LinkedMonumentsPlaces: collections.InterfaceToInt32Slice(pmo.MonumentsLieuxLiees),
-		LinkedLegalEntities:   collections.InterfaceToInt32Slice(pmo.PersonnesMoralesLiees),
-		LinkedFurnitureImages: collections.InterfaceToInt32Slice(pmo.MobiliersImagesLiees),
-		Themes:                interfaceSliceToBasicFilterSlice(pmo.Themes.([]any)),
+		Centuries:             interfaceSliceToBasicFilterSlice(ppy.Centuries.([]any)),
+		LinkedMonumentsPlaces: collections.InterfaceToInt32Slice(ppy.MonumentsLieuxLiees),
+		LinkedLegalEntities:   collections.InterfaceToInt32Slice(ppy.PersonnesMoralesLiees),
+		LinkedFurnitureImages: collections.InterfaceToInt32Slice(ppy.MobiliersImagesLiees),
+		Themes:                interfaceSliceToBasicFilterSlice(ppy.Themes.([]any)),
+		ParentID:              ppy.ParentID.Int32,
 	})
 }
