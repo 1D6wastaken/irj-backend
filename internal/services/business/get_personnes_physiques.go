@@ -100,6 +100,7 @@ func (b *BusinessService) GetPendingPersonnesPhysiques(w http.ResponseWriter, r 
 			Professions:  collections.InterfaceToStringSlice(row.Professions),
 			Medias:       medias,
 			Centuries:    collections.InterfaceToStringSlice(row.Siecles),
+			ParentID:     row.ParentID.Int32,
 		})
 	}
 
@@ -180,6 +181,7 @@ func (b *BusinessService) GetDraftPersonnesPhysiques(w http.ResponseWriter, r *h
 			Professions:  collections.InterfaceToStringSlice(row.Professions),
 			Medias:       medias,
 			Centuries:    collections.InterfaceToStringSlice(row.Siecles),
+			ParentID:     row.ParentID.Int32,
 		})
 	}
 

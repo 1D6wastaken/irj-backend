@@ -61,6 +61,9 @@ type PendingDocuments struct {
 
 	// time period of the monument lieu
 	Centuries []string `json:"centuries"`
+
+	// parent id
+	ParentID int32 `json:"parent_id,omitempty"`
 }
 
 // Validate validates this pending documents

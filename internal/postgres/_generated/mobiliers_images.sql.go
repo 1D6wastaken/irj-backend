@@ -346,6 +346,7 @@ SELECT m.id_mobilier_image    AS id,
        m.protection_commentaires,
        m.lieu_conservation,
        m.lieu_origine,
+       m.parent_id,
        -- Redacteurs (auteurs fiche)
        COALESCE(array_agg(DISTINCT baf.auteur_fiche_nom) FILTER (WHERE baf.auteur_fiche_nom IS NOT NULL),
                 '{}')         AS redacteurs,
@@ -446,6 +447,7 @@ type GetDraftMobiliersImagesRow struct {
 	ProtectionCommentaires  pgtype.Text
 	LieuConservation        pgtype.Text
 	LieuOrigine             pgtype.Text
+	ParentID                pgtype.Int4
 	Redacteurs              interface{}
 	Commune                 interface{}
 	Departement             interface{}
@@ -488,6 +490,7 @@ func (q *Queries) GetDraftMobiliersImages(ctx context.Context, userID pgtype.Tex
 			&i.ProtectionCommentaires,
 			&i.LieuConservation,
 			&i.LieuOrigine,
+			&i.ParentID,
 			&i.Redacteurs,
 			&i.Commune,
 			&i.Departement,
@@ -888,6 +891,7 @@ SELECT m.id_mobilier_image    AS id,
        m.protection_commentaires,
        m.lieu_conservation,
        m.lieu_origine,
+       m.parent_id,
        -- Redacteurs (auteurs fiche)
        COALESCE(array_agg(DISTINCT baf.auteur_fiche_nom) FILTER (WHERE baf.auteur_fiche_nom IS NOT NULL),
                 '{}')         AS redacteurs,
@@ -987,6 +991,7 @@ type GetPendingMobiliersImagesRow struct {
 	ProtectionCommentaires  pgtype.Text
 	LieuConservation        pgtype.Text
 	LieuOrigine             pgtype.Text
+	ParentID                pgtype.Int4
 	Redacteurs              interface{}
 	Commune                 interface{}
 	Departement             interface{}
@@ -1029,6 +1034,7 @@ func (q *Queries) GetPendingMobiliersImages(ctx context.Context) ([]GetPendingMo
 			&i.ProtectionCommentaires,
 			&i.LieuConservation,
 			&i.LieuOrigine,
+			&i.ParentID,
 			&i.Redacteurs,
 			&i.Commune,
 			&i.Departement,

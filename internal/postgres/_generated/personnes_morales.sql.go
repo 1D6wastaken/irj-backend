@@ -269,6 +269,7 @@ SELECT p.id_pers_morale       AS id,
        p.publie,
        p.contributeurs,
        p.commentaires,
+       p.parent_id,
        -- Redacteurs (auteurs fiche)
        COALESCE(array_agg(DISTINCT baf.auteur_fiche_nom) FILTER (WHERE baf.auteur_fiche_nom IS NOT NULL),
                 '{}')         AS redacteurs,
@@ -354,6 +355,7 @@ type GetDraftPersonnesMoralesRow struct {
 	Publie                  pgtype.Bool
 	Contributeurs           pgtype.Text
 	Commentaires            pgtype.Text
+	ParentID                pgtype.Int4
 	Redacteurs              interface{}
 	Commune                 interface{}
 	Departement             interface{}
@@ -393,6 +395,7 @@ func (q *Queries) GetDraftPersonnesMorales(ctx context.Context, userID pgtype.Te
 			&i.Publie,
 			&i.Contributeurs,
 			&i.Commentaires,
+			&i.ParentID,
 			&i.Redacteurs,
 			&i.Commune,
 			&i.Departement,
@@ -538,6 +541,7 @@ SELECT p.id_pers_morale       AS id,
        p.publie,
        p.contributeurs,
        p.commentaires,
+       p.parent_id,
        -- Redacteurs (auteurs fiche)
        COALESCE(array_agg(DISTINCT baf.auteur_fiche_nom) FILTER (WHERE baf.auteur_fiche_nom IS NOT NULL),
                 '{}')         AS redacteurs,
@@ -622,6 +626,7 @@ type GetPendingPersonnesMoralesRow struct {
 	Publie                  pgtype.Bool
 	Contributeurs           pgtype.Text
 	Commentaires            pgtype.Text
+	ParentID                pgtype.Int4
 	Redacteurs              interface{}
 	Commune                 interface{}
 	Departement             interface{}
@@ -661,6 +666,7 @@ func (q *Queries) GetPendingPersonnesMorales(ctx context.Context) ([]GetPendingP
 			&i.Publie,
 			&i.Contributeurs,
 			&i.Commentaires,
+			&i.ParentID,
 			&i.Redacteurs,
 			&i.Commune,
 			&i.Departement,

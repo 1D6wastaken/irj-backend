@@ -324,6 +324,7 @@ SELECT p.id_pers_physique     AS id,
        p.publie,
        p.contributeurs,
        p.commentaires,
+       p.parent_id,
        -- Redacteurs (auteurs fiche)
        COALESCE(array_agg(DISTINCT baf.auteur_fiche_nom) FILTER (WHERE baf.auteur_fiche_nom IS NOT NULL),
                 '{}')         AS redacteurs,
@@ -418,6 +419,7 @@ type GetDraftPersonnesPhysiquesRow struct {
 	Publie                pgtype.Bool
 	Contributeurs         pgtype.Text
 	Commentaires          pgtype.Text
+	ParentID              pgtype.Int4
 	Redacteurs            interface{}
 	Commune               interface{}
 	Departement           interface{}
@@ -460,6 +462,7 @@ func (q *Queries) GetDraftPersonnesPhysiques(ctx context.Context, userID pgtype.
 			&i.Publie,
 			&i.Contributeurs,
 			&i.Commentaires,
+			&i.ParentID,
 			&i.Redacteurs,
 			&i.Commune,
 			&i.Departement,
@@ -609,6 +612,7 @@ SELECT p.id_pers_physique     AS id,
        p.publie,
        p.contributeurs,
        p.commentaires,
+       p.parent_id,
        -- Redacteurs (auteurs fiche)
        COALESCE(array_agg(DISTINCT baf.auteur_fiche_nom) FILTER (WHERE baf.auteur_fiche_nom IS NOT NULL),
                 '{}')         AS redacteurs,
@@ -702,6 +706,7 @@ type GetPendingPersonnesPhysiquesRow struct {
 	Publie                pgtype.Bool
 	Contributeurs         pgtype.Text
 	Commentaires          pgtype.Text
+	ParentID              pgtype.Int4
 	Redacteurs            interface{}
 	Commune               interface{}
 	Departement           interface{}
@@ -744,6 +749,7 @@ func (q *Queries) GetPendingPersonnesPhysiques(ctx context.Context) ([]GetPendin
 			&i.Publie,
 			&i.Contributeurs,
 			&i.Commentaires,
+			&i.ParentID,
 			&i.Redacteurs,
 			&i.Commune,
 			&i.Departement,

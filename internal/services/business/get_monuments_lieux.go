@@ -100,6 +100,7 @@ func (b *BusinessService) GetPendingMonumentsLieux(w http.ResponseWriter, r *htt
 			Natures:      collections.InterfaceToStringSlice(row.Natures),
 			Medias:       medias,
 			Centuries:    collections.InterfaceToStringSlice(row.Siecles),
+			ParentID:     row.ParentID.Int32,
 		})
 	}
 
@@ -180,6 +181,7 @@ func (b *BusinessService) GetDraftMonumentsLieux(w http.ResponseWriter, r *http.
 			Natures:      collections.InterfaceToStringSlice(row.Natures),
 			Medias:       medias,
 			Centuries:    collections.InterfaceToStringSlice(row.Siecles),
+			ParentID:     row.ParentID.Int32,
 		})
 	}
 

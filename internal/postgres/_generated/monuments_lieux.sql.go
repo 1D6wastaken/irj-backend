@@ -309,6 +309,7 @@ SELECT m.id_monument_lieu     AS id,
        m.protection,
        m.protection_commentaires,
        m.source,
+       m.parent_id,
        -- Redacteurs (auteurs fiche)
        COALESCE(array_agg(DISTINCT baf.auteur_fiche_nom) FILTER (WHERE baf.auteur_fiche_nom IS NOT NULL),
                 '{}')         AS redacteurs,
@@ -402,6 +403,7 @@ type GetDraftMonumentsLieuxRow struct {
 	Protection              pgtype.Bool
 	ProtectionCommentaires  pgtype.Text
 	Source                  pgtype.Text
+	ParentID                pgtype.Int4
 	Redacteurs              interface{}
 	Commune                 interface{}
 	Departement             interface{}
@@ -441,6 +443,7 @@ func (q *Queries) GetDraftMonumentsLieux(ctx context.Context, userID pgtype.Text
 			&i.Protection,
 			&i.ProtectionCommentaires,
 			&i.Source,
+			&i.ParentID,
 			&i.Redacteurs,
 			&i.Commune,
 			&i.Departement,
@@ -813,6 +816,7 @@ SELECT m.id_monument_lieu     AS id,
        m.protection,
        m.protection_commentaires,
        m.source,
+       m.parent_id,
        -- Redacteurs (auteurs fiche)
        COALESCE(array_agg(DISTINCT baf.auteur_fiche_nom) FILTER (WHERE baf.auteur_fiche_nom IS NOT NULL),
                 '{}')         AS redacteurs,
@@ -905,6 +909,7 @@ type GetPendingMonumentsLieuxRow struct {
 	Protection              pgtype.Bool
 	ProtectionCommentaires  pgtype.Text
 	Source                  pgtype.Text
+	ParentID                pgtype.Int4
 	Redacteurs              interface{}
 	Commune                 interface{}
 	Departement             interface{}
@@ -944,6 +949,7 @@ func (q *Queries) GetPendingMonumentsLieux(ctx context.Context) ([]GetPendingMon
 			&i.Protection,
 			&i.ProtectionCommentaires,
 			&i.Source,
+			&i.ParentID,
 			&i.Redacteurs,
 			&i.Commune,
 			&i.Departement,

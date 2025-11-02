@@ -2552,6 +2552,9 @@ definitions:
         items:
           type: string
         description: time period of the monument lieu
+      parent_id:
+        type: integer
+        format: int32
   MonumentsLieuxCreationBody:
     type: object
     required:
