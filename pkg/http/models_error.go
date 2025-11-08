@@ -11,6 +11,7 @@ var (
 	ErrMethodNotAllowed = APIError{HTTPCode: http.StatusMethodNotAllowed, Message: "Method not allowed", Details: ""}
 	ErrConflict         = APIError{HTTPCode: http.StatusConflict, Message: "Resource already exists", Details: ""}
 	ErrUnauthorized     = APIError{HTTPCode: http.StatusUnauthorized, Message: "Unauthorized request", Details: ""}
+	ErrForbidden        = APIError{HTTPCode: http.StatusForbidden, Message: "Forbidden request", Details: ""}
 	ErrInternalError    = APIError{HTTPCode: http.StatusInternalServerError, Message: "Server panicked unexpectedly", Details: ""}
 )
 

@@ -153,7 +153,10 @@ func storeUserActivationEvent(_ context.Context, s *UserService, exData *approve
 		defer s.stopper.Release()
 
 		err := s.postgresService.Queries.ContributorValidationEvent(context.Background(), queries.ContributorValidationEventParams{
-			UserID: userID,
+			UserID: pgtype.Text{
+				String: userID,
+				Valid:  true,
+			},
 			AdminID: pgtype.Text{
 				String: adminID,
 				Valid:  true,
@@ -213,7 +216,10 @@ func storeUserRejectionEvent(_ context.Context, s *UserService, exData *approveR
 		defer s.stopper.Release()
 
 		err := s.postgresService.Queries.ContributorRejectionEvent(context.Background(), queries.ContributorRejectionEventParams{
-			UserID: userID,
+			UserID: pgtype.Text{
+				String: userID,
+				Valid:  true,
+			},
 			AdminID: pgtype.Text{
 				String: adminID,
 				Valid:  true,

@@ -206,7 +206,10 @@ func storeUserRegistrationEvent(_ context.Context, s *UserService, exData *regis
 	go func(logger *zerolog.Logger, id string) {
 		defer s.stopper.Release()
 
-		err := s.postgresService.Queries.ContributorRegistrationEvent(context.Background(), id)
+		err := s.postgresService.Queries.ContributorRegistrationEvent(context.Background(), pgtype.Text{
+			String: id,
+			Valid:  true,
+		})
 		if err != nil {
 			logger.Error().Err(err).Msg("failed to store registration event")
 		}

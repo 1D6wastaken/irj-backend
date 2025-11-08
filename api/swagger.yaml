@@ -760,6 +760,52 @@ paths:
           schema:
             $ref: "#/definitions/SearchResult"
 
+  /history/{id}:
+    get:
+      tags:
+        - private
+      summary: "Get user history"
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: limit
+          type: integer
+          description: The maximum size of the returned array
+          required: false
+          default: 10
+          in: query
+        - name: page
+          type: integer
+          description: The page
+          required: false
+          default: 1
+          in: query
+        - in: path
+          name: id
+          required: true
+          type: string
+          format: uuid
+          description: "user id"
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/GetUserHistory"
+        "401":
+          description: "No authorization"
+          schema:
+            $ref: "#/definitions/error"
+        "403":
+          description: "Not allowed"
+          schema:
+            $ref: "#/definitions/error"
+        "404":
+          description: "Not Found"
+          schema:
+            $ref: "#/definitions/error"
+
   /draft/monuments_lieux:
     get:
       tags:
@@ -824,6 +870,67 @@ paths:
             type: array
             items:
               $ref: "#/definitions/PendingDocuments"
+
+  /draft/monuments_lieux/{id}:
+    delete:
+      tags:
+        - private
+      summary: "Delete draft monuments lieux"
+      security:
+        - Bearer: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          type: string
+      responses:
+        "204":
+          description: "No content"
+  /draft/mobiliers_images/{id}:
+    delete:
+      tags:
+        - private
+      summary: "Delete draft mobiliers images"
+      security:
+        - Bearer: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          type: string
+      responses:
+        "204":
+          description: "No content"
+  /draft/personnes_morales/{id}:
+    delete:
+      tags:
+        - private
+      summary: "Delete draft personnes morales"
+      security:
+        - Bearer: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          type: string
+      responses:
+        "204":
+          description: "No content"
+  /draft/personnes_physiques/{id}:
+    delete:
+      tags:
+        - private
+      summary: "Delete draft personnes physiques"
+      security:
+        - Bearer: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          type: string
+      responses:
+        "204":
+          description: "No content"
 
   ## USERS ##
   /users:
@@ -1023,6 +1130,7 @@ paths:
           description: "Not Found"
           schema:
             $ref: "#/definitions/error"
+
   /email/{token}/validate:
     get:
       tags:
@@ -1048,8 +1156,6 @@ paths:
           description: "Already confirmed"
           schema:
             $ref: "#/definitions/error"
-
-
 
   ## LOGIN ##
   /login:
@@ -1152,6 +1258,73 @@ paths:
             $ref: "#/definitions/error"
         "404":
           description: "token not valid"
+          schema:
+            $ref: "#/definitions/error"
+
+  ## ADMIN ##
+  /admin/users:
+    get:
+      tags:
+        - admin
+      summary: "Get all users info"
+      security:
+        - Bearer: [ ]
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/GetAdminUsersInfo"
+        "401":
+          description: "No authorization"
+          schema:
+            $ref: "#/definitions/error"
+        "403":
+          description: "Not allowed"
+          schema:
+            $ref: "#/definitions/error"
+        "404":
+          description: "Not Found"
+          schema:
+            $ref: "#/definitions/error"
+  /admin/contributions:
+    get:
+      tags:
+        - admin
+      summary: "Get all contributions"
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: limit
+          type: integer
+          description: The maximum size of the returned array
+          required: false
+          default: 10
+          in: query
+        - name: page
+          type: integer
+          description: The page
+          required: false
+          default: 1
+          in: query
+      produces:
+        - "application/json"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/GetAdminContributions"
+        "401":
+          description: "No authorization"
+          schema:
+            $ref: "#/definitions/error"
+        "403":
+          description: "Not allowed"
+          schema:
+            $ref: "#/definitions/error"
+        "404":
+          description: "Not Found"
           schema:
             $ref: "#/definitions/error"
 
@@ -1264,6 +1437,99 @@ definitions:
     required:
       - token
 
+  GetUserHistory:
+    type: object
+    required:
+      - events
+      - total
+    properties:
+      total:
+        type: integer
+        format: int64
+      events:
+        type: array
+        items:
+          $ref: "#/definitions/GetUserHistoryItem"
+  GetUserHistoryItem:
+    type: object
+    required:
+      - date
+      - event
+      - category
+    properties:
+      date:
+        type: string
+        format: date-time
+      event:
+        type: string
+      category:
+        type: string
+        enum:
+          - monuments_lieux
+          - mobiliers_images
+          - personnes_morales
+          - personnes_physiques
+      document_id:
+        type: integer
+        format: int32
+  GetAdminContributions:
+    type: object
+    required:
+      - events
+      - total
+    properties:
+      total:
+        type: integer
+        format: int64
+      events:
+        type: array
+        items:
+          $ref: "#/definitions/GetAdminContributionsItem"
+  GetAdminContributionsItem:
+    type: object
+    required:
+      - date
+      - event
+      - category
+    properties:
+      date:
+          type: string
+          format: date-time
+      event:
+          type: string
+      category:
+          type: string
+          enum:
+          - monuments_lieux
+          - mobiliers_images
+          - personnes_morales
+          - personnes_physiques
+      document_id:
+          type: integer
+          format: int32
+      user_id:
+          type: string
+          format: uuid
+      user_firstname:
+          type: string
+      user_lastname:
+          type: string
+      user_mail:
+          type: string
+          format: email
+      admin_id:
+          type: string
+          format: uuid
+      admin_firstname:
+          type: string
+      admin_lastname:
+          type: string
+      admin_mail:
+          type: string
+          format: email
+          
+
+
   GetUsersInfo:
     type: array
     items:
@@ -1312,6 +1578,75 @@ definitions:
       creation_date:
         type: string
         format: date
+        description: creation date of the entry
+  GetAdminUsersInfo:
+    type: array
+    items:
+      $ref: "#/definitions/GetAdminUserInfo"
+  GetAdminUserInfo:
+    type: object
+    required:
+      - id
+      - firstname
+      - lastname
+      - mail
+      - grade
+      - creation_date
+    properties:
+      id:
+        type: string
+        format: uuid
+      firstname:
+        type: string
+        description: First name
+      lastname:
+        type: string
+        description: Last name
+      mail:
+        type: string
+        format: email
+        description: Email of contributor
+      mail_confirm:
+        type: boolean
+        description: Email confirmed or not
+      phone:
+        type: string
+        maxLength: 20
+      organization:
+        type: string
+      domain:
+        type: string
+        enum:
+          - ART
+          - ARCHITECTURE
+          - MEDIEVAL
+          - ARCHEOLOGIE
+          - PATRIMOINE
+          - THEOLOGIE
+          - PELERINAGE
+          - AUTRE
+      last_login:
+        type: string
+        format: date-time
+      validated_by_firstname:
+        type: string
+        description: First name of the validator
+      validated_by_lastname:
+        type: string
+        description: Last name of the validator
+      validated_by_mail:
+        type: string
+        format: email
+        description: Email of the validator
+      grade:
+        type: string
+        enum:
+          - PENDING
+          - ACTIVE
+          - ADMIN
+      creation_date:
+        type: string
+        format: date-time
         description: creation date of the entry
   PostUsersBody:
     type: object

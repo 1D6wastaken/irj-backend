@@ -148,23 +148,25 @@ func approveMonumentLieu(ctx context.Context, s *BusinessService, exData *approv
 	}
 
 	if exData.documents.ParentID.Valid {
-		exData.id = exData.documents.ParentID.Int32
+		if err := deleteMonumentLieu(ctx, exData.logger, s, exData.documents.ParentID.Int32); err != nil {
+			exData.err = err
+		}
 
-		return rejectMonumentLieu
+		return storeMonuLieuxDocumentUpdateValidationEvent
 	}
 
-	return storeMonuLieuxDocumentValidationEvent
+	return storeMonuLieuxDocumentSubmissionValidationEvent
 }
 
 //nolint:lll
-func storeMonuLieuxDocumentValidationEvent(_ context.Context, s *BusinessService, exData *approveRejectMonumentLieuExchangeData) approveRejectMonumentLieuState {
+func storeMonuLieuxDocumentSubmissionValidationEvent(_ context.Context, s *BusinessService, exData *approveRejectMonumentLieuExchangeData) approveRejectMonumentLieuState {
 	s.stopper.Hold(1)
 
 	//nolint:contextcheck
 	go func(logger *zerolog.Logger, adminID string, documentID int32) {
 		defer s.stopper.Release()
 
-		err := s.postgresService.Queries.DocumentValidationEvent(context.Background(), queries.DocumentValidationEventParams{
+		err := s.postgresService.Queries.DocumentSubmissionValidationEvent(context.Background(), queries.DocumentSubmissionValidationEventParams{
 			AdminID: pgtype.Text{
 				String: adminID,
 				Valid:  true,
@@ -186,81 +188,102 @@ func storeMonuLieuxDocumentValidationEvent(_ context.Context, s *BusinessService
 	return nil
 }
 
-//nolint:cyclop,lll
-func rejectMonumentLieu(ctx context.Context, s *BusinessService, exData *approveRejectMonumentLieuExchangeData) approveRejectMonumentLieuState {
-	err := s.postgresService.Queries.DetachSieclesFromMonuLieu(ctx, exData.id)
-	if err != nil {
-		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to detach siecles from monument lieu")
-	}
+//nolint:lll
+func storeMonuLieuxDocumentUpdateValidationEvent(_ context.Context, s *BusinessService, exData *approveRejectMonumentLieuExchangeData) approveRejectMonumentLieuState {
+	s.stopper.Hold(1)
 
-	err = s.postgresService.Queries.DetachMediasFromMonuLieu(ctx, exData.id)
-	if err != nil {
-		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to detach medias from monument lieu")
-	}
+	//nolint:contextcheck
+	go func(logger *zerolog.Logger, adminID string, documentID, parentID int32) {
+		defer s.stopper.Release()
 
-	err = s.postgresService.Queries.DetachThemesFromMonuLieu(ctx, exData.id)
-	if err != nil {
-		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to detach themes from monument lieu")
-	}
-
-	err = s.postgresService.Queries.DetachNaturesFromMonuLieu(ctx, exData.id)
-	if err != nil {
-		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to detach natures from monument lieu")
-	}
-
-	err = s.postgresService.Queries.DetachEtatsFromMonuLieu(ctx, exData.id)
-	if err != nil {
-		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to detach conservation states from monument lieu")
-	}
-
-	err = s.postgresService.Queries.DetachMateriauxFromMonuLieu(ctx, exData.id)
-	if err != nil {
-		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to detach materials from monument lieu")
-	}
-
-	err = s.postgresService.Queries.UnlinkMonuLieuFromMobImg(ctx, exData.id)
-	if err != nil {
-		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to unlink mobiliers images document from monument lieu")
-	}
-
-	err = s.postgresService.Queries.UnlinkMonuLieuFromPersMo(ctx, exData.id)
-	if err != nil {
-		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to unlink personnes morales document from monument lieu")
-	}
-
-	err = s.postgresService.Queries.UnlinkMonuLieuFromPersPhy(ctx, exData.id)
-	if err != nil {
-		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to unlink personnes physiques document from monument lieu")
-	}
-
-	err = s.postgresService.Queries.DetachAuthorFromMonuLieu(ctx, exData.id)
-	if err != nil {
-		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to detach author from monument lieu")
-	}
-
-	if err := s.postgresService.Queries.DeleteMonumentLieu(ctx, exData.id); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			exData.logger.Warn().Msg("document not found and therefore can not be approved")
-
-			return nil
+		if err := s.postgresService.Queries.DocumentUpdateValidationEvent(context.Background(), queries.DocumentUpdateValidationEventParams{
+			AdminID: pgtype.Text{
+				String: adminID,
+				Valid:  true,
+			},
+			DocumentID: pgtype.Int4{
+				Int32: documentID,
+				Valid: true,
+			},
+			Comment: pgtype.Text{
+				String: "monuments_lieux",
+				Valid:  true,
+			},
+		}); err != nil {
+			logger.Error().Err(err).Msg("failed to store document validation event")
 		}
 
-		exData.logger.Error().Err(err).Msg("failed to approve document")
-		exData.err = catalogs.ErrUnexpectedError
+		if err := s.postgresService.Queries.UpdateDocumentIDAfterUpdate(context.Background(), queries.UpdateDocumentIDAfterUpdateParams{
+			NewDocID: pgtype.Int4{
+				Int32: documentID,
+				Valid: true,
+			},
+			ParentDocID: pgtype.Int4{
+				Int32: parentID,
+				Valid: true,
+			},
+		}); err != nil {
+			logger.Error().Err(err).Msg("failed to store document validation event")
+		}
+	}(exData.logger, exData.token.ID, exData.id, exData.documents.ParentID.Int32)
+
+	return nil
+}
+
+//nolint:cyclop,lll
+func rejectMonumentLieu(ctx context.Context, s *BusinessService, exData *approveRejectMonumentLieuExchangeData) approveRejectMonumentLieuState {
+	if err := deleteMonumentLieu(ctx, exData.logger, s, exData.id); err != nil {
+		exData.err = err
+
+		return nil
 	}
 
-	return storeMonuLieuxDocumentRejectionEvent
+	if exData.documents.ParentID.Valid {
+		return storeMonuLieuxDocumentUpdateRejectionEvent
+	}
+
+	return storeMonuLieuxDocumentSubmissionRejectionEvent
 }
 
 //nolint:lll
-func storeMonuLieuxDocumentRejectionEvent(_ context.Context, s *BusinessService, exData *approveRejectMonumentLieuExchangeData) approveRejectMonumentLieuState {
+func storeMonuLieuxDocumentSubmissionRejectionEvent(_ context.Context, s *BusinessService, exData *approveRejectMonumentLieuExchangeData) approveRejectMonumentLieuState {
 	s.stopper.Hold(1)
 
 	//nolint:contextcheck
 	go func(logger *zerolog.Logger, adminID string, documentID int32) {
 		defer s.stopper.Release()
 
-		err := s.postgresService.Queries.DocumentRejectionEvent(context.Background(), queries.DocumentRejectionEventParams{
+		err := s.postgresService.Queries.DocumentSubmissionRejectionEvent(context.Background(), queries.DocumentSubmissionRejectionEventParams{
+			AdminID: pgtype.Text{
+				String: adminID,
+				Valid:  true,
+			},
+			DocumentID: pgtype.Int4{
+				Int32: documentID,
+				Valid: true,
+			},
+			Comment: pgtype.Text{
+				String: "monuments_lieux",
+				Valid:  true,
+			},
+		})
+		if err != nil {
+			logger.Error().Err(err).Msg("failed to store document rejection event")
+		}
+	}(exData.logger, exData.token.ID, exData.id)
+
+	return nil
+}
+
+//nolint:lll
+func storeMonuLieuxDocumentUpdateRejectionEvent(_ context.Context, s *BusinessService, exData *approveRejectMonumentLieuExchangeData) approveRejectMonumentLieuState {
+	s.stopper.Hold(1)
+
+	//nolint:contextcheck
+	go func(logger *zerolog.Logger, adminID string, documentID int32) {
+		defer s.stopper.Release()
+
+		err := s.postgresService.Queries.DocumentUpdateRejectionEvent(context.Background(), queries.DocumentUpdateRejectionEventParams{
 			AdminID: pgtype.Text{
 				String: adminID,
 				Valid:  true,

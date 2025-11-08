@@ -60,6 +60,12 @@ CREATE TABLE IF NOT EXISTS cor_pers_phy_app_users
 ALTER TABLE bib_auteurs
     ADD COLUMN user_id TEXT NULL REFERENCES t_app_users(id);
 
+ALTER TABLE t_app_events
+    ALTER COLUMN user_id DROP NOT NULL;
 
+ALTER TYPE event_type RENAME VALUE 'document_validation' TO 'document_submission_validation';
+ALTER TYPE event_type RENAME VALUE 'document_rejection' TO 'document_submission_rejection';
+ALTER TYPE event_type ADD VALUE 'document_update_validation';
+ALTER TYPE event_type ADD VALUE 'document_update_rejection';
 
 COMMIT;

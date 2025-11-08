@@ -16,7 +16,7 @@ INSERT INTO t_app_events (type, user_id)
 VALUES ('account_deletion', $1)
 `
 
-func (q *Queries) AccountDeletionEvent(ctx context.Context, id string) error {
+func (q *Queries) AccountDeletionEvent(ctx context.Context, id pgtype.Text) error {
 	_, err := q.db.Exec(ctx, accountDeletionEvent, id)
 	return err
 }
@@ -26,7 +26,7 @@ INSERT INTO t_app_events (type, user_id)
 VALUES ('contributor_registration', $1)
 `
 
-func (q *Queries) ContributorRegistrationEvent(ctx context.Context, id string) error {
+func (q *Queries) ContributorRegistrationEvent(ctx context.Context, id pgtype.Text) error {
 	_, err := q.db.Exec(ctx, contributorRegistrationEvent, id)
 	return err
 }
@@ -37,7 +37,7 @@ VALUES ('contributor_rejection', $1, $2)
 `
 
 type ContributorRejectionEventParams struct {
-	UserID  string
+	UserID  pgtype.Text
 	AdminID pgtype.Text
 }
 
@@ -52,28 +52,12 @@ VALUES ('contributor_validation', $1, $2)
 `
 
 type ContributorValidationEventParams struct {
-	UserID  string
+	UserID  pgtype.Text
 	AdminID pgtype.Text
 }
 
 func (q *Queries) ContributorValidationEvent(ctx context.Context, arg ContributorValidationEventParams) error {
 	_, err := q.db.Exec(ctx, contributorValidationEvent, arg.UserID, arg.AdminID)
-	return err
-}
-
-const documentRejectionEvent = `-- name: DocumentRejectionEvent :exec
-INSERT INTO t_app_events (type, document_id, admin_id, comment)
-VALUES ('document_rejection', $1, $2, $3)
-`
-
-type DocumentRejectionEventParams struct {
-	DocumentID pgtype.Int4
-	AdminID    pgtype.Text
-	Comment    pgtype.Text
-}
-
-func (q *Queries) DocumentRejectionEvent(ctx context.Context, arg DocumentRejectionEventParams) error {
-	_, err := q.db.Exec(ctx, documentRejectionEvent, arg.DocumentID, arg.AdminID, arg.Comment)
 	return err
 }
 
@@ -83,7 +67,7 @@ VALUES ('document_submission', $1, $2, $3)
 `
 
 type DocumentSubmissionEventParams struct {
-	UserID     string
+	UserID     pgtype.Text
 	DocumentID pgtype.Int4
 	Comment    pgtype.Text
 }
@@ -93,13 +77,45 @@ func (q *Queries) DocumentSubmissionEvent(ctx context.Context, arg DocumentSubmi
 	return err
 }
 
+const documentSubmissionRejectionEvent = `-- name: DocumentSubmissionRejectionEvent :exec
+INSERT INTO t_app_events (type, document_id, admin_id, comment)
+VALUES ('document_submission_rejection', $1, $2, $3)
+`
+
+type DocumentSubmissionRejectionEventParams struct {
+	DocumentID pgtype.Int4
+	AdminID    pgtype.Text
+	Comment    pgtype.Text
+}
+
+func (q *Queries) DocumentSubmissionRejectionEvent(ctx context.Context, arg DocumentSubmissionRejectionEventParams) error {
+	_, err := q.db.Exec(ctx, documentSubmissionRejectionEvent, arg.DocumentID, arg.AdminID, arg.Comment)
+	return err
+}
+
+const documentSubmissionValidationEvent = `-- name: DocumentSubmissionValidationEvent :exec
+INSERT INTO t_app_events (type, document_id, admin_id, comment)
+VALUES ('document_submission_validation', $1, $2, $3)
+`
+
+type DocumentSubmissionValidationEventParams struct {
+	DocumentID pgtype.Int4
+	AdminID    pgtype.Text
+	Comment    pgtype.Text
+}
+
+func (q *Queries) DocumentSubmissionValidationEvent(ctx context.Context, arg DocumentSubmissionValidationEventParams) error {
+	_, err := q.db.Exec(ctx, documentSubmissionValidationEvent, arg.DocumentID, arg.AdminID, arg.Comment)
+	return err
+}
+
 const documentUpdateEvent = `-- name: DocumentUpdateEvent :exec
 INSERT INTO t_app_events (type, user_id, document_id, comment)
 VALUES ('document_update', $1, $2, $3)
 `
 
 type DocumentUpdateEventParams struct {
-	UserID     string
+	UserID     pgtype.Text
 	DocumentID pgtype.Int4
 	Comment    pgtype.Text
 }
@@ -109,18 +125,322 @@ func (q *Queries) DocumentUpdateEvent(ctx context.Context, arg DocumentUpdateEve
 	return err
 }
 
-const documentValidationEvent = `-- name: DocumentValidationEvent :exec
+const documentUpdateRejectionEvent = `-- name: DocumentUpdateRejectionEvent :exec
 INSERT INTO t_app_events (type, document_id, admin_id, comment)
-VALUES ('document_validation', $1, $2, $3)
+VALUES ('document_update_rejection', $1, $2, $3)
 `
 
-type DocumentValidationEventParams struct {
+type DocumentUpdateRejectionEventParams struct {
 	DocumentID pgtype.Int4
 	AdminID    pgtype.Text
 	Comment    pgtype.Text
 }
 
-func (q *Queries) DocumentValidationEvent(ctx context.Context, arg DocumentValidationEventParams) error {
-	_, err := q.db.Exec(ctx, documentValidationEvent, arg.DocumentID, arg.AdminID, arg.Comment)
+func (q *Queries) DocumentUpdateRejectionEvent(ctx context.Context, arg DocumentUpdateRejectionEventParams) error {
+	_, err := q.db.Exec(ctx, documentUpdateRejectionEvent, arg.DocumentID, arg.AdminID, arg.Comment)
+	return err
+}
+
+const documentUpdateValidationEvent = `-- name: DocumentUpdateValidationEvent :exec
+INSERT INTO t_app_events (type, document_id, admin_id, comment)
+VALUES ('document_update_validation', $1, $2, $3)
+`
+
+type DocumentUpdateValidationEventParams struct {
+	DocumentID pgtype.Int4
+	AdminID    pgtype.Text
+	Comment    pgtype.Text
+}
+
+func (q *Queries) DocumentUpdateValidationEvent(ctx context.Context, arg DocumentUpdateValidationEventParams) error {
+	_, err := q.db.Exec(ctx, documentUpdateValidationEvent, arg.DocumentID, arg.AdminID, arg.Comment)
+	return err
+}
+
+const getAllHistory = `-- name: GetAllHistory :many
+WITH user_docs AS (
+    SELECT DISTINCT document_id
+    FROM t_app_events
+    WHERE type IN (
+                   'document_submission', 'document_update',
+                   'document_submission_validation', 'document_submission_rejection',
+                   'document_update_validation', 'document_update_rejection'
+        )
+),
+
+     creator_events AS (
+         SELECT DISTINCT ON (document_id)
+             document_id,
+             user_id AS creator_user_id
+         FROM t_app_events
+         WHERE type IN ('document_submission','document_update')
+         ORDER BY document_id, date ASC   -- le 1er event utilisateur
+     ),
+
+     user_related_events AS (
+         SELECT e.id, e.type, e.user_id, e.admin_id, e.document_id, e.comment, e.date
+         FROM t_app_events e
+         WHERE type IN (
+                        'document_submission', 'document_update',
+                        'document_submission_validation', 'document_submission_rejection',
+                        'document_update_validation', 'document_update_rejection'
+             )
+
+         UNION
+
+         SELECT e.id, e.type, e.user_id, e.admin_id, e.document_id, e.comment, e.date
+         FROM t_app_events e
+                  JOIN user_docs ud ON ud.document_id = e.document_id
+         WHERE e.admin_id IS NOT NULL
+           AND type IN (
+                        'document_submission', 'document_update',
+                        'document_submission_validation', 'document_submission_rejection',
+                        'document_update_validation', 'document_update_rejection'
+             )
+     ),
+
+     scored_events AS (
+         SELECT
+             e.id, e.type, e.user_id, e.admin_id, e.document_id, e.comment, e.date,
+             CASE
+                 WHEN e.type IN (
+                                 'document_submission_validation',
+                                 'document_submission_rejection',
+                                 'document_update_validation',
+                                 'document_update_rejection'
+                     ) THEN 2
+                 ELSE 1
+                 END AS priority
+         FROM user_related_events e
+     ),
+
+     ranked AS (
+         SELECT
+             id, type, user_id, admin_id, document_id, comment, date, priority,
+             ROW_NUMBER() OVER (
+                 PARTITION BY document_id
+                 ORDER BY priority DESC, date DESC
+                 ) AS rn
+         FROM scored_events
+     ),
+
+     selected AS (
+         SELECT id, type, user_id, admin_id, document_id, comment, date, priority, rn
+         FROM ranked
+         WHERE rn = 1
+     ),
+
+     paginated AS (
+         SELECT
+             s.id, s.type, s.user_id, s.admin_id, s.document_id, s.comment, s.date, s.priority, s.rn,
+             ce.creator_user_id,   -- ✅ récupère l'user d'origine
+             u.prenom  AS user_prenom,
+             u.nom     AS user_nom,
+             u.email   AS user_email,
+             a.prenom  AS admin_prenom,
+             a.nom     AS admin_nom,
+             a.email   AS admin_email,
+             COUNT(*) OVER() AS total_count
+         FROM selected s
+                  LEFT JOIN creator_events ce ON ce.document_id = s.document_id
+                  LEFT JOIN t_app_users u ON u.id = ce.creator_user_id
+                  LEFT JOIN t_app_users a ON a.id = s.admin_id
+         ORDER BY s.date DESC
+     )
+
+SELECT id, type, user_id, admin_id, document_id, comment, date, priority, rn, creator_user_id, user_prenom, user_nom, user_email, admin_prenom, admin_nom, admin_email, total_count
+FROM paginated
+LIMIT $2 OFFSET $1
+`
+
+type GetAllHistoryParams struct {
+	OffsetParam int32
+	LimitParam  int32
+}
+
+type GetAllHistoryRow struct {
+	ID            int32
+	Type          EventType
+	UserID        pgtype.Text
+	AdminID       pgtype.Text
+	DocumentID    pgtype.Int4
+	Comment       pgtype.Text
+	Date          pgtype.Timestamptz
+	Priority      int32
+	Rn            int64
+	CreatorUserID pgtype.Text
+	UserPrenom    pgtype.Text
+	UserNom       pgtype.Text
+	UserEmail     pgtype.Text
+	AdminPrenom   pgtype.Text
+	AdminNom      pgtype.Text
+	AdminEmail    pgtype.Text
+	TotalCount    int64
+}
+
+// ✅ Récupère l'événement utilisateur qui a créé ou mis à jour la fiche
+func (q *Queries) GetAllHistory(ctx context.Context, arg GetAllHistoryParams) ([]GetAllHistoryRow, error) {
+	rows, err := q.db.Query(ctx, getAllHistory, arg.OffsetParam, arg.LimitParam)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAllHistoryRow
+	for rows.Next() {
+		var i GetAllHistoryRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Type,
+			&i.UserID,
+			&i.AdminID,
+			&i.DocumentID,
+			&i.Comment,
+			&i.Date,
+			&i.Priority,
+			&i.Rn,
+			&i.CreatorUserID,
+			&i.UserPrenom,
+			&i.UserNom,
+			&i.UserEmail,
+			&i.AdminPrenom,
+			&i.AdminNom,
+			&i.AdminEmail,
+			&i.TotalCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getHistoryByUserID = `-- name: GetHistoryByUserID :many
+WITH user_docs AS (
+    SELECT DISTINCT document_id
+    FROM t_app_events
+    WHERE t_app_events.user_id = $3
+      AND type IN ('document_submission', 'document_update', 'document_submission_validation', 'document_submission_rejection', 'document_update_validation', 'document_update_rejection')
+),
+     user_related_events AS (
+         SELECT e.id, e.type, e.user_id, e.admin_id, e.document_id, e.comment, e.date
+         FROM t_app_events e
+         WHERE e.user_id = $3
+           AND type IN ('document_submission', 'document_update', 'document_submission_validation', 'document_submission_rejection', 'document_update_validation', 'document_update_rejection')
+
+         UNION
+
+         SELECT e.id, e.type, e.user_id, e.admin_id, e.document_id, e.comment, e.date
+         FROM t_app_events e
+                  JOIN user_docs ud ON ud.document_id = e.document_id
+         WHERE e.admin_id IS NOT NULL
+           AND type IN ('document_submission', 'document_update', 'document_submission_validation', 'document_submission_rejection', 'document_update_validation', 'document_update_rejection')
+
+     ),
+     scored_events AS (
+         SELECT
+             e.id, e.type, e.user_id, e.admin_id, e.document_id, e.comment, e.date,
+             CASE
+                 WHEN e.type IN (
+                                 'document_submission_validation',
+                                 'document_submission_rejection',
+                                 'document_update_validation',
+                                 'document_update_rejection'
+                     ) THEN 2
+                 ELSE 1
+                 END AS priority
+         FROM user_related_events e
+     ),
+     ranked AS (
+         SELECT
+             id, type, user_id, admin_id, document_id, comment, date, priority,
+             ROW_NUMBER() OVER (
+                 PARTITION BY document_id
+                 ORDER BY priority DESC, date DESC
+                 ) AS rn
+         FROM scored_events
+     ),
+     selected AS (
+         SELECT id, type, user_id, admin_id, document_id, comment, date, priority, rn
+         FROM ranked
+         WHERE rn = 1
+     ),
+     paginated AS (
+         SELECT
+             id, type, user_id, admin_id, document_id, comment, date, priority, rn,
+             COUNT(*) OVER() AS total_count
+         FROM selected
+         ORDER BY date DESC
+     )
+SELECT id, type, user_id, admin_id, document_id, comment, date, priority, rn, total_count
+FROM paginated
+LIMIT $2 OFFSET $1
+`
+
+type GetHistoryByUserIDParams struct {
+	OffsetParam int32
+	LimitParam  int32
+	UserID      pgtype.Text
+}
+
+type GetHistoryByUserIDRow struct {
+	ID         int32
+	Type       EventType
+	UserID     pgtype.Text
+	AdminID    pgtype.Text
+	DocumentID pgtype.Int4
+	Comment    pgtype.Text
+	Date       pgtype.Timestamptz
+	Priority   int32
+	Rn         int64
+	TotalCount int64
+}
+
+func (q *Queries) GetHistoryByUserID(ctx context.Context, arg GetHistoryByUserIDParams) ([]GetHistoryByUserIDRow, error) {
+	rows, err := q.db.Query(ctx, getHistoryByUserID, arg.OffsetParam, arg.LimitParam, arg.UserID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetHistoryByUserIDRow
+	for rows.Next() {
+		var i GetHistoryByUserIDRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Type,
+			&i.UserID,
+			&i.AdminID,
+			&i.DocumentID,
+			&i.Comment,
+			&i.Date,
+			&i.Priority,
+			&i.Rn,
+			&i.TotalCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updateDocumentIDAfterUpdate = `-- name: UpdateDocumentIDAfterUpdate :exec
+UPDATE t_app_events
+SET document_id = $1
+WHERE document_id = $2
+`
+
+type UpdateDocumentIDAfterUpdateParams struct {
+	NewDocID    pgtype.Int4
+	ParentDocID pgtype.Int4
+}
+
+func (q *Queries) UpdateDocumentIDAfterUpdate(ctx context.Context, arg UpdateDocumentIDAfterUpdateParams) error {
+	_, err := q.db.Exec(ctx, updateDocumentIDAfterUpdate, arg.NewDocID, arg.ParentDocID)
 	return err
 }

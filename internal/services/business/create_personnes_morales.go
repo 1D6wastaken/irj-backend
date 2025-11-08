@@ -146,7 +146,7 @@ func createPersonneMorale(ctx context.Context, s *BusinessService, exData *creat
 		ParentID:          pgtype.Int4{},
 		UserID: pgtype.Text{
 			String: exData.token.ID,
-			Valid:  true,
+			Valid:  exData.params.Draft,
 		},
 	})
 	if err != nil {
@@ -160,6 +160,10 @@ func createPersonneMorale(ctx context.Context, s *BusinessService, exData *creat
 
 	exData.id = id
 
+	if exData.params.Draft {
+		return linkPersonneMorale
+	}
+
 	return storePersMoDocumentSubmissionEvent
 }
 
@@ -172,7 +176,10 @@ func storePersMoDocumentSubmissionEvent(_ context.Context, s *BusinessService, e
 		defer s.stopper.Release()
 
 		err := s.postgresService.Queries.DocumentSubmissionEvent(context.Background(), queries.DocumentSubmissionEventParams{
-			UserID: userID,
+			UserID: pgtype.Text{
+				String: userID,
+				Valid:  true,
+			},
 			DocumentID: pgtype.Int4{
 				Int32: documentID,
 				Valid: true,

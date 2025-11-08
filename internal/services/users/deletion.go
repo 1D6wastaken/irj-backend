@@ -12,6 +12,7 @@ import (
 	"irj/internal/smtp"
 	_http "irj/pkg/http"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/zerolog"
 )
@@ -137,7 +138,10 @@ func storeAccountDeletionEvent(_ context.Context, s *UserService, exData *delete
 	go func(logger *zerolog.Logger, id string) {
 		defer s.stopper.Release()
 
-		err := s.postgresService.Queries.AccountDeletionEvent(context.Background(), id)
+		err := s.postgresService.Queries.AccountDeletionEvent(context.Background(), pgtype.Text{
+			String: id,
+			Valid:  true,
+		})
 		if err != nil {
 			logger.Error().Err(err).Msg("failed to store deletion event")
 		}

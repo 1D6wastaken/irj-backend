@@ -60,12 +60,13 @@ func (b *BusinessService) UpdatePersonnePhysique(w http.ResponseWriter, r *http.
 }
 
 type updatePersonnePhysiqueExchangeData struct {
-	logger   *zerolog.Logger
-	err      error
-	parentID int32
-	id       int32
-	params   *api.PersonnePhysiqueCreationBody
-	token    *jwt.SessionInfo
+	logger        *zerolog.Logger
+	err           error
+	parentID      int32
+	id            int32
+	params        *api.PersonnePhysiqueCreationBody
+	token         *jwt.SessionInfo
+	draftToDelete int32
 }
 
 //nolint:lll
@@ -92,7 +93,7 @@ func processUpdatePersonnePhysique(ctx context.Context, s *BusinessService, toke
 	go func() {
 		defer s.stopper.Release()
 
-		for state := updatePersonnePhysique; state != nil; {
+		for state := getPersonnePhysiqueToUpdate; state != nil; {
 			state = state(ctx, s, &exData)
 		}
 
@@ -109,6 +110,38 @@ func processUpdatePersonnePhysique(ctx context.Context, s *BusinessService, toke
 	case resp := <-respChan:
 		return resp
 	}
+}
+
+func getPersonnePhysiqueToUpdate(ctx context.Context, s *BusinessService, exData *updatePersonnePhysiqueExchangeData) updatePersonnePhysiqueState {
+	p, err := s.postgresService.Queries.GetPersonnePhysiqueByID(ctx, exData.id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			exData.logger.Warn().Int32("id", exData.id).Msg("personne physique not found")
+
+			exData.err = catalogs.ErrDBResourceNotFound
+
+			return nil
+		}
+
+		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to get personne physique by id")
+		exData.err = catalogs.ErrDBResourceRetrieval
+
+		return nil
+	}
+
+	if p.PublicationStatus == postgres.DraftPublicationStatus {
+		exData.logger.Info().Int32("id", exData.id).Msg("updating draft personne physique")
+
+		exData.draftToDelete = exData.id
+
+		if p.ParentID.Valid {
+			exData.id = p.ParentID.Int32
+		} else {
+			exData.id = 0
+		}
+	}
+
+	return updatePersonnePhysique
 }
 
 //nolint:lll
@@ -148,10 +181,10 @@ func updatePersonnePhysique(ctx context.Context, s *BusinessService, exData *upd
 			Valid: exData.params.Country != 0,
 		},
 		PublicationStatus: publicationStatus,
-		ParentID:          pgtype.Int4{Int32: exData.id, Valid: true},
+		ParentID:          pgtype.Int4{Int32: exData.id, Valid: exData.id != 0},
 		UserID: pgtype.Text{
 			String: exData.token.ID,
-			Valid:  true,
+			Valid:  exData.params.Draft,
 		},
 	})
 	if err != nil {
@@ -259,6 +292,14 @@ func addAuteurToUpdatedPersonnePhysique(ctx context.Context, s *BusinessService,
 
 		exData.logger.Error().Err(err).Int32("id", exData.parentID).Msg("failed to get author by personne physique id")
 
+		if exData.params.Draft {
+			if exData.draftToDelete != 0 {
+				return deleteOldDraftPersonnePhysiqueParent
+			}
+
+			return nil
+		}
+
 		return storePersPhyDocumentUpdateEvent
 	}
 
@@ -268,6 +309,14 @@ func addAuteurToUpdatedPersonnePhysique(ctx context.Context, s *BusinessService,
 	})
 	if err != nil {
 		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to attach author to personne physique")
+	}
+
+	if exData.params.Draft {
+		if exData.draftToDelete != 0 {
+			return deleteOldDraftPersonnePhysiqueParent
+		}
+
+		return nil
 	}
 
 	return storePersPhyDocumentUpdateEvent
@@ -320,6 +369,14 @@ func linkNewAuteurToPersPhy(ctx context.Context, s *BusinessService, exData *upd
 		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to attach author to personne physique")
 	}
 
+	if exData.params.Draft {
+		if exData.draftToDelete != 0 {
+			return deleteOldDraftPersonnePhysiqueParent
+		}
+
+		return nil
+	}
+
 	return storePersPhyDocumentUpdateEvent
 }
 
@@ -332,7 +389,10 @@ func storePersPhyDocumentUpdateEvent(_ context.Context, s *BusinessService, exDa
 		defer s.stopper.Release()
 
 		err := s.postgresService.Queries.DocumentUpdateEvent(context.Background(), queries.DocumentUpdateEventParams{
-			UserID: userID,
+			UserID: pgtype.Text{
+				String: userID,
+				Valid:  true,
+			},
 			DocumentID: pgtype.Int4{
 				Int32: documentID,
 				Valid: true,
@@ -346,6 +406,26 @@ func storePersPhyDocumentUpdateEvent(_ context.Context, s *BusinessService, exDa
 			logger.Error().Err(err).Msg("failed to store document update event")
 		}
 	}(exData.logger, exData.token.ID, exData.id)
+
+	if exData.draftToDelete != 0 {
+		return deleteOldDraftPersonnePhysiqueParent
+	}
+
+	return nil
+}
+
+//nolint:lll
+func deleteOldDraftPersonnePhysiqueParent(_ context.Context, s *BusinessService, exData *updatePersonnePhysiqueExchangeData) updatePersonnePhysiqueState {
+	s.stopper.Hold(1)
+
+	//nolint:contextcheck
+	go func(logger *zerolog.Logger, id int32) {
+		defer s.stopper.Release()
+
+		if err := deletePersonnePhysique(context.Background(), logger, s, id); err != nil {
+			logger.Error().Err(err).Int32("id", id).Msg("failed to delete old draft personne physique parent")
+		}
+	}(exData.logger, exData.draftToDelete)
 
 	return nil
 }

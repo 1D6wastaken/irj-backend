@@ -1,6 +1,8 @@
 package users
 
 import (
+	"net/http"
+	"strconv"
 	"time"
 
 	"irj/internal/config"
@@ -27,4 +29,24 @@ func NewUserService(stopper *utils.AppStopper, cfg *config.Config, smtpService *
 		smtpService:     smtpService,
 		postgresService: postgresService,
 	}
+}
+
+func extractLimitAndOffset(r *http.Request) (int32, int32) {
+	limitStr := r.URL.Query().Get("limit")
+	pageStr := r.URL.Query().Get("page")
+
+	limit, _ := strconv.ParseInt(limitStr, 10, 32)
+	page, _ := strconv.ParseInt(pageStr, 10, 32)
+
+	if limit <= 0 {
+		limit = 25
+	}
+
+	if page <= 0 {
+		page = 1
+	}
+
+	offset := (int32(page) - 1) * int32(limit)
+
+	return int32(limit), offset
 }

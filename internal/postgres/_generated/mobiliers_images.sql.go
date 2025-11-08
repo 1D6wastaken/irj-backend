@@ -650,6 +650,7 @@ SELECT m.id_mobilier_image AS id,
        m.protection_commentaires,
        m.lieu_conservation,
        m.lieu_origine,
+       m.user_id,
        -- Redacteurs (auteurs fiche)
        COALESCE(
                        jsonb_agg(
@@ -816,6 +817,7 @@ type GetMobilierImageByIDRow struct {
 	ProtectionCommentaires  pgtype.Text
 	LieuConservation        pgtype.Text
 	LieuOrigine             pgtype.Text
+	UserID                  pgtype.Text
 	Authors                 interface{}
 	City                    []byte
 	Department              []byte
@@ -854,6 +856,7 @@ func (q *Queries) GetMobilierImageByID(ctx context.Context, idMobilierImage int3
 		&i.ProtectionCommentaires,
 		&i.LieuConservation,
 		&i.LieuOrigine,
+		&i.UserID,
 		&i.Authors,
 		&i.City,
 		&i.Department,

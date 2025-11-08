@@ -162,6 +162,11 @@ func (e *Env) Routes(router *httprouter.Router) {
 	router.HandlerFunc(http.MethodGet, "/api/v1/users/:id", protected(_http.HandlerMiddleware(e.UserService.GetUserInfo)))
 	router.HandlerFunc(http.MethodPut, "/api/v1/users/:id", protected(_http.HandlerMiddleware(e.UserService.UpdateUserInfo)))
 
+	router.HandlerFunc(http.MethodGet, "/api/v1/history/:id", protected(_http.HandlerMiddleware(e.UserService.GetUserHistory)))
+
+	router.HandlerFunc(http.MethodGet, "/api/v1/admin/users", protected(_http.HandlerMiddleware(e.UserService.GetAdminUsersDashboard)))
+	router.HandlerFunc(http.MethodGet, "/api/v1/admin/contributions", protected(_http.HandlerMiddleware(e.UserService.GetAdminHistoryDashboard)))
+
 	router.HandlerFunc(http.MethodPost, "/api/v1/medias", protected(_http.HandlerMiddleware(e.BusinessService.UploadImage)))
 	router.HandlerFunc(http.MethodPost, "/api/v1/monuments_lieux", protected(_http.HandlerMiddleware(e.BusinessService.CreateMonumentLieu)))
 	router.HandlerFunc(http.MethodPost, "/api/v1/mobiliers_images", protected(_http.HandlerMiddleware(e.BusinessService.CreateMobilierImage)))
@@ -173,11 +178,6 @@ func (e *Env) Routes(router *httprouter.Router) {
 	router.HandlerFunc(http.MethodGet, "/api/v1/personnes_morales", protected(_http.HandlerMiddleware(e.BusinessService.GetPendingPersonnesMorales)))
 	router.HandlerFunc(http.MethodGet, "/api/v1/personnes_physiques", protected(_http.HandlerMiddleware(e.BusinessService.GetPendingPersonnesPhysiques)))
 
-	router.HandlerFunc(http.MethodGet, "/api/v1/draft/monuments_lieux", protected(_http.HandlerMiddleware(e.BusinessService.GetDraftMonumentsLieux)))
-	router.HandlerFunc(http.MethodGet, "/api/v1/draft/mobiliers_images", protected(_http.HandlerMiddleware(e.BusinessService.GetDraftMobiliersImages)))
-	router.HandlerFunc(http.MethodGet, "/api/v1/draft/personnes_morales", protected(_http.HandlerMiddleware(e.BusinessService.GetDraftPersonnesMorales)))
-	router.HandlerFunc(http.MethodGet, "/api/v1/draft/personnes_physiques", protected(_http.HandlerMiddleware(e.BusinessService.GetDraftPersonnesPhysiques)))
-
 	router.HandlerFunc(http.MethodPatch, "/api/v1/monuments_lieux/:id", protected(_http.HandlerMiddleware(e.BusinessService.ApproveRejectMonumentLieu)))
 	router.HandlerFunc(http.MethodPatch, "/api/v1/mobiliers_images/:id", protected(_http.HandlerMiddleware(e.BusinessService.ApproveRejectMobilierImage)))
 	router.HandlerFunc(http.MethodPatch, "/api/v1/personnes_morales/:id", protected(_http.HandlerMiddleware(e.BusinessService.ApproveRejectPersonneMorale)))
@@ -187,6 +187,16 @@ func (e *Env) Routes(router *httprouter.Router) {
 	router.HandlerFunc(http.MethodPut, "/api/v1/mobiliers_images/:id", protected(_http.HandlerMiddleware(e.BusinessService.UpdateMobilierImage)))
 	router.HandlerFunc(http.MethodPut, "/api/v1/personnes_morales/:id", protected(_http.HandlerMiddleware(e.BusinessService.UpdatePersonneMorale)))
 	router.HandlerFunc(http.MethodPut, "/api/v1/personnes_physiques/:id", protected(_http.HandlerMiddleware(e.BusinessService.UpdatePersonnePhysique)))
+
+	router.HandlerFunc(http.MethodGet, "/api/v1/draft/monuments_lieux", protected(_http.HandlerMiddleware(e.BusinessService.GetDraftMonumentsLieux)))
+	router.HandlerFunc(http.MethodGet, "/api/v1/draft/mobiliers_images", protected(_http.HandlerMiddleware(e.BusinessService.GetDraftMobiliersImages)))
+	router.HandlerFunc(http.MethodGet, "/api/v1/draft/personnes_morales", protected(_http.HandlerMiddleware(e.BusinessService.GetDraftPersonnesMorales)))
+	router.HandlerFunc(http.MethodGet, "/api/v1/draft/personnes_physiques", protected(_http.HandlerMiddleware(e.BusinessService.GetDraftPersonnesPhysiques)))
+
+	router.HandlerFunc(http.MethodDelete, "/api/v1/draft/monuments_lieux/:id", protected(_http.HandlerMiddleware(e.BusinessService.DeleteDraftMonumentLieu)))
+	router.HandlerFunc(http.MethodDelete, "/api/v1/draft/mobiliers_images/:id", protected(_http.HandlerMiddleware(e.BusinessService.DeleteDraftMobilierImage)))
+	router.HandlerFunc(http.MethodDelete, "/api/v1/draft/personnes_morales/:id", protected(_http.HandlerMiddleware(e.BusinessService.DeleteDraftPersonneMorale)))
+	router.HandlerFunc(http.MethodDelete, "/api/v1/draft/personnes_physiques/:id", protected(_http.HandlerMiddleware(e.BusinessService.DeleteDraftPersonnePhysique)))
 }
 
 func (e *Env) GetLogger() *glog.Logger {

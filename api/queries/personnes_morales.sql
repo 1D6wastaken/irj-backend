@@ -57,6 +57,7 @@ SELECT p.id_pers_morale  AS id,
        p.publie,
        p.contributeurs,
        p.commentaires,
+       p.user_id,
        -- Redacteurs (auteurs fiche)
        COALESCE(
                        jsonb_agg(

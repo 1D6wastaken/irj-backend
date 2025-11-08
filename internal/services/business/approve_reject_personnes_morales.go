@@ -148,23 +148,25 @@ func approvePersonneMorale(ctx context.Context, s *BusinessService, exData *appr
 	}
 
 	if exData.documents.ParentID.Valid {
-		exData.id = exData.documents.ParentID.Int32
+		if err := deletePersonneMorale(ctx, exData.logger, s, exData.documents.ParentID.Int32); err != nil {
+			exData.err = err
+		}
 
-		return rejectPersonneMorale
+		return storePersMoDocumentUpdateValidationEvent
 	}
 
-	return storePersMoDocumentValidationEvent
+	return storePersMoDocumentSubmissionValidationEvent
 }
 
 //nolint:lll
-func storePersMoDocumentValidationEvent(_ context.Context, s *BusinessService, exData *approveRejectPersonneMoraleExchangeData) approveRejectPersonneMoraleState {
+func storePersMoDocumentSubmissionValidationEvent(_ context.Context, s *BusinessService, exData *approveRejectPersonneMoraleExchangeData) approveRejectPersonneMoraleState {
 	s.stopper.Hold(1)
 
 	//nolint:contextcheck
 	go func(logger *zerolog.Logger, adminID string, documentID int32) {
 		defer s.stopper.Release()
 
-		err := s.postgresService.Queries.DocumentValidationEvent(context.Background(), queries.DocumentValidationEventParams{
+		err := s.postgresService.Queries.DocumentSubmissionValidationEvent(context.Background(), queries.DocumentSubmissionValidationEventParams{
 			AdminID: pgtype.Text{
 				String: adminID,
 				Valid:  true,
@@ -186,71 +188,102 @@ func storePersMoDocumentValidationEvent(_ context.Context, s *BusinessService, e
 	return nil
 }
 
-//nolint:cyclop,lll
-func rejectPersonneMorale(ctx context.Context, s *BusinessService, exData *approveRejectPersonneMoraleExchangeData) approveRejectPersonneMoraleState {
-	err := s.postgresService.Queries.DetachSieclesFromPersMo(ctx, exData.id)
-	if err != nil {
-		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to detach siecles from personne morale")
-	}
+//nolint:lll
+func storePersMoDocumentUpdateValidationEvent(_ context.Context, s *BusinessService, exData *approveRejectPersonneMoraleExchangeData) approveRejectPersonneMoraleState {
+	s.stopper.Hold(1)
 
-	err = s.postgresService.Queries.DetachMediasFromPersMo(ctx, exData.id)
-	if err != nil {
-		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to detach medias from personne morale")
-	}
+	//nolint:contextcheck
+	go func(logger *zerolog.Logger, adminID string, documentID, parentID int32) {
+		defer s.stopper.Release()
 
-	err = s.postgresService.Queries.DetachThemesFromPersMo(ctx, exData.id)
-	if err != nil {
-		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to detach themes from personne morale")
-	}
-
-	err = s.postgresService.Queries.DetachNaturesFromPersMo(ctx, exData.id)
-	if err != nil {
-		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to detach natures from personne morale")
-	}
-
-	err = s.postgresService.Queries.UnlinkPersMoFromMonuLieu(ctx, exData.id)
-	if err != nil {
-		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to unlink monuments lieux document from personne morale")
-	}
-
-	err = s.postgresService.Queries.UnlinkPersMoFromMobImg(ctx, exData.id)
-	if err != nil {
-		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to unlink mobiliers images document from personne morale")
-	}
-
-	err = s.postgresService.Queries.UnlinkPersMoFromPersPhy(ctx, exData.id)
-	if err != nil {
-		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to unlink personnes physiques document from personne morale")
-	}
-
-	err = s.postgresService.Queries.DetachAuthorFromPersMo(ctx, exData.id)
-	if err != nil {
-		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to detach author from personne morale")
-	}
-
-	if err := s.postgresService.Queries.DeletePersonneMorale(ctx, exData.id); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			exData.logger.Warn().Msg("document not found and therefore can not be approved")
-
-			return nil
+		if err := s.postgresService.Queries.DocumentUpdateValidationEvent(context.Background(), queries.DocumentUpdateValidationEventParams{
+			AdminID: pgtype.Text{
+				String: adminID,
+				Valid:  true,
+			},
+			DocumentID: pgtype.Int4{
+				Int32: documentID,
+				Valid: true,
+			},
+			Comment: pgtype.Text{
+				String: "personnes_morales",
+				Valid:  true,
+			},
+		}); err != nil {
+			logger.Error().Err(err).Msg("failed to store document validation event")
 		}
 
-		exData.logger.Error().Err(err).Msg("failed to reject document")
-		exData.err = catalogs.ErrUnexpectedError
+		if err := s.postgresService.Queries.UpdateDocumentIDAfterUpdate(context.Background(), queries.UpdateDocumentIDAfterUpdateParams{
+			NewDocID: pgtype.Int4{
+				Int32: documentID,
+				Valid: true,
+			},
+			ParentDocID: pgtype.Int4{
+				Int32: parentID,
+				Valid: true,
+			},
+		}); err != nil {
+			logger.Error().Err(err).Msg("failed to store document validation event")
+		}
+	}(exData.logger, exData.token.ID, exData.id, exData.documents.ParentID.Int32)
+
+	return nil
+}
+
+//nolint:cyclop,lll
+func rejectPersonneMorale(ctx context.Context, s *BusinessService, exData *approveRejectPersonneMoraleExchangeData) approveRejectPersonneMoraleState {
+	if err := deletePersonneMorale(ctx, exData.logger, s, exData.id); err != nil {
+		exData.err = err
+
+		return nil
 	}
 
-	return storePersMoDocumentRejectionEvent
+	if exData.documents.ParentID.Valid {
+		return storePersMoDocumentUpdateRejectionEvent
+	}
+
+	return storePersMoDocumentSubmissionRejectionEvent
 }
 
 //nolint:lll
-func storePersMoDocumentRejectionEvent(_ context.Context, s *BusinessService, exData *approveRejectPersonneMoraleExchangeData) approveRejectPersonneMoraleState {
+func storePersMoDocumentSubmissionRejectionEvent(_ context.Context, s *BusinessService, exData *approveRejectPersonneMoraleExchangeData) approveRejectPersonneMoraleState {
 	s.stopper.Hold(1)
 
 	//nolint:contextcheck
 	go func(logger *zerolog.Logger, adminID string, documentID int32) {
 		defer s.stopper.Release()
 
-		err := s.postgresService.Queries.DocumentRejectionEvent(context.Background(), queries.DocumentRejectionEventParams{
+		err := s.postgresService.Queries.DocumentSubmissionRejectionEvent(context.Background(), queries.DocumentSubmissionRejectionEventParams{
+			AdminID: pgtype.Text{
+				String: adminID,
+				Valid:  true,
+			},
+			DocumentID: pgtype.Int4{
+				Int32: documentID,
+				Valid: true,
+			},
+			Comment: pgtype.Text{
+				String: "personnes_morales",
+				Valid:  true,
+			},
+		})
+		if err != nil {
+			logger.Error().Err(err).Msg("failed to store document rejection event")
+		}
+	}(exData.logger, exData.token.ID, exData.id)
+
+	return nil
+}
+
+//nolint:lll
+func storePersMoDocumentUpdateRejectionEvent(_ context.Context, s *BusinessService, exData *approveRejectPersonneMoraleExchangeData) approveRejectPersonneMoraleState {
+	s.stopper.Hold(1)
+
+	//nolint:contextcheck
+	go func(logger *zerolog.Logger, adminID string, documentID int32) {
+		defer s.stopper.Release()
+
+		err := s.postgresService.Queries.DocumentUpdateRejectionEvent(context.Background(), queries.DocumentUpdateRejectionEventParams{
 			AdminID: pgtype.Text{
 				String: adminID,
 				Valid:  true,

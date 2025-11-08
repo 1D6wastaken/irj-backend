@@ -60,12 +60,13 @@ func (b *BusinessService) UpdateMobilierImage(w http.ResponseWriter, r *http.Req
 }
 
 type updateMobilierImageExchangeData struct {
-	logger   *zerolog.Logger
-	err      error
-	parentID int32
-	id       int32
-	params   *api.MobilierImageCreationBody
-	token    *jwt.SessionInfo
+	logger        *zerolog.Logger
+	err           error
+	parentID      int32
+	id            int32
+	params        *api.MobilierImageCreationBody
+	token         *jwt.SessionInfo
+	draftToDelete int32
 }
 
 type updateMobilierImageState func(ctx context.Context, s *BusinessService, data *updateMobilierImageExchangeData) updateMobilierImageState
@@ -91,7 +92,7 @@ func processUpdateMobilierImage(ctx context.Context, s *BusinessService, token *
 	go func() {
 		defer s.stopper.Release()
 
-		for state := updateMobilierImage; state != nil; {
+		for state := getMobilierImageToUpdate; state != nil; {
 			state = state(ctx, s, &exData)
 		}
 
@@ -108,6 +109,38 @@ func processUpdateMobilierImage(ctx context.Context, s *BusinessService, token *
 	case resp := <-respChan:
 		return resp
 	}
+}
+
+func getMobilierImageToUpdate(ctx context.Context, s *BusinessService, exData *updateMobilierImageExchangeData) updateMobilierImageState {
+	m, err := s.postgresService.Queries.GetMobilierImageByID(ctx, exData.id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			exData.logger.Warn().Int32("id", exData.id).Msg("mobilier image not found")
+
+			exData.err = catalogs.ErrDBResourceNotFound
+
+			return nil
+		}
+
+		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to get mobilier image by id")
+		exData.err = catalogs.ErrDBResourceRetrieval
+
+		return nil
+	}
+
+	if m.PublicationStatus == postgres.DraftPublicationStatus {
+		exData.logger.Info().Int32("id", exData.id).Msg("updating draft mobilier image")
+
+		exData.draftToDelete = exData.id
+
+		if m.ParentID.Valid {
+			exData.id = m.ParentID.Int32
+		} else {
+			exData.id = 0
+		}
+	}
+
+	return updateMobilierImage
 }
 
 func updateMobilierImage(ctx context.Context, s *BusinessService, exData *updateMobilierImageExchangeData) updateMobilierImageState {
@@ -148,10 +181,10 @@ func updateMobilierImage(ctx context.Context, s *BusinessService, exData *update
 			Valid: exData.params.Country != 0,
 		},
 		PublicationStatus: publicationStatus,
-		ParentID:          pgtype.Int4{Int32: exData.id, Valid: true},
+		ParentID:          pgtype.Int4{Int32: exData.id, Valid: exData.id != 0},
 		UserID: pgtype.Text{
 			String: exData.token.ID,
-			Valid:  true,
+			Valid:  exData.params.Draft,
 		},
 	})
 	if err != nil {
@@ -267,6 +300,14 @@ func addAuteursToUpdatedMobilierImage(ctx context.Context, s *BusinessService, e
 
 		exData.logger.Error().Err(err).Int32("id", exData.parentID).Msg("failed to get author by mobilier image")
 
+		if exData.params.Draft {
+			if exData.draftToDelete != 0 {
+				return deleteOldDraftMobilierImageParent
+			}
+
+			return nil
+		}
+
 		return storeMobImgDocumentUpdateEvent
 	}
 
@@ -276,6 +317,14 @@ func addAuteursToUpdatedMobilierImage(ctx context.Context, s *BusinessService, e
 	})
 	if err != nil {
 		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to attach author to updated mobilier image")
+	}
+
+	if exData.params.Draft {
+		if exData.draftToDelete != 0 {
+			return deleteOldDraftMobilierImageParent
+		}
+
+		return nil
 	}
 
 	return storeMobImgDocumentUpdateEvent
@@ -336,6 +385,14 @@ func linkNewAuteurToMobilierImage(ctx context.Context, s *BusinessService, exDat
 		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to attach author to updated mobilier image")
 	}
 
+	if exData.params.Draft {
+		if exData.draftToDelete != 0 {
+			return deleteOldDraftMobilierImageParent
+		}
+
+		return nil
+	}
+
 	return storeMobImgDocumentUpdateEvent
 }
 
@@ -348,7 +405,10 @@ func storeMobImgDocumentUpdateEvent(_ context.Context, s *BusinessService, exDat
 		defer s.stopper.Release()
 
 		err := s.postgresService.Queries.DocumentUpdateEvent(context.Background(), queries.DocumentUpdateEventParams{
-			UserID: userID,
+			UserID: pgtype.Text{
+				String: userID,
+				Valid:  true,
+			},
 			DocumentID: pgtype.Int4{
 				Int32: documentID,
 				Valid: true,
@@ -362,6 +422,26 @@ func storeMobImgDocumentUpdateEvent(_ context.Context, s *BusinessService, exDat
 			logger.Error().Err(err).Msg("failed to store document update event")
 		}
 	}(exData.logger, exData.token.ID, exData.id)
+
+	if exData.draftToDelete != 0 {
+		return deleteOldDraftMobilierImageParent
+	}
+
+	return nil
+}
+
+//nolint:lll
+func deleteOldDraftMobilierImageParent(_ context.Context, s *BusinessService, exData *updateMobilierImageExchangeData) updateMobilierImageState {
+	s.stopper.Hold(1)
+
+	//nolint:contextcheck
+	go func(logger *zerolog.Logger, id int32) {
+		defer s.stopper.Release()
+
+		if err := deleteMobilierImage(context.Background(), logger, s, id); err != nil {
+			logger.Error().Err(err).Int32("id", id).Msg("failed to delete old draft mobilier image parent")
+		}
+	}(exData.logger, exData.draftToDelete)
 
 	return nil
 }

@@ -22,6 +22,7 @@ var (
 	ErrDBResourceUpdate    = errors.New("unexpected error during resource update")
 	ErrDBResourceCreation  = errors.New("unexpected error during resource creation")
 	ErrDBResourceDeletion  = errors.New("unexpected error during resource deletion")
+	ErrDBResourceNotFound  = errors.New("resource not found in database")
 )
 
 // Users.
@@ -51,6 +52,7 @@ var errorMapping = map[error]_http.APIError{
 	ErrDBResourceDeletion:  {HTTPCode: http.StatusInternalServerError, Message: "Internal server error", Details: ErrDBResourceDeletion.Error()},
 	ErrDBResourceCreation:  {HTTPCode: http.StatusInternalServerError, Message: "Internal server error", Details: ErrDBResourceCreation.Error()},
 
+	ErrDBResourceNotFound:    {HTTPCode: http.StatusNotFound, Message: "Resource not found", Details: ErrDBResourceNotFound.Error()},
 	ErrUserNotFound:          {HTTPCode: http.StatusNotFound, Message: "Resource not found", Details: ErrUserNotFound.Error()},
 	ErrTokenNotFound:         {HTTPCode: http.StatusNotFound, Message: "Resource not found", Details: ErrTokenNotFound.Error()},
 	ErrUserAlreadyRegistered: {HTTPCode: http.StatusConflict, Message: "Conflict", Details: ErrUserAlreadyRegistered.Error()},

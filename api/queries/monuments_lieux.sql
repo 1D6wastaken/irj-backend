@@ -57,6 +57,7 @@ SELECT m.id_monument_lieu AS id,
        m.protection,
        m.protection_commentaires,
        m.source,
+       m.user_id,
        -- Redacteurs (auteurs fiche)
        COALESCE(
                        jsonb_agg(

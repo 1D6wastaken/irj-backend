@@ -179,20 +179,54 @@ func (q *Queries) GetUserByID(ctx context.Context, id string) (GetUserByIDRow, e
 }
 
 const getUsers = `-- name: GetUsers :many
-SELECT id,
-       prenom,
-       nom,
-       email,
-       last_login
-FROM t_app_users
+WITH validations AS (
+    SELECT
+        e.user_id,
+        e.admin_id,
+        e.date,
+        ROW_NUMBER() OVER (
+            PARTITION BY e.user_id
+            ORDER BY e.date DESC
+            ) AS rn
+    FROM t_app_events e
+    WHERE e.type = 'contributor_validation'
+)
+SELECT
+    u.id,
+    u.prenom,
+    u.nom,
+    u.email,
+    u.email_confirm,
+    u.telephone,
+    u.organisation,
+    u.domaine,
+    u.last_login,
+    u.date_creation,
+    u.grade,
+    a.prenom AS admin_prenom,
+    a.nom AS admin_nom,
+    a.email AS admin_email
+FROM t_app_users u
+         LEFT JOIN validations v ON v.user_id = u.id AND v.rn = 1
+         LEFT JOIN t_app_users a ON a.id = v.admin_id
+ORDER BY u.id
 `
 
 type GetUsersRow struct {
-	ID        string
-	Prenom    string
-	Nom       string
-	Email     string
-	LastLogin pgtype.Timestamptz
+	ID           string
+	Prenom       string
+	Nom          string
+	Email        string
+	EmailConfirm bool
+	Telephone    pgtype.Text
+	Organisation pgtype.Text
+	Domaine      DomaineExpertise
+	LastLogin    pgtype.Timestamptz
+	DateCreation pgtype.Timestamptz
+	Grade        UserGrade
+	AdminPrenom  pgtype.Text
+	AdminNom     pgtype.Text
+	AdminEmail   pgtype.Text
 }
 
 func (q *Queries) GetUsers(ctx context.Context) ([]GetUsersRow, error) {
@@ -209,7 +243,16 @@ func (q *Queries) GetUsers(ctx context.Context) ([]GetUsersRow, error) {
 			&i.Prenom,
 			&i.Nom,
 			&i.Email,
+			&i.EmailConfirm,
+			&i.Telephone,
+			&i.Organisation,
+			&i.Domaine,
 			&i.LastLogin,
+			&i.DateCreation,
+			&i.Grade,
+			&i.AdminPrenom,
+			&i.AdminNom,
+			&i.AdminEmail,
 		); err != nil {
 			return nil, err
 		}

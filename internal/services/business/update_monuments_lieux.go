@@ -61,12 +61,13 @@ func (b *BusinessService) UpdateMonumentLieu(w http.ResponseWriter, r *http.Requ
 }
 
 type updateMonumentLieuExchangeData struct {
-	logger   *zerolog.Logger
-	err      error
-	parentID int32
-	id       int32
-	params   *api.MonumentsLieuxCreationBody
-	token    *jwt.SessionInfo
+	logger        *zerolog.Logger
+	err           error
+	parentID      int32
+	id            int32
+	params        *api.MonumentsLieuxCreationBody
+	token         *jwt.SessionInfo
+	draftToDelete int32
 }
 
 type updateMonumentLieuState func(ctx context.Context, s *BusinessService, data *updateMonumentLieuExchangeData) updateMonumentLieuState
@@ -92,7 +93,7 @@ func processUpdateMonumentLieu(ctx context.Context, s *BusinessService, token *j
 	go func() {
 		defer s.stopper.Release()
 
-		for state := updateMonumentLieu; state != nil; {
+		for state := getMonumentLieuToUpdate; state != nil; {
 			state = state(ctx, s, &exData)
 		}
 
@@ -109,6 +110,38 @@ func processUpdateMonumentLieu(ctx context.Context, s *BusinessService, token *j
 	case resp := <-respChan:
 		return resp
 	}
+}
+
+func getMonumentLieuToUpdate(ctx context.Context, s *BusinessService, exData *updateMonumentLieuExchangeData) updateMonumentLieuState {
+	m, err := s.postgresService.Queries.GetMonumentLieuByID(ctx, exData.id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			exData.logger.Warn().Int32("id", exData.id).Msg("monument lieu to update not found")
+
+			exData.err = catalogs.ErrDBResourceNotFound
+
+			return nil
+		}
+
+		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to get monument lieu to update")
+		exData.err = catalogs.ErrDBResourceRetrieval
+
+		return nil
+	}
+
+	if m.PublicationStatus == postgres.DraftPublicationStatus {
+		exData.logger.Info().Int32("id", m.ID).Msg("updating draft monument lieu")
+
+		exData.draftToDelete = exData.id
+
+		if m.ParentID.Valid {
+			exData.id = m.ParentID.Int32
+		} else {
+			exData.id = 0
+		}
+	}
+
+	return updateMonumentLieu
 }
 
 func updateMonumentLieu(ctx context.Context, s *BusinessService, exData *updateMonumentLieuExchangeData) updateMonumentLieuState {
@@ -150,10 +183,10 @@ func updateMonumentLieu(ctx context.Context, s *BusinessService, exData *updateM
 			Valid: exData.params.Country != 0,
 		},
 		PublicationStatus: publicationStatus,
-		ParentID:          pgtype.Int4{Int32: exData.id, Valid: true},
+		ParentID:          pgtype.Int4{Int32: exData.id, Valid: exData.id != 0},
 		UserID: pgtype.Text{
 			String: exData.token.ID,
-			Valid:  true,
+			Valid:  exData.params.Draft,
 		},
 	})
 	if err != nil {
@@ -260,6 +293,14 @@ func addAuteurToUpdatedMonumentLieu(ctx context.Context, s *BusinessService, exD
 
 		exData.logger.Error().Err(err).Int32("id", exData.parentID).Msg("failed to get author by previous monument lieu")
 
+		if exData.params.Draft {
+			if exData.draftToDelete != 0 {
+				return deleteOldDraftMonumentLieu
+			}
+
+			return nil
+		}
+
 		return storeMonuLieuxDocumentUpdateEvent
 	}
 
@@ -269,6 +310,14 @@ func addAuteurToUpdatedMonumentLieu(ctx context.Context, s *BusinessService, exD
 	})
 	if err != nil {
 		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to attach author to updated monument lieu")
+	}
+
+	if exData.params.Draft {
+		if exData.draftToDelete != 0 {
+			return deleteOldDraftMonumentLieu
+		}
+
+		return nil
 	}
 
 	return storeMonuLieuxDocumentUpdateEvent
@@ -320,6 +369,14 @@ func linkNewAuteurToMonumentLieu(ctx context.Context, s *BusinessService, exData
 		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to attach author to updated monument lieu")
 	}
 
+	if exData.params.Draft {
+		if exData.draftToDelete != 0 {
+			return deleteOldDraftMonumentLieu
+		}
+
+		return nil
+	}
+
 	return storeMonuLieuxDocumentUpdateEvent
 }
 
@@ -332,7 +389,10 @@ func storeMonuLieuxDocumentUpdateEvent(_ context.Context, s *BusinessService, ex
 		defer s.stopper.Release()
 
 		err := s.postgresService.Queries.DocumentUpdateEvent(context.Background(), queries.DocumentUpdateEventParams{
-			UserID: userID,
+			UserID: pgtype.Text{
+				String: userID,
+				Valid:  true,
+			},
 			DocumentID: pgtype.Int4{
 				Int32: documentID,
 				Valid: true,
@@ -346,6 +406,25 @@ func storeMonuLieuxDocumentUpdateEvent(_ context.Context, s *BusinessService, ex
 			logger.Error().Err(err).Msg("failed to store document update event")
 		}
 	}(exData.logger, exData.token.ID, exData.id)
+
+	if exData.draftToDelete != 0 {
+		return deleteOldDraftMonumentLieu
+	}
+
+	return nil
+}
+
+func deleteOldDraftMonumentLieu(ctx context.Context, s *BusinessService, exData *updateMonumentLieuExchangeData) updateMonumentLieuState {
+	s.stopper.Hold(1)
+
+	//nolint:contextcheck
+	go func(logger *zerolog.Logger, id int32) {
+		defer s.stopper.Release()
+
+		if err := deleteMonumentLieu(context.Background(), logger, s, id); err != nil {
+			logger.Error().Err(err).Int32("id", id).Msg("failed to delete old draft monument lieu")
+		}
+	}(exData.logger, exData.draftToDelete)
 
 	return nil
 }

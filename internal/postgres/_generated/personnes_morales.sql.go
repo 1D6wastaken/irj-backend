@@ -706,6 +706,7 @@ SELECT p.id_pers_morale  AS id,
        p.publie,
        p.contributeurs,
        p.commentaires,
+       p.user_id,
        -- Redacteurs (auteurs fiche)
        COALESCE(
                        jsonb_agg(
@@ -839,6 +840,7 @@ type GetPersonneMoraleByIDRow struct {
 	Publie                  pgtype.Bool
 	Contributeurs           pgtype.Text
 	Commentaires            pgtype.Text
+	UserID                  pgtype.Text
 	Authors                 interface{}
 	City                    []byte
 	Department              []byte
@@ -874,6 +876,7 @@ func (q *Queries) GetPersonneMoraleByID(ctx context.Context, idPersMorale int32)
 		&i.Publie,
 		&i.Contributeurs,
 		&i.Commentaires,
+		&i.UserID,
 		&i.Authors,
 		&i.City,
 		&i.Department,

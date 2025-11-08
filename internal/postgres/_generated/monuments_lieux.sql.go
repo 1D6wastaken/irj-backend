@@ -595,6 +595,7 @@ SELECT m.id_monument_lieu AS id,
        m.protection,
        m.protection_commentaires,
        m.source,
+       m.user_id,
        -- Redacteurs (auteurs fiche)
        COALESCE(
                        jsonb_agg(
@@ -747,6 +748,7 @@ type GetMonumentLieuByIDRow struct {
 	Protection              pgtype.Bool
 	ProtectionCommentaires  pgtype.Text
 	Source                  pgtype.Text
+	UserID                  pgtype.Text
 	Authors                 interface{}
 	City                    []byte
 	Department              []byte
@@ -782,6 +784,7 @@ func (q *Queries) GetMonumentLieuByID(ctx context.Context, idMonumentLieu int32)
 		&i.Protection,
 		&i.ProtectionCommentaires,
 		&i.Source,
+		&i.UserID,
 		&i.Authors,
 		&i.City,
 		&i.Department,

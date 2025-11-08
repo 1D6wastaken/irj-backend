@@ -62,6 +62,7 @@ SELECT m.id_mobilier_image AS id,
        m.protection_commentaires,
        m.lieu_conservation,
        m.lieu_origine,
+       m.user_id,
        -- Redacteurs (auteurs fiche)
        COALESCE(
                        jsonb_agg(
