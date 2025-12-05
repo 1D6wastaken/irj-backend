@@ -104,15 +104,11 @@ func (b *BusinessService) GetMediaByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filename := filepath.Base(media.Path)
-
-	path := filepath.Join(b.config.FileSystem.UploadDir, filename)
-
-	logger.Info().Msgf("media: %s", path)
+	logger.Info().Msgf("media: %s", media.Path)
 
 	w.Header().Set("Content-Type", media.Mimetype)
 
-	http.ServeFile(w, r, path)
+	http.ServeFile(w, r, media.Path)
 }
 
 func (b *BusinessService) UploadImage(w http.ResponseWriter, r *http.Request) *_http.APIError {
