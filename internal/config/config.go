@@ -16,6 +16,7 @@ const (
 	defaultMaxConns    int32  = 10
 	defaultLogFile     string = "/var/log/saintjacques/logs"
 	defaultImageSize   int64  = 5
+	defaultBaseDir     string = "/home/stjacq/nocodb_data/nc/uploads"
 	defaultUploadDir   string = "download/noco/Patrimoine Jacquaire/TMedias/CheminMedia"
 )
 
@@ -40,6 +41,7 @@ type (
 	}
 
 	FileSystem struct {
+		BaseDir        string `yaml:"baseDir"`
 		UploadDir      string `yaml:"uploadDir"`
 		UploadDirForDB string `yaml:"uploadDirForDb"`
 		MaxSize        int64  `yaml:"maxSize"`
@@ -123,6 +125,10 @@ func (cfg *Config) checkDatabase() error {
 }
 
 func (cfg *Config) checkFileSystem() {
+	if cfg.FileSystem.BaseDir == "" {
+		cfg.FileSystem.BaseDir = defaultBaseDir
+	}
+
 	if cfg.FileSystem.UploadDir == "" {
 		cfg.FileSystem.UploadDir = defaultUploadDir
 	}
