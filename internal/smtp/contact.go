@@ -35,7 +35,7 @@ func (s *SMTPService) SendContactEmail(ctx context.Context, innerSubject, body, 
               <p>Bonjour,</p>
 			  <p>Vous avez reçu un nouveau message d'un contributeur via le formulaire de contact :</p>
 			  <p>Objet du message : ` + innerSubject + `</p>
-			  <p>` + body + `</p>
+			  <pre>` + body + `</pre>
 			  <p>Vous pouvez répondre directement à cette adresse email : <a href="mailto:` + email + `">` + email + `</a></p>
 			</td>
 		  </tr><tr>
