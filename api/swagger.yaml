@@ -19,6 +19,26 @@ schemes:
 basePath: /api/v1
 
 paths:
+  /contact:
+    post:
+      tags:
+        - public
+      summary: "Send a contact message"
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/ContactMessage"
+      produces:
+        - "application/json"
+      responses:
+        "201":
+          description: "Message sent"
+        "400":
+          description: "Invalid field"
+          schema:
+            $ref: "#/definitions/error"
   ## FILTERS ##
   /countries:
     get:
@@ -3117,3 +3137,20 @@ definitions:
     properties:
       department:
         $ref: "#/definitions/DepartmentFilter"
+
+  ContactMessage:
+    type: object
+    required:
+      - email
+      - subject
+      - message
+    properties:
+      email:
+        type: string
+        description: Email of the sender
+      subject:
+        type: string
+        description: Subject of the message
+      message:
+        type: string
+        description: Content of the message

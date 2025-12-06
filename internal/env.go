@@ -197,6 +197,8 @@ func (e *Env) Routes(router *httprouter.Router) {
 	router.HandlerFunc(http.MethodDelete, "/api/v1/draft/mobiliers_images/:id", protected(_http.HandlerMiddleware(e.BusinessService.DeleteDraftMobilierImage)))
 	router.HandlerFunc(http.MethodDelete, "/api/v1/draft/personnes_morales/:id", protected(_http.HandlerMiddleware(e.BusinessService.DeleteDraftPersonneMorale)))
 	router.HandlerFunc(http.MethodDelete, "/api/v1/draft/personnes_physiques/:id", protected(_http.HandlerMiddleware(e.BusinessService.DeleteDraftPersonnePhysique)))
+
+	router.HandlerFunc(http.MethodPost, "/api/v1/contact", protected(_http.HandlerMiddleware(e.UserService.ContactForm)))
 }
 
 func (e *Env) GetLogger() *glog.Logger {
