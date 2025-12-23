@@ -177,7 +177,7 @@ func (b *BusinessService) UploadImage(w http.ResponseWriter, r *http.Request) *_
 			String: fmt.Sprintf("[{\"title\":%q,\"mimetype\":%q,\"size\":%d,\"path\":%q}]", title, mimeType, size, savePath),
 			Valid:  true,
 		},
-		DateCreation: pgtype.Text{String: time.Now().String(), Valid: true},
+		DateCreation: pgtype.Timestamptz{Time: time.Now(), Valid: true},
 	})
 	if err != nil {
 		return _http.ErrInternalError.Msg("Erreur DB").Err(err)

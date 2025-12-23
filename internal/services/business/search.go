@@ -1,6 +1,7 @@
 package business
 
 import (
+	"cmp"
 	"context"
 	"net/http"
 	"strconv"
@@ -257,6 +258,11 @@ func searchWithText(ctx context.Context, s *BusinessService, r *http.Request) (*
 			Professions: collections.InterfaceToStringSlice(row.Professions),
 		})
 	}
+
+	// sort items by items.title alphabetically
+	items = collections.Sort(items, func(a, b *api.ListItem) int {
+		return cmp.Compare(*a.Title, *b.Title)
+	})
 
 	return &api.SearchResult{
 		Total: &total,

@@ -20,7 +20,7 @@ RETURNING id_media
 type CreateNewMediaParams struct {
 	Title        pgtype.Text
 	CheminMedia  pgtype.Text
-	DateCreation pgtype.Text
+	DateCreation pgtype.Timestamptz
 }
 
 func (q *Queries) CreateNewMedia(ctx context.Context, arg CreateNewMediaParams) (int32, error) {
