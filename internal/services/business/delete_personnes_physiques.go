@@ -53,6 +53,7 @@ func (b *BusinessService) DeleteDraftPersonnePhysique(w http.ResponseWriter, r *
 	return nil
 }
 
+//nolint:cyclop
 func deletePersonnePhysique(ctx context.Context, logger *zerolog.Logger, s *BusinessService, id int32) error {
 	err := s.postgresService.Queries.DetachSieclesFromPersPhy(ctx, id)
 	if err != nil {

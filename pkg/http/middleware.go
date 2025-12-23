@@ -119,7 +119,7 @@ var (
 func ParseAndCheckJWT(secret []byte, authorization string, checkClaims func(claims jwt.MapClaims) bool) error {
 	authorization = strings.TrimPrefix(authorization, "Bearer ")
 
-	token, err := jwt.Parse(authorization, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.Parse(authorization, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, ErrUnexpectedSigningMethod
 		}
@@ -166,7 +166,7 @@ func ExpectJWT(hmacSecret []byte, condition func(jwt.MapClaims) bool) Middleware
 func ExtractJWT(secret []byte, authorization string) (jwt.MapClaims, error) {
 	authorization = strings.TrimPrefix(authorization, "Bearer ")
 
-	token, err := jwt.Parse(authorization, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.Parse(authorization, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, ErrUnexpectedSigningMethod
 		}

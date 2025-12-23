@@ -53,6 +53,7 @@ func (b *BusinessService) DeleteDraftMonumentLieu(w http.ResponseWriter, r *http
 	return nil
 }
 
+//nolint:cyclop
 func deleteMonumentLieu(ctx context.Context, logger *zerolog.Logger, s *BusinessService, id int32) error {
 	err := s.postgresService.Queries.DetachSieclesFromMonuLieu(ctx, id)
 	if err != nil {

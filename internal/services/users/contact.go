@@ -27,6 +27,7 @@ func (u *UserService) ContactForm(w http.ResponseWriter, r *http.Request) *_http
 	}
 
 	logger := zerolog.Ctx(r.Context())
+
 	ctx, cancel := context.WithTimeout(r.Context(), defaultTimeOut)
 	defer cancel()
 

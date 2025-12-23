@@ -55,7 +55,7 @@ func parseMediaPath(path string) (MediaPath, error) {
 	return media[0], err
 }
 
-func (b *BusinessService) parseMedias(rawMedias interface{}) ([]NocoMedia, error) {
+func (b *BusinessService) parseMedias(rawMedias any) ([]NocoMedia, error) {
 	data, err := json.Marshal(rawMedias)
 	if err != nil {
 		return nil, err

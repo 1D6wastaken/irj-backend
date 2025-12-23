@@ -414,7 +414,7 @@ func storeMonuLieuxDocumentUpdateEvent(_ context.Context, s *BusinessService, ex
 	return nil
 }
 
-func deleteOldDraftMonumentLieu(ctx context.Context, s *BusinessService, exData *updateMonumentLieuExchangeData) updateMonumentLieuState {
+func deleteOldDraftMonumentLieu(_ context.Context, s *BusinessService, exData *updateMonumentLieuExchangeData) updateMonumentLieuState {
 	s.stopper.Hold(1)
 
 	//nolint:contextcheck

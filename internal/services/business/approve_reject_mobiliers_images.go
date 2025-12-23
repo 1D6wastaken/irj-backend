@@ -230,7 +230,7 @@ func storeMobImgDocumentUpdateValidationEvent(_ context.Context, s *BusinessServ
 	return nil
 }
 
-//nolint:cyclop,lll
+//nolint:lll
 func rejectMobilierImage(ctx context.Context, s *BusinessService, exData *approveRejectMobilierImageExchangeData) approveRejectMobilierImageState {
 	if err := deleteMobilierImage(ctx, exData.logger, s, exData.id); err != nil {
 		exData.err = err

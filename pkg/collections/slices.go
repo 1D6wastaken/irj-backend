@@ -4,14 +4,6 @@ import (
 	"slices"
 )
 
-func OrEmptySlice[T any](slice []T) []T {
-	if slice == nil {
-		return []T{}
-	}
-
-	return slice
-}
-
 func OrNil[T any](slice []T) []T {
 	if len(slice) == 0 {
 		return nil
@@ -30,28 +22,6 @@ func Map[T, U any](data []T, mapFn func(T) U) []U {
 	return out
 }
 
-func FlatMap[T, U any](data []T, mapFn func(T) []U) []U {
-	out := make([]U, 0)
-
-	for _, datum := range data {
-		out = append(out, mapFn(datum)...)
-	}
-
-	return out
-}
-
-func Filter[T any](data []T, filterFn func(T) bool) []T {
-	out := make([]T, 0)
-
-	for _, datum := range data {
-		if filterFn(datum) {
-			out = append(out, datum)
-		}
-	}
-
-	return out
-}
-
 func FilterMap[T, U any](data []T, filterMapFn func(T) (U, bool)) []U {
 	out := make([]U, 0)
 
@@ -64,45 +34,6 @@ func FilterMap[T, U any](data []T, filterMapFn func(T) (U, bool)) []U {
 	return out
 }
 
-//nolint:nonamedreturns
-func Find[T any](data []T, findFn func(T) bool) (t T, ok bool) {
-	for _, datum := range data {
-		if findFn(datum) {
-			return datum, true
-		}
-	}
-
-	return
-}
-
-func Some[T any](data []T, someFn func(T) bool) bool {
-	for _, datum := range data {
-		if someFn(datum) {
-			return true
-		}
-	}
-
-	return false
-}
-
-func Every[T any](data []T, someFn func(T) bool) bool {
-	for _, datum := range data {
-		if !someFn(datum) {
-			return false
-		}
-	}
-
-	return true
-}
-
-func Reduce[T, A any](data []T, reduceFn func(A, T) A, accumulator A) A {
-	for _, datum := range data {
-		accumulator = reduceFn(accumulator, datum)
-	}
-
-	return accumulator
-}
-
 func Sort[T any](data []T, sortFn func(a, b T) int) []T {
 	d := slices.Clone(data)
 
@@ -111,13 +42,13 @@ func Sort[T any](data []T, sortFn func(a, b T) int) []T {
 	return d
 }
 
-func InterfaceToStringSlice(input interface{}) []string {
+func InterfaceToStringSlice(input any) []string {
 	if input == nil {
 		return []string{}
 	}
 
-	// Tentative de conversion en []interface{}
-	if slice, ok := input.([]interface{}); ok {
+	// Tentative de conversion en []any
+	if slice, ok := input.([]any); ok {
 		result := make([]string, 0, len(slice))
 		for _, v := range slice {
 			if str, ok := v.(string); ok {
@@ -136,13 +67,13 @@ func InterfaceToStringSlice(input interface{}) []string {
 	return []string{}
 }
 
-func InterfaceToInt32Slice(input interface{}) []int32 {
+func InterfaceToInt32Slice(input any) []int32 {
 	if input == nil {
 		return []int32{}
 	}
 
-	// Tentative de conversion en []interface{}
-	if slice, ok := input.([]interface{}); ok {
+	// Tentative de conversion en []any
+	if slice, ok := input.([]any); ok {
 		result := make([]int32, 0, len(slice))
 		for _, v := range slice {
 			if str, ok := v.(int32); ok {

@@ -35,6 +35,7 @@ func (e *Env) DeleteInactiveUsers(ctx context.Context) error {
 			return
 		}
 
+		//nolint:gocritic
 		for _, u := range users {
 			if u.LastLogin.Valid && u.LastLogin.Time.Before(time.Now().Add(24*365*-3*time.Hour)) {
 				err := e.PostgresService.Queries.DeleteUserByID(ctx, u.ID)

@@ -1,5 +1,7 @@
 package utils
 
+import "slices"
+
 func Contains[T comparable](s []T, e T) bool {
 	return Find(s, e) != -1
 }
@@ -25,13 +27,7 @@ func FindIndexByFunc[T any](data []T, fn func(T) bool) int {
 }
 
 func Some[T any](data []T, some func(t T) bool) bool {
-	for _, datum := range data {
-		if some(datum) {
-			return true
-		}
-	}
-
-	return false
+	return slices.ContainsFunc(data, some)
 }
 
 func Filter[T any](data []T, filter func(t T) bool) []T {

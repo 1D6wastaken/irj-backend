@@ -35,7 +35,7 @@ func CloneRequest(r *http.Request) (*http.Request, error) {
 	return clone, nil
 }
 
-func WriteJSONResponse(w http.ResponseWriter, status int, jsonBody interface{}) *APIError {
+func WriteJSONResponse(w http.ResponseWriter, status int, jsonBody any) *APIError {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 

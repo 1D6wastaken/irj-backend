@@ -230,7 +230,7 @@ func storeMonuLieuxDocumentUpdateValidationEvent(_ context.Context, s *BusinessS
 	return nil
 }
 
-//nolint:cyclop,lll
+//nolint:lll
 func rejectMonumentLieu(ctx context.Context, s *BusinessService, exData *approveRejectMonumentLieuExchangeData) approveRejectMonumentLieuState {
 	if err := deleteMonumentLieu(ctx, exData.logger, s, exData.id); err != nil {
 		exData.err = err

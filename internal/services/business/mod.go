@@ -67,10 +67,10 @@ func parseLocation(
 	return &c, &d, &r, &p, nil
 }
 
-func interfaceSliceToBasicFilterSlice(input []interface{}) []*api.BasicFilter {
+func interfaceSliceToBasicFilterSlice(input []any) []*api.BasicFilter {
 	result := make([]*api.BasicFilter, 0, len(input))
 	for _, v := range input {
-		m, ok := v.(map[string]interface{})
+		m, ok := v.(map[string]any)
 		if !ok {
 			continue
 		}

@@ -112,7 +112,8 @@ func processUpdatePersonnePhysique(ctx context.Context, s *BusinessService, toke
 	}
 }
 
-func getPersonnePhysiqueToUpdate(ctx context.Context, s *BusinessService, exData *updatePersonnePhysiqueExchangeData) updatePersonnePhysiqueState {
+func getPersonnePhysiqueToUpdate(ctx context.Context, s *BusinessService,
+	exData *updatePersonnePhysiqueExchangeData) updatePersonnePhysiqueState {
 	p, err := s.postgresService.Queries.GetPersonnePhysiqueByID(ctx, exData.id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

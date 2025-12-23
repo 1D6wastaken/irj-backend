@@ -93,7 +93,7 @@ func Run(serverBuilder func(ctx context.Context, stopper *utils.AppStopper) (Ser
 		_http.ErrMethodNotAllowed.Write(w)
 	})
 
-	router.PanicHandler = func(w http.ResponseWriter, r *http.Request, err interface{}) {
+	router.PanicHandler = func(w http.ResponseWriter, r *http.Request, err any) {
 		zerolog.Ctx(r.Context()).Error().
 			Str("stacktrace", string(debug.Stack())).
 			Str("error", fmt.Sprintf("%v", err)).

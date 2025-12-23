@@ -230,7 +230,7 @@ func storePersPhyDocumentSubmissionValidationEvent(_ context.Context, s *Busines
 	return nil
 }
 
-//nolint:cyclop,lll
+//nolint:lll
 func rejectPersonnePhysique(ctx context.Context, s *BusinessService, exData *approveRejectPersonnePhysiqueExchangeData) approveRejectPersonnePhysiqueState {
 	if err := deletePersonnePhysique(ctx, exData.logger, s, exData.id); err != nil {
 		exData.err = err

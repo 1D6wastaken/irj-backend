@@ -29,7 +29,9 @@ func InitLogger(level, service string, file *os.File) Logger {
 	}
 
 	logger = logger.Level(l)
+
 	zerolog.SetGlobalLevel(l)
+
 	zerolog.TimeFieldFormat = time.RFC3339Nano
 
 	log.SetFlags(0)
