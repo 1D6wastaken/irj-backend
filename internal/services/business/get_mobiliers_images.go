@@ -232,6 +232,19 @@ func (b *BusinessService) GetMobilierImage(w http.ResponseWriter, r *http.Reques
 		return _http.ErrInternalError.Msg("error while parsing location").Err(err)
 	}
 
+	var (
+		creationDate strfmt.Date
+		updateDate   strfmt.Date
+	)
+
+	if mobilier.DateCrAtion.Valid {
+		creationDate = strfmt.Date(mobilier.DateCrAtion.Time)
+	}
+
+	if mobilier.DateMaj.Valid {
+		updateDate = strfmt.Date(mobilier.DateMaj.Time)
+	}
+
 	return _http.WriteJSONResponse(w, http.StatusOK, api.MobilierImage{
 		ID:                    mobilier.ID,
 		Title:                 mobilier.Title,
@@ -239,8 +252,8 @@ func (b *BusinessService) GetMobilierImage(w http.ResponseWriter, r *http.Reques
 		History:               mobilier.Historique.String,
 		Bibliography:          mobilier.Bibliographie.String,
 		Inscriptions:          mobilier.Inscriptions.String,
-		CreationDate:          strfmt.Date(mobilier.DateCrAtion.Time),
-		UpdateDate:            strfmt.Date(mobilier.DateMaj.Time),
+		CreationDate:          creationDate,
+		UpdateDate:            updateDate,
 		Published:             mobilier.Publie.Bool,
 		Contributors:          mobilier.Contributeurs.String,
 		Sources:               mobilier.Source.String,

@@ -12,10 +12,10 @@ import (
 const searchGlobal = `-- name: SearchGlobal :many
 WITH query AS (SELECT unnest(string_to_array(lower($1), ' ')) AS term),
 
-     in_communes AS (SELECT unnest(coalesce($5::int[], ARRAY []::int[])) AS id_commune),
-     in_departements AS (SELECT unnest(coalesce($6::int[], ARRAY []::int[])) AS id_departement),
-     in_regions AS (SELECT unnest(coalesce($7::int[], ARRAY []::int[])) AS id_region),
-     in_pays AS (SELECT unnest(coalesce($4::int[], ARRAY []::int[])) AS id_pays),
+     in_communes AS (SELECT unnest(coalesce($6::int[], ARRAY []::int[])) AS id_commune),
+     in_departements AS (SELECT unnest(coalesce($7::int[], ARRAY []::int[])) AS id_departement),
+     in_regions AS (SELECT unnest(coalesce($8::int[], ARRAY []::int[])) AS id_region),
+     in_pays AS (SELECT unnest(coalesce($5::int[], ARRAY []::int[])) AS id_pays),
 
      depts_from_communes AS (SELECT DISTINCT c.id_departement
                              FROM loc_communes c
@@ -121,16 +121,20 @@ FROM (
                   LEFT JOIN cor_materiaux_monu_lieu cmm ON cmm.monument_lieu_id = m.id_monument_lieu
                   LEFT JOIN cor_medias_monu_lieu cme ON m.id_monument_lieu = cme.monument_lieu_id
                   LEFT JOIN t_medias tm ON tm.id_media = cme.media_monu_lieu_id
+                  LEFT JOIN cor_themes_monu_lieu ctml ON ctml.monu_lieu_id = m.id_monument_lieu
+                  LEFT JOIN t_themes th ON th.id_theme = ctml.theme_id
          WHERE $2 = true
            AND ($1 IS NULL OR m.titre_monu_lieu ILIKE '%' || $1 || '%')
            AND ($3::int[] IS NULL OR cardinality($3::int[]) = 0 OR
                 csm.siecle_monu_lieu_id = ANY ($3::int[]))
+           AND ($4::int[] IS NULL OR cardinality($4::int[]) = 0 OR
+                ctml.theme_id = ANY ($4::int[]))
            AND (
              -- aucun filtre géographique fourni => on accepte tout
-             (COALESCE(cardinality($4::int[]), 0) = 0
-                 AND COALESCE(cardinality($5::int[]), 0) = 0
+             (COALESCE(cardinality($5::int[]), 0) = 0
                  AND COALESCE(cardinality($6::int[]), 0) = 0
-                 AND COALESCE(cardinality($7::int[]), 0) = 0)
+                 AND COALESCE(cardinality($7::int[]), 0) = 0
+                 AND COALESCE(cardinality($8::int[]), 0) = 0)
                  OR
                  -- correspond à une commune explicitement sélectionnée
              (EXISTS (SELECT 1 FROM effective_communes) AND m.id_commune IN (SELECT id_commune FROM effective_communes))
@@ -174,12 +178,12 @@ FROM (
                                           WHERE r.id_pays IN (SELECT id_pays FROM effective_countries))
                   ))
              )
-           AND ($8::int[] IS NULL OR cardinality($8::int[]) = 0 OR
-                cnm.monu_lieu_nature_id = ANY ($8::int[]))
            AND ($9::int[] IS NULL OR cardinality($9::int[]) = 0 OR
                 cnm.monu_lieu_nature_id = ANY ($9::int[]))
            AND ($10::int[] IS NULL OR cardinality($10::int[]) = 0 OR
                 cnm.monu_lieu_nature_id = ANY ($10::int[]))
+           AND ($11::int[] IS NULL OR cardinality($11::int[]) = 0 OR
+                cnm.monu_lieu_nature_id = ANY ($11::int[]))
            AND m.publie = true
            AND m.publication_status = 'PUBLISHED'
          GROUP BY m.id_monument_lieu
@@ -231,16 +235,20 @@ FROM (
                   LEFT JOIN cor_techniques_mob_img ctm ON ctm.mobilier_image_id = mob.id_mobilier_image
                   LEFT JOIN cor_medias_mob_img cme ON mob.id_mobilier_image = cme.mobilier_image_id
                   LEFT JOIN t_medias tm ON tm.id_media = cme.media_mob_img_id
-         WHERE $11 = true
+                  LEFT JOIN cor_themes_mob_img ctmi ON ctmi.mob_img_id = mob.id_mobilier_image
+                  LEFT JOIN t_themes th ON th.id_theme = ctmi.theme_id
+         WHERE $12 = true
            AND ($1 IS NULL OR mob.titre_mob_img ILIKE '%' || $1 || '%')
            AND ($3::int[] IS NULL OR cardinality($3::int[]) = 0 OR
                 csm.siecle_mob_img_id = ANY ($3::int[]))
+           AND ($4::int[] IS NULL OR cardinality($4::int[]) = 0 OR
+                ctmi.theme_id = ANY ($4::int[]))
            AND (
              -- aucun filtre géographique fourni => on accepte tout
-             (COALESCE(cardinality($4::int[]), 0) = 0
-                 AND COALESCE(cardinality($5::int[]), 0) = 0
+             (COALESCE(cardinality($5::int[]), 0) = 0
                  AND COALESCE(cardinality($6::int[]), 0) = 0
-                 AND COALESCE(cardinality($7::int[]), 0) = 0)
+                 AND COALESCE(cardinality($7::int[]), 0) = 0
+                 AND COALESCE(cardinality($8::int[]), 0) = 0)
                  OR
                  -- correspond à une commune explicitement sélectionnée
              (EXISTS (SELECT 1 FROM effective_communes) AND
@@ -285,14 +293,14 @@ FROM (
                                             WHERE r.id_pays IN (SELECT id_pays FROM effective_countries))
                   ))
              )
-           AND ($12::int[] IS NULL OR cardinality($12::int[]) = 0 OR
-                cnm.nature_id = ANY ($12::int[]))
            AND ($13::int[] IS NULL OR cardinality($13::int[]) = 0 OR
-                cem.etat_cons_mob_img_id = ANY ($13::int[]))
+                cnm.nature_id = ANY ($13::int[]))
            AND ($14::int[] IS NULL OR cardinality($14::int[]) = 0 OR
-                cmm.materiau_mob_img_id = ANY ($14::int[]))
+                cem.etat_cons_mob_img_id = ANY ($14::int[]))
            AND ($15::int[] IS NULL OR cardinality($15::int[]) = 0 OR
-                ctm.technique_id = ANY ($15::int[]))
+                cmm.materiau_mob_img_id = ANY ($15::int[]))
+           AND ($16::int[] IS NULL OR cardinality($16::int[]) = 0 OR
+                ctm.technique_id = ANY ($16::int[]))
            AND mob.publie = true
            AND mob.publication_status = 'PUBLISHED'
          GROUP BY mob.id_mobilier_image
@@ -340,16 +348,20 @@ FROM (
                   LEFT JOIN bib_pers_mo_natures bpn ON bpn.id_pers_mo_nature = cnp.pers_mo_nature_id
                   LEFT JOIN cor_medias_pers_mo cme ON pm.id_pers_morale = cme.pers_morale_id
                   LEFT JOIN t_medias tm ON tm.id_media = cme.media_pers_mo_id
-         WHERE $16 = true
+                  LEFT JOIN cor_themes_pers_mo ctpmo ON ctpmo.pers_mo_id = pm.id_pers_morale
+                  LEFT JOIN t_themes th ON th.id_theme = ctpmo.theme_id
+         WHERE $17 = true
            AND ($1 IS NULL OR pm.titre_pers_mo ILIKE '%' || $1 || '%')
            AND ($3::int[] IS NULL OR cardinality($3::int[]) = 0 OR
                 csp.siecle_pers_mo_id = ANY ($3::int[]))
+           AND ($4::int[] IS NULL OR cardinality($4::int[]) = 0 OR
+                ctpmo.theme_id = ANY ($4::int[]))
            AND (
              -- aucun filtre géographique fourni => on accepte tout
-             (COALESCE(cardinality($4::int[]), 0) = 0
-                 AND COALESCE(cardinality($5::int[]), 0) = 0
+             (COALESCE(cardinality($5::int[]), 0) = 0
                  AND COALESCE(cardinality($6::int[]), 0) = 0
-                 AND COALESCE(cardinality($7::int[]), 0) = 0)
+                 AND COALESCE(cardinality($7::int[]), 0) = 0
+                 AND COALESCE(cardinality($8::int[]), 0) = 0)
                  OR
                  -- correspond à une commune explicitement sélectionnée
              (EXISTS (SELECT 1 FROM effective_communes) AND
@@ -394,8 +406,8 @@ FROM (
                                            WHERE r.id_pays IN (SELECT id_pays FROM effective_countries))
                   ))
              )
-           AND ($17::int[] IS NULL OR cardinality($17::int[]) = 0 OR
-                cnp.pers_mo_nature_id = ANY ($17::int[]))
+           AND ($18::int[] IS NULL OR cardinality($18::int[]) = 0 OR
+                cnp.pers_mo_nature_id = ANY ($18::int[]))
            AND pm.publie = true
            AND pm.publication_status = 'PUBLISHED'
          GROUP BY pm.id_pers_morale
@@ -444,16 +456,20 @@ FROM (
                   LEFT JOIN cor_modes_deplacements_pers_phy cmd ON cmd.pers_physique_id = pp.id_pers_physique
                   LEFT JOIN cor_medias_pers_phy cmp ON pp.id_pers_physique = cmp.pers_physique_id
                   LEFT JOIN t_medias tm ON tm.id_media = cmp.media_pers_phy_id
-         WHERE $18 = true
+                  LEFT JOIN cor_themes_pers_phy ctpph ON ctpph.pers_phy_id = pp.id_pers_physique
+                  LEFT JOIN t_themes th ON th.id_theme = ctpph.theme_id
+         WHERE $19 = true
            AND ($1 IS NULL OR pp.prenom_nom_pers_phy ILIKE '%' || $1 || '%')
            AND ($3::int[] IS NULL OR cardinality($3::int[]) = 0 OR
                 csp.siecle_pers_phy_id = ANY ($3::int[]))
+           AND ($4::int[] IS NULL OR cardinality($4::int[]) = 0 OR
+                ctpph.theme_id = ANY ($4::int[]))
            AND (
              -- aucun filtre géographique fourni => on accepte tout
-             (COALESCE(cardinality($4::int[]), 0) = 0
-                 AND COALESCE(cardinality($5::int[]), 0) = 0
+             (COALESCE(cardinality($5::int[]), 0) = 0
                  AND COALESCE(cardinality($6::int[]), 0) = 0
-                 AND COALESCE(cardinality($7::int[]), 0) = 0)
+                 AND COALESCE(cardinality($7::int[]), 0) = 0
+                 AND COALESCE(cardinality($8::int[]), 0) = 0)
                  OR
                  -- correspond à une commune explicitement sélectionnée
              (EXISTS (SELECT 1 FROM effective_communes) AND
@@ -498,24 +514,25 @@ FROM (
                                            WHERE r.id_pays IN (SELECT id_pays FROM effective_countries))
                   ))
              )
-           AND ($19::int[] IS NULL OR cardinality($19::int[]) = 0 OR
-                cpp.profession_id = ANY ($19::int[]))
-           AND ($20::int[] IS NULL OR
-                cardinality($20::int[]) = 0 OR
-                cmd.mode_deplacement_id = ANY ($20::int[]))
+           AND ($20::int[] IS NULL OR cardinality($20::int[]) = 0 OR
+                cpp.profession_id = ANY ($20::int[]))
+           AND ($21::int[] IS NULL OR
+                cardinality($21::int[]) = 0 OR
+                cmd.mode_deplacement_id = ANY ($21::int[]))
            AND pp.publie = true
            AND pp.publication_status = 'PUBLISHED'
          GROUP BY pp.id_pers_physique) AS results
 
 
 ORDER BY score DESC
-LIMIT $22 OFFSET $21
+LIMIT $23 OFFSET $22
 `
 
 type SearchGlobalParams struct {
 	Q                      string
 	IncludeMonumentsLieux  interface{}
 	Siecles                []int32
+	Themes                 []int32
 	Pays                   []int32
 	Communes               []int32
 	Departements           []int32
@@ -561,6 +578,7 @@ func (q *Queries) SearchGlobal(ctx context.Context, arg SearchGlobalParams) ([]S
 		arg.Q,
 		arg.IncludeMonumentsLieux,
 		arg.Siecles,
+		arg.Themes,
 		arg.Pays,
 		arg.Communes,
 		arg.Departements,
@@ -611,10 +629,10 @@ func (q *Queries) SearchGlobal(ctx context.Context, arg SearchGlobalParams) ([]S
 
 const searchGlobalNoText = `-- name: SearchGlobalNoText :many
 WITH
-in_communes AS (SELECT unnest(coalesce($4::int[], ARRAY []::int[])) AS id_commune),
-in_departements AS (SELECT unnest(coalesce($5::int[], ARRAY []::int[])) AS id_departement),
-in_regions AS (SELECT unnest(coalesce($6::int[], ARRAY []::int[])) AS id_region),
-in_pays AS (SELECT unnest(coalesce($3::int[], ARRAY []::int[])) AS id_pays),
+in_communes AS (SELECT unnest(coalesce($5::int[], ARRAY []::int[])) AS id_commune),
+in_departements AS (SELECT unnest(coalesce($6::int[], ARRAY []::int[])) AS id_departement),
+in_regions AS (SELECT unnest(coalesce($7::int[], ARRAY []::int[])) AS id_region),
+in_pays AS (SELECT unnest(coalesce($4::int[], ARRAY []::int[])) AS id_pays),
 
 depts_from_communes AS (SELECT DISTINCT c.id_departement
                         FROM loc_communes c
@@ -719,15 +737,19 @@ FROM (
                   LEFT JOIN cor_materiaux_monu_lieu cmm ON cmm.monument_lieu_id = m.id_monument_lieu
                   LEFT JOIN cor_medias_monu_lieu cme ON m.id_monument_lieu = cme.monument_lieu_id
                   LEFT JOIN t_medias tm ON tm.id_media = cme.media_monu_lieu_id
+                  LEFT JOIN cor_themes_monu_lieu ctml ON ctml.monu_lieu_id = m.id_monument_lieu
+                  LEFT JOIN t_themes th ON th.id_theme = ctml.theme_id
          WHERE $1 = true
            AND ($2::int[] IS NULL OR cardinality($2::int[]) = 0 OR
                 csm.siecle_monu_lieu_id = ANY ($2::int[]))
+           AND ($3::int[] IS NULL OR cardinality($3::int[]) = 0 OR
+                ctml.theme_id = ANY ($3::int[]))
            AND (
              -- aucun filtre géographique fourni => on accepte tout
-             (COALESCE(cardinality($3::int[]), 0) = 0
-                 AND COALESCE(cardinality($4::int[]), 0) = 0
+             (COALESCE(cardinality($4::int[]), 0) = 0
                  AND COALESCE(cardinality($5::int[]), 0) = 0
-                 AND COALESCE(cardinality($6::int[]), 0) = 0)
+                 AND COALESCE(cardinality($6::int[]), 0) = 0
+                 AND COALESCE(cardinality($7::int[]), 0) = 0)
                  OR
                  -- correspond à une commune explicitement sélectionnée
              (EXISTS (SELECT 1 FROM effective_communes) AND m.id_commune IN (SELECT id_commune FROM effective_communes))
@@ -771,12 +793,12 @@ FROM (
                                           WHERE r.id_pays IN (SELECT id_pays FROM effective_countries))
                   ))
              )
-           AND ($7::int[] IS NULL OR cardinality($7::int[]) = 0 OR
-                cnm.monu_lieu_nature_id = ANY ($7::int[]))
            AND ($8::int[] IS NULL OR cardinality($8::int[]) = 0 OR
                 cnm.monu_lieu_nature_id = ANY ($8::int[]))
            AND ($9::int[] IS NULL OR cardinality($9::int[]) = 0 OR
                 cnm.monu_lieu_nature_id = ANY ($9::int[]))
+           AND ($10::int[] IS NULL OR cardinality($10::int[]) = 0 OR
+                cnm.monu_lieu_nature_id = ANY ($10::int[]))
            AND m.publie = true
            AND m.publication_status = 'PUBLISHED'
          GROUP BY m.id_monument_lieu
@@ -827,15 +849,19 @@ FROM (
                   LEFT JOIN cor_techniques_mob_img ctm ON ctm.mobilier_image_id = mob.id_mobilier_image
                   LEFT JOIN cor_medias_mob_img cme ON mob.id_mobilier_image = cme.mobilier_image_id
                   LEFT JOIN t_medias tm ON tm.id_media = cme.media_mob_img_id
-         WHERE $10 = true
+                  LEFT JOIN cor_themes_mob_img ctmi ON ctmi.mob_img_id = mob.id_mobilier_image
+                  LEFT JOIN t_themes th ON th.id_theme = ctmi.theme_id
+         WHERE $11 = true
            AND ($2::int[] IS NULL OR cardinality($2::int[]) = 0 OR
                 csm.siecle_mob_img_id = ANY ($2::int[]))
+           AND ($3::int[] IS NULL OR cardinality($3::int[]) = 0 OR
+                ctmi.theme_id = ANY ($3::int[]))
            AND (
              -- aucun filtre géographique fourni => on accepte tout
-             (COALESCE(cardinality($3::int[]), 0) = 0
-                 AND COALESCE(cardinality($4::int[]), 0) = 0
+             (COALESCE(cardinality($4::int[]), 0) = 0
                  AND COALESCE(cardinality($5::int[]), 0) = 0
-                 AND COALESCE(cardinality($6::int[]), 0) = 0)
+                 AND COALESCE(cardinality($6::int[]), 0) = 0
+                 AND COALESCE(cardinality($7::int[]), 0) = 0)
                  OR
                  -- correspond à une commune explicitement sélectionnée
              (EXISTS (SELECT 1 FROM effective_communes) AND
@@ -880,14 +906,14 @@ FROM (
                                             WHERE r.id_pays IN (SELECT id_pays FROM effective_countries))
                   ))
              )
-           AND ($11::int[] IS NULL OR cardinality($11::int[]) = 0 OR
-                cnm.nature_id = ANY ($11::int[]))
            AND ($12::int[] IS NULL OR cardinality($12::int[]) = 0 OR
-                cem.etat_cons_mob_img_id = ANY ($12::int[]))
+                cnm.nature_id = ANY ($12::int[]))
            AND ($13::int[] IS NULL OR cardinality($13::int[]) = 0 OR
-                cmm.materiau_mob_img_id = ANY ($13::int[]))
+                cem.etat_cons_mob_img_id = ANY ($13::int[]))
            AND ($14::int[] IS NULL OR cardinality($14::int[]) = 0 OR
-                ctm.technique_id = ANY ($14::int[]))
+                cmm.materiau_mob_img_id = ANY ($14::int[]))
+           AND ($15::int[] IS NULL OR cardinality($15::int[]) = 0 OR
+                ctm.technique_id = ANY ($15::int[]))
            AND mob.publie = true
            AND mob.publication_status = 'PUBLISHED'
          GROUP BY mob.id_mobilier_image
@@ -934,15 +960,19 @@ FROM (
                   LEFT JOIN bib_pers_mo_natures bpn ON bpn.id_pers_mo_nature = cnp.pers_mo_nature_id
                   LEFT JOIN cor_medias_pers_mo cme ON pm.id_pers_morale = cme.pers_morale_id
                   LEFT JOIN t_medias tm ON tm.id_media = cme.media_pers_mo_id
-         WHERE $15 = true
+                  LEFT JOIN cor_themes_pers_mo ctpmo ON ctpmo.pers_mo_id = pm.id_pers_morale
+                  LEFT JOIN t_themes th ON th.id_theme = ctpmo.theme_id
+         WHERE $16 = true
            AND ($2::int[] IS NULL OR cardinality($2::int[]) = 0 OR
                 csp.siecle_pers_mo_id = ANY ($2::int[]))
+           AND ($3::int[] IS NULL OR cardinality($3::int[]) = 0 OR
+                ctpmo.theme_id = ANY ($3::int[]))
            AND (
              -- aucun filtre géographique fourni => on accepte tout
-             (COALESCE(cardinality($3::int[]), 0) = 0
-                 AND COALESCE(cardinality($4::int[]), 0) = 0
+             (COALESCE(cardinality($4::int[]), 0) = 0
                  AND COALESCE(cardinality($5::int[]), 0) = 0
-                 AND COALESCE(cardinality($6::int[]), 0) = 0)
+                 AND COALESCE(cardinality($6::int[]), 0) = 0
+                 AND COALESCE(cardinality($7::int[]), 0) = 0)
                  OR
                  -- correspond à une commune explicitement sélectionnée
              (EXISTS (SELECT 1 FROM effective_communes) AND
@@ -987,8 +1017,8 @@ FROM (
                                            WHERE r.id_pays IN (SELECT id_pays FROM effective_countries))
                   ))
              )
-           AND ($16::int[] IS NULL OR cardinality($16::int[]) = 0 OR
-                cnp.pers_mo_nature_id = ANY ($16::int[]))
+           AND ($17::int[] IS NULL OR cardinality($17::int[]) = 0 OR
+                cnp.pers_mo_nature_id = ANY ($17::int[]))
            AND pm.publie = true
            AND pm.publication_status = 'PUBLISHED'
          GROUP BY pm.id_pers_morale
@@ -1036,15 +1066,19 @@ FROM (
                   LEFT JOIN cor_modes_deplacements_pers_phy cmd ON cmd.pers_physique_id = pp.id_pers_physique
                   LEFT JOIN cor_medias_pers_phy cmp ON pp.id_pers_physique = cmp.pers_physique_id
                   LEFT JOIN t_medias tm ON tm.id_media = cmp.media_pers_phy_id
-         WHERE $17 = true
+                  LEFT JOIN cor_themes_pers_phy ctphy ON ctphy.pers_phy_id = pp.id_pers_physique
+                  LEFT JOIN t_themes th ON th.id_theme = ctphy.theme_id
+         WHERE $18 = true
            AND ($2::int[] IS NULL OR cardinality($2::int[]) = 0 OR
                 csp.siecle_pers_phy_id = ANY ($2::int[]))
+           AND ($3::int[] IS NULL OR cardinality($3::int[]) = 0 OR
+                ctphy.theme_id = ANY ($3::int[]))
            AND (
              -- aucun filtre géographique fourni => on accepte tout
-             (COALESCE(cardinality($3::int[]), 0) = 0
-                 AND COALESCE(cardinality($4::int[]), 0) = 0
+             (COALESCE(cardinality($4::int[]), 0) = 0
                  AND COALESCE(cardinality($5::int[]), 0) = 0
-                 AND COALESCE(cardinality($6::int[]), 0) = 0)
+                 AND COALESCE(cardinality($6::int[]), 0) = 0
+                 AND COALESCE(cardinality($7::int[]), 0) = 0)
                  OR
                  -- correspond à une commune explicitement sélectionnée
              (EXISTS (SELECT 1 FROM effective_communes) AND
@@ -1089,23 +1123,24 @@ FROM (
                                            WHERE r.id_pays IN (SELECT id_pays FROM effective_countries))
                   ))
              )
-           AND ($18::int[] IS NULL OR cardinality($18::int[]) = 0 OR
-                cpp.profession_id = ANY ($18::int[]))
-           AND ($19::int[] IS NULL OR
-                cardinality($19::int[]) = 0 OR
-                cmd.mode_deplacement_id = ANY ($19::int[]))
+           AND ($19::int[] IS NULL OR cardinality($19::int[]) = 0 OR
+                cpp.profession_id = ANY ($19::int[]))
+           AND ($20::int[] IS NULL OR
+                cardinality($20::int[]) = 0 OR
+                cmd.mode_deplacement_id = ANY ($20::int[]))
            AND pp.publie = true
            AND pp.publication_status = 'PUBLISHED'
          GROUP BY pp.id_pers_physique) AS results
 
 
 ORDER BY title
-LIMIT $21 OFFSET $20
+LIMIT $22 OFFSET $21
 `
 
 type SearchGlobalNoTextParams struct {
 	IncludeMonumentsLieux  interface{}
 	Siecles                []int32
+	Themes                 []int32
 	Pays                   []int32
 	Communes               []int32
 	Departements           []int32
@@ -1149,6 +1184,7 @@ func (q *Queries) SearchGlobalNoText(ctx context.Context, arg SearchGlobalNoText
 	rows, err := q.db.Query(ctx, searchGlobalNoText,
 		arg.IncludeMonumentsLieux,
 		arg.Siecles,
+		arg.Themes,
 		arg.Pays,
 		arg.Communes,
 		arg.Departements,

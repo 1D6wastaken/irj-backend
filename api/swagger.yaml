@@ -1783,6 +1783,11 @@ definitions:
         items:
           type: integer
           format: int32
+      themes:
+        type: array
+        items:
+          type: integer
+          format: int32
       countries:
         type: array
         items:

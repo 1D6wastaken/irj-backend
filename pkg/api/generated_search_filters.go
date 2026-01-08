@@ -22,6 +22,9 @@ type SearchFilters struct {
 	// centuries
 	Centuries []int32 `json:"centuries"`
 
+	// themes
+	Themes []int32 `json:"themes"`
+
 	// countries
 	Countries []int32 `json:"countries"`
 

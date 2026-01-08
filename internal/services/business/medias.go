@@ -27,7 +27,7 @@ import (
 	"github.com/rs/zerolog"
 )
 
-const MaxFileSize = 5 << 20 // 5 MB
+const MaxFileSize = 1 << 20 // 1 MB
 
 type (
 	NocoMedia struct {

@@ -117,10 +117,14 @@ FROM (
                   LEFT JOIN cor_materiaux_monu_lieu cmm ON cmm.monument_lieu_id = m.id_monument_lieu
                   LEFT JOIN cor_medias_monu_lieu cme ON m.id_monument_lieu = cme.monument_lieu_id
                   LEFT JOIN t_medias tm ON tm.id_media = cme.media_monu_lieu_id
+                  LEFT JOIN cor_themes_monu_lieu ctml ON ctml.monu_lieu_id = m.id_monument_lieu
+                  LEFT JOIN t_themes th ON th.id_theme = ctml.theme_id
          WHERE sqlc.arg('include_monuments_lieux') = true
            AND (sqlc.arg('q') IS NULL OR m.titre_monu_lieu ILIKE '%' || sqlc.arg('q') || '%')
            AND (sqlc.arg('siecles')::int[] IS NULL OR cardinality(sqlc.arg('siecles')::int[]) = 0 OR
                 csm.siecle_monu_lieu_id = ANY (sqlc.arg('siecles')::int[]))
+           AND (sqlc.arg('themes')::int[] IS NULL OR cardinality(sqlc.arg('themes')::int[]) = 0 OR
+                ctml.theme_id = ANY (sqlc.arg('themes')::int[]))
            AND (
              -- aucun filtre géographique fourni => on accepte tout
              (COALESCE(cardinality(sqlc.arg('pays')::int[]), 0) = 0
@@ -227,10 +231,14 @@ FROM (
                   LEFT JOIN cor_techniques_mob_img ctm ON ctm.mobilier_image_id = mob.id_mobilier_image
                   LEFT JOIN cor_medias_mob_img cme ON mob.id_mobilier_image = cme.mobilier_image_id
                   LEFT JOIN t_medias tm ON tm.id_media = cme.media_mob_img_id
+                  LEFT JOIN cor_themes_mob_img ctmi ON ctmi.mob_img_id = mob.id_mobilier_image
+                  LEFT JOIN t_themes th ON th.id_theme = ctmi.theme_id
          WHERE sqlc.arg('include_mobiliers_images') = true
            AND (sqlc.arg('q') IS NULL OR mob.titre_mob_img ILIKE '%' || sqlc.arg('q') || '%')
            AND (sqlc.arg('siecles')::int[] IS NULL OR cardinality(sqlc.arg('siecles')::int[]) = 0 OR
                 csm.siecle_mob_img_id = ANY (sqlc.arg('siecles')::int[]))
+           AND (sqlc.arg('themes')::int[] IS NULL OR cardinality(sqlc.arg('themes')::int[]) = 0 OR
+                ctmi.theme_id = ANY (sqlc.arg('themes')::int[]))
            AND (
              -- aucun filtre géographique fourni => on accepte tout
              (COALESCE(cardinality(sqlc.arg('pays')::int[]), 0) = 0
@@ -336,10 +344,14 @@ FROM (
                   LEFT JOIN bib_pers_mo_natures bpn ON bpn.id_pers_mo_nature = cnp.pers_mo_nature_id
                   LEFT JOIN cor_medias_pers_mo cme ON pm.id_pers_morale = cme.pers_morale_id
                   LEFT JOIN t_medias tm ON tm.id_media = cme.media_pers_mo_id
+                  LEFT JOIN cor_themes_pers_mo ctpmo ON ctpmo.pers_mo_id = pm.id_pers_morale
+                  LEFT JOIN t_themes th ON th.id_theme = ctpmo.theme_id
          WHERE sqlc.arg('include_pers_morales') = true
            AND (sqlc.arg('q') IS NULL OR pm.titre_pers_mo ILIKE '%' || sqlc.arg('q') || '%')
            AND (sqlc.arg('siecles')::int[] IS NULL OR cardinality(sqlc.arg('siecles')::int[]) = 0 OR
                 csp.siecle_pers_mo_id = ANY (sqlc.arg('siecles')::int[]))
+           AND (sqlc.arg('themes')::int[] IS NULL OR cardinality(sqlc.arg('themes')::int[]) = 0 OR
+                ctpmo.theme_id = ANY (sqlc.arg('themes')::int[]))
            AND (
              -- aucun filtre géographique fourni => on accepte tout
              (COALESCE(cardinality(sqlc.arg('pays')::int[]), 0) = 0
@@ -440,10 +452,14 @@ FROM (
                   LEFT JOIN cor_modes_deplacements_pers_phy cmd ON cmd.pers_physique_id = pp.id_pers_physique
                   LEFT JOIN cor_medias_pers_phy cmp ON pp.id_pers_physique = cmp.pers_physique_id
                   LEFT JOIN t_medias tm ON tm.id_media = cmp.media_pers_phy_id
+                  LEFT JOIN cor_themes_pers_phy ctpph ON ctpph.pers_phy_id = pp.id_pers_physique
+                  LEFT JOIN t_themes th ON th.id_theme = ctpph.theme_id
          WHERE sqlc.arg('include_pers_physiques') = true
            AND (sqlc.arg('q') IS NULL OR pp.prenom_nom_pers_phy ILIKE '%' || sqlc.arg('q') || '%')
            AND (sqlc.arg('siecles')::int[] IS NULL OR cardinality(sqlc.arg('siecles')::int[]) = 0 OR
                 csp.siecle_pers_phy_id = ANY (sqlc.arg('siecles')::int[]))
+           AND (sqlc.arg('themes')::int[] IS NULL OR cardinality(sqlc.arg('themes')::int[]) = 0 OR
+                ctpph.theme_id = ANY (sqlc.arg('themes')::int[]))
            AND (
              -- aucun filtre géographique fourni => on accepte tout
              (COALESCE(cardinality(sqlc.arg('pays')::int[]), 0) = 0
@@ -624,9 +640,13 @@ FROM (
                   LEFT JOIN cor_materiaux_monu_lieu cmm ON cmm.monument_lieu_id = m.id_monument_lieu
                   LEFT JOIN cor_medias_monu_lieu cme ON m.id_monument_lieu = cme.monument_lieu_id
                   LEFT JOIN t_medias tm ON tm.id_media = cme.media_monu_lieu_id
+                  LEFT JOIN cor_themes_monu_lieu ctml ON ctml.monu_lieu_id = m.id_monument_lieu
+                  LEFT JOIN t_themes th ON th.id_theme = ctml.theme_id
          WHERE sqlc.arg('include_monuments_lieux') = true
            AND (sqlc.arg('siecles')::int[] IS NULL OR cardinality(sqlc.arg('siecles')::int[]) = 0 OR
                 csm.siecle_monu_lieu_id = ANY (sqlc.arg('siecles')::int[]))
+           AND (sqlc.arg('themes')::int[] IS NULL OR cardinality(sqlc.arg('themes')::int[]) = 0 OR
+                ctml.theme_id = ANY (sqlc.arg('themes')::int[]))
            AND (
              -- aucun filtre géographique fourni => on accepte tout
              (COALESCE(cardinality(sqlc.arg('pays')::int[]), 0) = 0
@@ -732,9 +752,13 @@ FROM (
                   LEFT JOIN cor_techniques_mob_img ctm ON ctm.mobilier_image_id = mob.id_mobilier_image
                   LEFT JOIN cor_medias_mob_img cme ON mob.id_mobilier_image = cme.mobilier_image_id
                   LEFT JOIN t_medias tm ON tm.id_media = cme.media_mob_img_id
+                  LEFT JOIN cor_themes_mob_img ctmi ON ctmi.mob_img_id = mob.id_mobilier_image
+                  LEFT JOIN t_themes th ON th.id_theme = ctmi.theme_id
          WHERE sqlc.arg('include_mobiliers_images') = true
            AND (sqlc.arg('siecles')::int[] IS NULL OR cardinality(sqlc.arg('siecles')::int[]) = 0 OR
                 csm.siecle_mob_img_id = ANY (sqlc.arg('siecles')::int[]))
+           AND (sqlc.arg('themes')::int[] IS NULL OR cardinality(sqlc.arg('themes')::int[]) = 0 OR
+                ctmi.theme_id = ANY (sqlc.arg('themes')::int[]))
            AND (
              -- aucun filtre géographique fourni => on accepte tout
              (COALESCE(cardinality(sqlc.arg('pays')::int[]), 0) = 0
@@ -839,9 +863,13 @@ FROM (
                   LEFT JOIN bib_pers_mo_natures bpn ON bpn.id_pers_mo_nature = cnp.pers_mo_nature_id
                   LEFT JOIN cor_medias_pers_mo cme ON pm.id_pers_morale = cme.pers_morale_id
                   LEFT JOIN t_medias tm ON tm.id_media = cme.media_pers_mo_id
+                  LEFT JOIN cor_themes_pers_mo ctpmo ON ctpmo.pers_mo_id = pm.id_pers_morale
+                  LEFT JOIN t_themes th ON th.id_theme = ctpmo.theme_id
          WHERE sqlc.arg('include_pers_morales') = true
            AND (sqlc.arg('siecles')::int[] IS NULL OR cardinality(sqlc.arg('siecles')::int[]) = 0 OR
                 csp.siecle_pers_mo_id = ANY (sqlc.arg('siecles')::int[]))
+           AND (sqlc.arg('themes')::int[] IS NULL OR cardinality(sqlc.arg('themes')::int[]) = 0 OR
+                ctpmo.theme_id = ANY (sqlc.arg('themes')::int[]))
            AND (
              -- aucun filtre géographique fourni => on accepte tout
              (COALESCE(cardinality(sqlc.arg('pays')::int[]), 0) = 0
@@ -941,9 +969,13 @@ FROM (
                   LEFT JOIN cor_modes_deplacements_pers_phy cmd ON cmd.pers_physique_id = pp.id_pers_physique
                   LEFT JOIN cor_medias_pers_phy cmp ON pp.id_pers_physique = cmp.pers_physique_id
                   LEFT JOIN t_medias tm ON tm.id_media = cmp.media_pers_phy_id
+                  LEFT JOIN cor_themes_pers_phy ctphy ON ctphy.pers_phy_id = pp.id_pers_physique
+                  LEFT JOIN t_themes th ON th.id_theme = ctphy.theme_id
          WHERE sqlc.arg('include_pers_physiques') = true
            AND (sqlc.arg('siecles')::int[] IS NULL OR cardinality(sqlc.arg('siecles')::int[]) = 0 OR
                 csp.siecle_pers_phy_id = ANY (sqlc.arg('siecles')::int[]))
+           AND (sqlc.arg('themes')::int[] IS NULL OR cardinality(sqlc.arg('themes')::int[]) = 0 OR
+                ctphy.theme_id = ANY (sqlc.arg('themes')::int[]))
            AND (
              -- aucun filtre géographique fourni => on accepte tout
              (COALESCE(cardinality(sqlc.arg('pays')::int[]), 0) = 0
