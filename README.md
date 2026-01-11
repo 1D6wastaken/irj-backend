@@ -18,7 +18,7 @@ Le backend est développé en **Go**, utilise **sqlc** pour la génération de c
 
 ## 🚀 Prérequis
 
-* **Go >= 1.20**
+* **Go >= 1.25**
 * **Taskfile** (outil de gestion de tâches : [https://taskfile.dev](https://taskfile.dev))
 * **Docker / PostgreSQL** (pour la base de données)
 * **go-migrate** (gestion des migrations)
