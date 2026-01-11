@@ -12,7 +12,7 @@ vars:
   # https://github.com/go-swagger/go-swagger/releases
   GOSWAGGER_VERSION: 0.33.1
   # https://github.com/sqlc-dev/sqlc/releases
-  SQLC_VERSION: 1.29.0
+  SQLC_VERSION: 1.30.0
 
   GOLANGCILINT: .bin/golangci-lint-{{.GOLANGCILINT_VERSION}}
 

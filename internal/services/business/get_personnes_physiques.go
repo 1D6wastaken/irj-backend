@@ -5,7 +5,9 @@ import (
 	"database/sql"
 	"errors"
 	"net/http"
+	"slices"
 	"strconv"
+	"strings"
 
 	"irj/internal/catalogs"
 	"irj/internal/jwt"
@@ -67,6 +69,11 @@ func (b *BusinessService) GetPendingPersonnesPhysiques(w http.ResponseWriter, r 
 					ID:    &m.ID,
 					Title: &m.Title,
 				}
+			})
+
+			// sort medias by Title
+			slices.SortFunc(medias, func(a, b *api.Media) int {
+				return strings.Compare(*a.Title, *b.Title)
 			})
 		} else {
 			logger.Error().Err(err).Msg("failed to parse medias")
