@@ -151,7 +151,7 @@ func updateMobilierImage(ctx context.Context, s *BusinessService, exData *update
 
 	id, err := s.postgresService.Queries.CreateMobilierImage(ctx, queries.CreateMobilierImageParams{
 		TitreMobImg:   *exData.params.Title,
-		Description:   pgtype.Text{String: *exData.params.Description, Valid: true},
+		Description:   pgtype.Text{String: exData.params.Description, Valid: true},
 		Historique:    pgtype.Text{String: exData.params.History, Valid: exData.params.History != ""},
 		Inscriptions:  pgtype.Text{String: exData.params.Inscription, Valid: exData.params.Inscription != ""},
 		Origin:        pgtype.Text{String: exData.params.OriginPlace, Valid: exData.params.OriginPlace != ""},

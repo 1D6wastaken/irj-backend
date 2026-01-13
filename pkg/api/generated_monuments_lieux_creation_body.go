@@ -51,8 +51,7 @@ type MonumentsLieuxCreationBody struct {
 	Source string `json:"source,omitempty"`
 
 	// description
-	// Required: true
-	Description *string `json:"description"`
+	Description string `json:"description,omitempty"`
 
 	// history
 	History string `json:"history,omitempty"`
@@ -102,10 +101,6 @@ func (m *MonumentsLieuxCreationBody) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
-	if err := m.validateDescription(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
@@ -115,15 +110,6 @@ func (m *MonumentsLieuxCreationBody) Validate(formats strfmt.Registry) error {
 func (m *MonumentsLieuxCreationBody) validateTitle(formats strfmt.Registry) error {
 
 	if err := validate.Required("title", "body", m.Title); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *MonumentsLieuxCreationBody) validateDescription(formats strfmt.Registry) error {
-
-	if err := validate.Required("description", "body", m.Description); err != nil {
 		return err
 	}
 

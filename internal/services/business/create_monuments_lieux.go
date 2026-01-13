@@ -105,7 +105,7 @@ func createMonumentLieu(ctx context.Context, s *BusinessService, exData *createM
 
 	id, err := s.postgresService.Queries.CreateMonumentLieu(ctx, queries.CreateMonumentLieuParams{
 		TitreMonuLieu: *exData.params.Title,
-		Description:   pgtype.Text{String: *exData.params.Description, Valid: true},
+		Description:   pgtype.Text{String: exData.params.Description, Valid: true},
 		Histoire:      pgtype.Text{String: exData.params.History, Valid: exData.params.History != ""},
 		Geolocalisation: pgtype.Text{
 			String: fmt.Sprintf("%s, %s", exData.params.Latitude, exData.params.Longitude),

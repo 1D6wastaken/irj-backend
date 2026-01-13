@@ -2578,7 +2578,6 @@ definitions:
     type: object
     required:
       - title
-      - description
     properties:
       title:
         type: string
@@ -2931,7 +2930,6 @@ definitions:
     type: object
     required:
       - title
-      - description
     properties:
       title:
         type: string
