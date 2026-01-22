@@ -520,7 +520,7 @@ FROM (
          GROUP BY pp.id_pers_physique) AS results
 
 
-ORDER BY score DESC
+ORDER BY lower(title) ASC
 LIMIT sqlc.arg(limit_param) OFFSET sqlc.arg(offset_param);
 
 -- name: SearchGlobalNoText :many

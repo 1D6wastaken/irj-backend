@@ -524,7 +524,7 @@ FROM (
          GROUP BY pp.id_pers_physique) AS results
 
 
-ORDER BY score DESC
+ORDER BY lower(title) ASC
 LIMIT $23 OFFSET $22
 `
 
