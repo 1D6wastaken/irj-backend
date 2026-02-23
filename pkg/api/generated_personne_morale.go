@@ -109,6 +109,9 @@ type PersonneMorale struct {
 
 	// parent id
 	ParentID int32 `json:"parent_id,omitempty"`
+
+	// comment of the temoin
+	TemoinComment string `json:"temoinComment,omitempty"`
 }
 
 // Validate validates this personne morale

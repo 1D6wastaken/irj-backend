@@ -264,5 +264,6 @@ func (b *BusinessService) GetMobilierImage(w http.ResponseWriter, r *http.Reques
 		LinkedLegalEntities:   collections.InterfaceToInt32Slice(mobilier.PersonnesMoralesLiees),
 		Themes:                interfaceSliceToBasicFilterSlice(mobilier.Themes.([]any)),
 		ParentID:              mobilier.ParentID.Int32,
+		TemoinComment:         mobilier.TemoinCommentaires.String,
 	})
 }

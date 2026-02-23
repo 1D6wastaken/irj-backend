@@ -186,6 +186,10 @@ func updateMobilierImage(ctx context.Context, s *BusinessService, exData *update
 			String: exData.token.ID,
 			Valid:  exData.params.Draft,
 		},
+		TemoinCommentaires: pgtype.Text{
+			String: exData.params.TemoinComment,
+			Valid:  exData.params.TemoinComment != "",
+		},
 	})
 	if err != nil {
 		exData.logger.Error().Err(err).Msg("failed to insert mobilier image")

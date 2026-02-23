@@ -91,6 +91,9 @@ type MonumentsLieuxCreationBody struct {
 
 	// draft
 	Draft bool `json:"draft,omitempty"`
+
+	// comment of the temoin
+	TemoinComment string `json:"temoinComment,omitempty"`
 }
 
 // Validate validates this monuments lieux creation body

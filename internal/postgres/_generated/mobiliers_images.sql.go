@@ -159,7 +159,8 @@ INSERT INTO t_mobiliers_images
  publie,
  publication_status,
  parent_id,
- user_id)
+ user_id,
+ temoin_commentaires)
 VALUES ($1,
         $2,
         $3,
@@ -180,29 +181,31 @@ VALUES ($1,
         false,
         $16,
         $17,
-        $18)
+        $18,
+        $19)
 RETURNING id_mobilier_image
 `
 
 type CreateMobilierImageParams struct {
-	TitreMobImg       string
-	Description       pgtype.Text
-	Historique        pgtype.Text
-	Inscriptions      pgtype.Text
-	Origin            pgtype.Text
-	Place             pgtype.Text
-	Bibliographie     pgtype.Text
-	Protection        pgtype.Bool
-	ProtectionComment pgtype.Text
-	Source            pgtype.Text
-	Contributors      pgtype.Text
-	IDCommune         pgtype.Int4
-	IDDepartement     pgtype.Int4
-	IDRegion          pgtype.Int4
-	IDPays            pgtype.Int4
-	PublicationStatus PublicationStatus
-	ParentID          pgtype.Int4
-	UserID            pgtype.Text
+	TitreMobImg        string
+	Description        pgtype.Text
+	Historique         pgtype.Text
+	Inscriptions       pgtype.Text
+	Origin             pgtype.Text
+	Place              pgtype.Text
+	Bibliographie      pgtype.Text
+	Protection         pgtype.Bool
+	ProtectionComment  pgtype.Text
+	Source             pgtype.Text
+	Contributors       pgtype.Text
+	IDCommune          pgtype.Int4
+	IDDepartement      pgtype.Int4
+	IDRegion           pgtype.Int4
+	IDPays             pgtype.Int4
+	PublicationStatus  PublicationStatus
+	ParentID           pgtype.Int4
+	UserID             pgtype.Text
+	TemoinCommentaires pgtype.Text
 }
 
 func (q *Queries) CreateMobilierImage(ctx context.Context, arg CreateMobilierImageParams) (int32, error) {
@@ -225,6 +228,7 @@ func (q *Queries) CreateMobilierImage(ctx context.Context, arg CreateMobilierIma
 		arg.PublicationStatus,
 		arg.ParentID,
 		arg.UserID,
+		arg.TemoinCommentaires,
 	)
 	var id_mobilier_image int32
 	err := row.Scan(&id_mobilier_image)
@@ -347,6 +351,7 @@ SELECT m.id_mobilier_image    AS id,
        m.lieu_conservation,
        m.lieu_origine,
        m.parent_id,
+       m.temoin_commentaires,
        -- Redacteurs (auteurs fiche)
        COALESCE(array_agg(DISTINCT baf.auteur_fiche_nom) FILTER (WHERE baf.auteur_fiche_nom IS NOT NULL),
                 '{}')         AS redacteurs,
@@ -448,6 +453,7 @@ type GetDraftMobiliersImagesRow struct {
 	LieuConservation        pgtype.Text
 	LieuOrigine             pgtype.Text
 	ParentID                pgtype.Int4
+	TemoinCommentaires      pgtype.Text
 	Redacteurs              interface{}
 	Commune                 interface{}
 	Departement             interface{}
@@ -491,6 +497,7 @@ func (q *Queries) GetDraftMobiliersImages(ctx context.Context, userID pgtype.Tex
 			&i.LieuConservation,
 			&i.LieuOrigine,
 			&i.ParentID,
+			&i.TemoinCommentaires,
 			&i.Redacteurs,
 			&i.Commune,
 			&i.Departement,
@@ -651,6 +658,7 @@ SELECT m.id_mobilier_image AS id,
        m.lieu_conservation,
        m.lieu_origine,
        m.user_id,
+       m.temoin_commentaires,
        -- Redacteurs (auteurs fiche)
        COALESCE(
                        jsonb_agg(
@@ -818,6 +826,7 @@ type GetMobilierImageByIDRow struct {
 	LieuConservation        pgtype.Text
 	LieuOrigine             pgtype.Text
 	UserID                  pgtype.Text
+	TemoinCommentaires      pgtype.Text
 	Authors                 interface{}
 	City                    []byte
 	Department              []byte
@@ -857,6 +866,7 @@ func (q *Queries) GetMobilierImageByID(ctx context.Context, idMobilierImage int3
 		&i.LieuConservation,
 		&i.LieuOrigine,
 		&i.UserID,
+		&i.TemoinCommentaires,
 		&i.Authors,
 		&i.City,
 		&i.Department,
@@ -895,6 +905,7 @@ SELECT m.id_mobilier_image    AS id,
        m.lieu_conservation,
        m.lieu_origine,
        m.parent_id,
+       m.temoin_commentaires,
        -- Redacteurs (auteurs fiche)
        COALESCE(array_agg(DISTINCT baf.auteur_fiche_nom) FILTER (WHERE baf.auteur_fiche_nom IS NOT NULL),
                 '{}')         AS redacteurs,
@@ -995,6 +1006,7 @@ type GetPendingMobiliersImagesRow struct {
 	LieuConservation        pgtype.Text
 	LieuOrigine             pgtype.Text
 	ParentID                pgtype.Int4
+	TemoinCommentaires      pgtype.Text
 	Redacteurs              interface{}
 	Commune                 interface{}
 	Departement             interface{}
@@ -1038,6 +1050,7 @@ func (q *Queries) GetPendingMobiliersImages(ctx context.Context) ([]GetPendingMo
 			&i.LieuConservation,
 			&i.LieuOrigine,
 			&i.ParentID,
+			&i.TemoinCommentaires,
 			&i.Redacteurs,
 			&i.Commune,
 			&i.Departement,

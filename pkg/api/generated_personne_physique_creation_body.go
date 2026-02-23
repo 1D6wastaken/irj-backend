@@ -97,6 +97,9 @@ type PersonnePhysiqueCreationBody struct {
 
 	// draft
 	Draft bool `json:"draft,omitempty"`
+
+	// comment of the temoin
+	TemoinComment string `json:"temoinComment,omitempty"`
 }
 
 // Validate validates this personne physique creation body

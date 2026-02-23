@@ -2016,6 +2016,9 @@ definitions:
       parent_id:
         type: integer
         format: int32
+      temoinComment:
+        type: string
+        description: comment of the temoin
   PersonnePhysiqueCreationBody:
     type: object
     required:
@@ -2107,6 +2110,9 @@ definitions:
           format: int32
       draft:
         type: boolean
+      temoinComment:
+        type: string
+        description: comment of the temoin
   PersonnesPhysiquesListFilters:
     type: object
     properties:
@@ -2297,6 +2303,9 @@ definitions:
       parent_id:
         type: integer
         format: int32
+      temoinComment:
+        type: string
+        description: comment of the temoin
   PersonneMoraleCreationBody:
     type: object
     required:
@@ -2378,6 +2387,9 @@ definitions:
           format: int32
       draft:
         type: boolean
+      temoinComment:
+        type: string
+        description: comment of the temoin
   PersonnesMoralesListFilters:
     type: object
     properties:
@@ -2574,6 +2586,9 @@ definitions:
       parent_id:
         type: integer
         format: int32
+      temoinComment:
+        type: string
+        description: comment of the temoin
   MobilierImageCreationBody:
     type: object
     required:
@@ -2668,6 +2683,9 @@ definitions:
           format: int32
       draft:
         type: boolean
+      temoinComment:
+        type: string
+        description: comment of the temoin
   MobiliersImagesListFilters:
     type: object
     properties:
@@ -2875,6 +2893,9 @@ definitions:
       parent_id:
         type: integer
         format: int32
+      temoinComment:
+        type: string
+        description: comment of the temoin
   PendingDocuments:
     type: object
     required:
@@ -3013,6 +3034,9 @@ definitions:
           format: int32
       draft:
         type: boolean
+      temoinComment:
+        type: string
+        description: comment of the temoin
 
   MonumentsLieuxListFilters:
     type: object

@@ -97,6 +97,9 @@ type MobilierImageCreationBody struct {
 
 	// draft
 	Draft bool `json:"draft,omitempty"`
+
+	// comment of the temoin
+	TemoinComment string `json:"temoinComment,omitempty"`
 }
 
 // Validate validates this mobilier image creation body

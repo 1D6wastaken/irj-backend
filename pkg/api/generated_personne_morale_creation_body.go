@@ -91,6 +91,9 @@ type PersonneMoraleCreationBody struct {
 
 	// draft
 	Draft bool `json:"draft,omitempty"`
+
+	// comment of the temoin
+	TemoinComment string `json:"temoinComment,omitempty"`
 }
 
 // Validate validates this personne morale creation body

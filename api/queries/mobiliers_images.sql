@@ -63,6 +63,7 @@ SELECT m.id_mobilier_image AS id,
        m.lieu_conservation,
        m.lieu_origine,
        m.user_id,
+       m.temoin_commentaires,
        -- Redacteurs (auteurs fiche)
        COALESCE(
                        jsonb_agg(
@@ -229,6 +230,7 @@ SELECT m.id_mobilier_image    AS id,
        m.lieu_conservation,
        m.lieu_origine,
        m.parent_id,
+       m.temoin_commentaires,
        -- Redacteurs (auteurs fiche)
        COALESCE(array_agg(DISTINCT baf.auteur_fiche_nom) FILTER (WHERE baf.auteur_fiche_nom IS NOT NULL),
                 '{}')         AS redacteurs,
@@ -328,6 +330,7 @@ SELECT m.id_mobilier_image    AS id,
        m.lieu_conservation,
        m.lieu_origine,
        m.parent_id,
+       m.temoin_commentaires,
        -- Redacteurs (auteurs fiche)
        COALESCE(array_agg(DISTINCT baf.auteur_fiche_nom) FILTER (WHERE baf.auteur_fiche_nom IS NOT NULL),
                 '{}')         AS redacteurs,
@@ -452,7 +455,8 @@ INSERT INTO t_mobiliers_images
  publie,
  publication_status,
  parent_id,
- user_id)
+ user_id,
+ temoin_commentaires)
 VALUES (sqlc.arg(titre_mob_img),
         sqlc.arg(description),
         sqlc.arg(historique),
@@ -473,7 +477,8 @@ VALUES (sqlc.arg(titre_mob_img),
         false,
         sqlc.arg(publication_status),
         sqlc.arg(parent_id),
-        sqlc.arg(user_id))
+        sqlc.arg(user_id),
+        sqlc.arg(temoin_commentaires))
 RETURNING id_mobilier_image;
 
 -- name: AttachSieclesToMobImg :exec
