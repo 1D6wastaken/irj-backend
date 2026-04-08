@@ -60,13 +60,14 @@ func (b *BusinessService) UpdatePersonneMorale(w http.ResponseWriter, r *http.Re
 }
 
 type updatePersonneMoraleExchangeData struct {
-	logger        *zerolog.Logger
-	err           error
-	parentID      int32
-	id            int32
-	params        *api.PersonneMoraleCreationBody
-	token         *jwt.SessionInfo
-	draftToDelete int32
+	logger               *zerolog.Logger
+	err                  error
+	parentID             int32
+	id                   int32
+	params               *api.PersonneMoraleCreationBody
+	token                *jwt.SessionInfo
+	draftToDelete        int32
+	originalDateCreation pgtype.Date
 }
 
 //nolint:lll
@@ -129,6 +130,8 @@ func getPersonneMoralToUpdate(ctx context.Context, s *BusinessService, exData *u
 		return nil
 	}
 
+	exData.originalDateCreation = document.DateCreation
+
 	if document.PublicationStatus == postgres.DraftPublicationStatus {
 		exData.logger.Info().Int32("id", exData.id).Msg("updating draft personne morale")
 
@@ -188,11 +191,12 @@ func updatePersonneMorale(ctx context.Context, s *BusinessService, exData *updat
 			Int32: exData.params.Country,
 			Valid: exData.params.Country != 0,
 		},
+		DateCreation:      exData.originalDateCreation,
 		PublicationStatus: publicationStatus,
 		ParentID:          pgtype.Int4{Int32: exData.id, Valid: exData.id != 0},
 		UserID: pgtype.Text{
 			String: exData.token.ID,
-			Valid:  exData.params.Draft,
+			Valid:  true,
 		},
 	})
 	if err != nil {

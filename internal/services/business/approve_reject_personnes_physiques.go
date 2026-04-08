@@ -10,6 +10,7 @@ import (
 	"irj/internal/catalogs"
 	"irj/internal/jwt"
 	queries "irj/internal/postgres/_generated"
+	"irj/internal/smtp"
 	"irj/pkg/api"
 	_http "irj/pkg/http"
 
@@ -159,14 +160,14 @@ func approvePersonnePhysique(ctx context.Context, s *BusinessService, exData *ap
 }
 
 //nolint:lll
-func storePersPhyDocumentUpdateValidationEvent(_ context.Context, s *BusinessService, exData *approveRejectPersonnePhysiqueExchangeData) approveRejectPersonnePhysiqueState {
+func storePersPhyDocumentSubmissionValidationEvent(_ context.Context, s *BusinessService, exData *approveRejectPersonnePhysiqueExchangeData) approveRejectPersonnePhysiqueState {
 	s.stopper.Hold(1)
 
 	//nolint:contextcheck
 	go func(logger *zerolog.Logger, adminID string, documentID int32) {
 		defer s.stopper.Release()
 
-		err := s.postgresService.Queries.DocumentUpdateValidationEvent(context.Background(), queries.DocumentUpdateValidationEventParams{
+		err := s.postgresService.Queries.DocumentSubmissionValidationEvent(context.Background(), queries.DocumentSubmissionValidationEventParams{
 			AdminID: pgtype.Text{
 				String: adminID,
 				Valid:  true,
@@ -185,18 +186,18 @@ func storePersPhyDocumentUpdateValidationEvent(_ context.Context, s *BusinessSer
 		}
 	}(exData.logger, exData.token.ID, exData.id)
 
-	return nil
+	return sendApprovalEmailPersPhy
 }
 
 //nolint:lll
-func storePersPhyDocumentSubmissionValidationEvent(_ context.Context, s *BusinessService, exData *approveRejectPersonnePhysiqueExchangeData) approveRejectPersonnePhysiqueState {
+func storePersPhyDocumentUpdateValidationEvent(_ context.Context, s *BusinessService, exData *approveRejectPersonnePhysiqueExchangeData) approveRejectPersonnePhysiqueState {
 	s.stopper.Hold(1)
 
 	//nolint:contextcheck
 	go func(logger *zerolog.Logger, adminID string, documentID, parentID int32) {
 		defer s.stopper.Release()
 
-		if err := s.postgresService.Queries.DocumentSubmissionValidationEvent(context.Background(), queries.DocumentSubmissionValidationEventParams{
+		if err := s.postgresService.Queries.DocumentUpdateValidationEvent(context.Background(), queries.DocumentUpdateValidationEventParams{
 			AdminID: pgtype.Text{
 				String: adminID,
 				Valid:  true,
@@ -227,7 +228,7 @@ func storePersPhyDocumentSubmissionValidationEvent(_ context.Context, s *Busines
 		}
 	}(exData.logger, exData.token.ID, exData.id, exData.documents.ParentID.Int32)
 
-	return nil
+	return sendApprovalEmailPersPhy
 }
 
 //nolint:lll
@@ -272,7 +273,7 @@ func storePersPhyDocumentSubmissionRejectionEvent(_ context.Context, s *Business
 		}
 	}(exData.logger, exData.token.ID, exData.id)
 
-	return nil
+	return sendRejectionEmailPersPhy
 }
 
 //nolint:lll
@@ -301,6 +302,70 @@ func storePersPhyDocumentUpdateRejectionEvent(_ context.Context, s *BusinessServ
 			logger.Error().Err(err).Msg("failed to store document rejection event")
 		}
 	}(exData.logger, exData.token.ID, exData.id)
+
+	return sendRejectionEmailPersPhy
+}
+
+//nolint:lll
+func sendApprovalEmailPersPhy(_ context.Context, s *BusinessService, exData *approveRejectPersonnePhysiqueExchangeData) approveRejectPersonnePhysiqueState {
+	if !exData.documents.UserID.Valid {
+		return nil
+	}
+
+	s.stopper.Hold(1)
+
+	//nolint:contextcheck
+	go func(logger *zerolog.Logger, userID string, isUpdate bool) {
+		defer s.stopper.Release()
+
+		ctx, cancel := context.WithTimeout(context.Background(), defaultTimeOut)
+		defer cancel()
+
+		user, err := s.postgresService.Queries.GetUserByID(ctx, userID)
+		if err != nil {
+			logger.Error().Err(err).Msg("failed to get user for approval email")
+
+			return
+		}
+
+		to := []smtp.EmailPerson{{Name: user.Prenom + " " + user.Nom, Email: user.Email}}
+
+		if err := s.smtpService.SendDocumentApprovedMail(ctx, to, isUpdate); err != nil {
+			logger.Error().Err(err).Msg("failed to send approval email")
+		}
+	}(exData.logger, exData.documents.UserID.String, exData.documents.ParentID.Valid)
+
+	return nil
+}
+
+//nolint:lll
+func sendRejectionEmailPersPhy(_ context.Context, s *BusinessService, exData *approveRejectPersonnePhysiqueExchangeData) approveRejectPersonnePhysiqueState {
+	if !exData.documents.UserID.Valid {
+		return nil
+	}
+
+	s.stopper.Hold(1)
+
+	//nolint:contextcheck
+	go func(logger *zerolog.Logger, userID string, isUpdate bool) {
+		defer s.stopper.Release()
+
+		ctx, cancel := context.WithTimeout(context.Background(), defaultTimeOut)
+		defer cancel()
+
+		user, err := s.postgresService.Queries.GetUserByID(ctx, userID)
+		if err != nil {
+			logger.Error().Err(err).Msg("failed to get user for rejection email")
+
+			return
+		}
+
+		to := []smtp.EmailPerson{{Name: user.Prenom + " " + user.Nom, Email: user.Email}}
+
+		if err := s.smtpService.SendDocumentRejectedMail(ctx, to, isUpdate); err != nil {
+			logger.Error().Err(err).Msg("failed to send rejection email")
+		}
+	}(exData.logger, exData.documents.UserID.String, exData.documents.ParentID.Valid)
 
 	return nil
 }

@@ -60,13 +60,14 @@ func (b *BusinessService) UpdateMobilierImage(w http.ResponseWriter, r *http.Req
 }
 
 type updateMobilierImageExchangeData struct {
-	logger        *zerolog.Logger
-	err           error
-	parentID      int32
-	id            int32
-	params        *api.MobilierImageCreationBody
-	token         *jwt.SessionInfo
-	draftToDelete int32
+	logger               *zerolog.Logger
+	err                  error
+	parentID             int32
+	id                   int32
+	params               *api.MobilierImageCreationBody
+	token                *jwt.SessionInfo
+	draftToDelete        int32
+	originalDateCreation pgtype.Date
 }
 
 type updateMobilierImageState func(ctx context.Context, s *BusinessService, data *updateMobilierImageExchangeData) updateMobilierImageState
@@ -128,6 +129,8 @@ func getMobilierImageToUpdate(ctx context.Context, s *BusinessService, exData *u
 		return nil
 	}
 
+	exData.originalDateCreation = m.DateCrAtion
+
 	if m.PublicationStatus == postgres.DraftPublicationStatus {
 		exData.logger.Info().Int32("id", exData.id).Msg("updating draft mobilier image")
 
@@ -180,11 +183,12 @@ func updateMobilierImage(ctx context.Context, s *BusinessService, exData *update
 			Int32: exData.params.Country,
 			Valid: exData.params.Country != 0,
 		},
+		DateCrAtion:       exData.originalDateCreation,
 		PublicationStatus: publicationStatus,
 		ParentID:          pgtype.Int4{Int32: exData.id, Valid: exData.id != 0},
 		UserID: pgtype.Text{
 			String: exData.token.ID,
-			Valid:  exData.params.Draft,
+			Valid:  true,
 		},
 		TemoinCommentaires: pgtype.Text{
 			String: exData.params.TemoinComment,

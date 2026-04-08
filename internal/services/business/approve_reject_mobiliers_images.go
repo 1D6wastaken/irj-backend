@@ -10,6 +10,7 @@ import (
 	"irj/internal/catalogs"
 	"irj/internal/jwt"
 	queries "irj/internal/postgres/_generated"
+	"irj/internal/smtp"
 	"irj/pkg/api"
 	_http "irj/pkg/http"
 
@@ -185,7 +186,7 @@ func storeMobImgDocumentSubmissionValidationEvent(_ context.Context, s *Business
 		}
 	}(exData.logger, exData.token.ID, exData.id)
 
-	return nil
+	return sendApprovalEmailMobImg
 }
 
 //nolint:lll
@@ -227,7 +228,7 @@ func storeMobImgDocumentUpdateValidationEvent(_ context.Context, s *BusinessServ
 		}
 	}(exData.logger, exData.token.ID, exData.id, exData.documents.ParentID.Int32)
 
-	return nil
+	return sendApprovalEmailMobImg
 }
 
 //nolint:lll
@@ -272,7 +273,7 @@ func storeMobImgDocumentSubmissionRejectionEvent(_ context.Context, s *BusinessS
 		}
 	}(exData.logger, exData.token.ID, exData.id)
 
-	return nil
+	return sendRejectionEmailMobImg
 }
 
 //nolint:lll
@@ -301,6 +302,70 @@ func storeMobImgDocumentUpdateRejectionEvent(_ context.Context, s *BusinessServi
 			logger.Error().Err(err).Msg("failed to store document rejection event")
 		}
 	}(exData.logger, exData.token.ID, exData.id)
+
+	return sendRejectionEmailMobImg
+}
+
+//nolint:lll
+func sendApprovalEmailMobImg(_ context.Context, s *BusinessService, exData *approveRejectMobilierImageExchangeData) approveRejectMobilierImageState {
+	if !exData.documents.UserID.Valid {
+		return nil
+	}
+
+	s.stopper.Hold(1)
+
+	//nolint:contextcheck
+	go func(logger *zerolog.Logger, userID string, isUpdate bool) {
+		defer s.stopper.Release()
+
+		ctx, cancel := context.WithTimeout(context.Background(), defaultTimeOut)
+		defer cancel()
+
+		user, err := s.postgresService.Queries.GetUserByID(ctx, userID)
+		if err != nil {
+			logger.Error().Err(err).Msg("failed to get user for approval email")
+
+			return
+		}
+
+		to := []smtp.EmailPerson{{Name: user.Prenom + " " + user.Nom, Email: user.Email}}
+
+		if err := s.smtpService.SendDocumentApprovedMail(ctx, to, isUpdate); err != nil {
+			logger.Error().Err(err).Msg("failed to send approval email")
+		}
+	}(exData.logger, exData.documents.UserID.String, exData.documents.ParentID.Valid)
+
+	return nil
+}
+
+//nolint:lll
+func sendRejectionEmailMobImg(_ context.Context, s *BusinessService, exData *approveRejectMobilierImageExchangeData) approveRejectMobilierImageState {
+	if !exData.documents.UserID.Valid {
+		return nil
+	}
+
+	s.stopper.Hold(1)
+
+	//nolint:contextcheck
+	go func(logger *zerolog.Logger, userID string, isUpdate bool) {
+		defer s.stopper.Release()
+
+		ctx, cancel := context.WithTimeout(context.Background(), defaultTimeOut)
+		defer cancel()
+
+		user, err := s.postgresService.Queries.GetUserByID(ctx, userID)
+		if err != nil {
+			logger.Error().Err(err).Msg("failed to get user for rejection email")
+
+			return
+		}
+
+		to := []smtp.EmailPerson{{Name: user.Prenom + " " + user.Nom, Email: user.Email}}
+
+		if err := s.smtpService.SendDocumentRejectedMail(ctx, to, isUpdate); err != nil {
+			logger.Error().Err(err).Msg("failed to send rejection email")
+		}
+	}(exData.logger, exData.documents.UserID.String, exData.documents.ParentID.Valid)
 
 	return nil
 }

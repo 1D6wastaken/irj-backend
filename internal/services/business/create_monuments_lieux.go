@@ -139,7 +139,7 @@ func createMonumentLieu(ctx context.Context, s *BusinessService, exData *createM
 		ParentID:          pgtype.Int4{},
 		UserID: pgtype.Text{
 			String: exData.token.ID,
-			Valid:  exData.params.Draft,
+			Valid:  true,
 		},
 	})
 	if err != nil {

@@ -137,7 +137,7 @@ func createMobilierImage(ctx context.Context, s *BusinessService, exData *create
 		ParentID:          pgtype.Int4{},
 		UserID: pgtype.Text{
 			String: exData.token.ID,
-			Valid:  exData.params.Draft,
+			Valid:  true,
 		},
 		TemoinCommentaires: pgtype.Text{
 			String: exData.params.TemoinComment,

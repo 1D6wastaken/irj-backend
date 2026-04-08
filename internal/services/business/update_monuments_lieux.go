@@ -61,13 +61,14 @@ func (b *BusinessService) UpdateMonumentLieu(w http.ResponseWriter, r *http.Requ
 }
 
 type updateMonumentLieuExchangeData struct {
-	logger        *zerolog.Logger
-	err           error
-	parentID      int32
-	id            int32
-	params        *api.MonumentsLieuxCreationBody
-	token         *jwt.SessionInfo
-	draftToDelete int32
+	logger               *zerolog.Logger
+	err                  error
+	parentID             int32
+	id                   int32
+	params               *api.MonumentsLieuxCreationBody
+	token                *jwt.SessionInfo
+	draftToDelete        int32
+	originalDateCreation pgtype.Date
 }
 
 type updateMonumentLieuState func(ctx context.Context, s *BusinessService, data *updateMonumentLieuExchangeData) updateMonumentLieuState
@@ -129,6 +130,8 @@ func getMonumentLieuToUpdate(ctx context.Context, s *BusinessService, exData *up
 		return nil
 	}
 
+	exData.originalDateCreation = m.DateCreation
+
 	if m.PublicationStatus == postgres.DraftPublicationStatus {
 		exData.logger.Info().Int32("id", m.ID).Msg("updating draft monument lieu")
 
@@ -182,11 +185,12 @@ func updateMonumentLieu(ctx context.Context, s *BusinessService, exData *updateM
 			Int32: exData.params.Country,
 			Valid: exData.params.Country != 0,
 		},
+		DateCreation:      exData.originalDateCreation,
 		PublicationStatus: publicationStatus,
 		ParentID:          pgtype.Int4{Int32: exData.id, Valid: exData.id != 0},
 		UserID: pgtype.Text{
 			String: exData.token.ID,
-			Valid:  exData.params.Draft,
+			Valid:  true,
 		},
 	})
 	if err != nil {

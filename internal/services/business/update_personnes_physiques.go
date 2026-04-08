@@ -60,13 +60,14 @@ func (b *BusinessService) UpdatePersonnePhysique(w http.ResponseWriter, r *http.
 }
 
 type updatePersonnePhysiqueExchangeData struct {
-	logger        *zerolog.Logger
-	err           error
-	parentID      int32
-	id            int32
-	params        *api.PersonnePhysiqueCreationBody
-	token         *jwt.SessionInfo
-	draftToDelete int32
+	logger               *zerolog.Logger
+	err                  error
+	parentID             int32
+	id                   int32
+	params               *api.PersonnePhysiqueCreationBody
+	token                *jwt.SessionInfo
+	draftToDelete        int32
+	originalDateCreation pgtype.Date
 }
 
 //nolint:lll
@@ -130,6 +131,8 @@ func getPersonnePhysiqueToUpdate(ctx context.Context, s *BusinessService,
 		return nil
 	}
 
+	exData.originalDateCreation = p.DateCreation
+
 	if p.PublicationStatus == postgres.DraftPublicationStatus {
 		exData.logger.Info().Int32("id", exData.id).Msg("updating draft personne physique")
 
@@ -181,11 +184,12 @@ func updatePersonnePhysique(ctx context.Context, s *BusinessService, exData *upd
 			Int32: exData.params.Country,
 			Valid: exData.params.Country != 0,
 		},
+		DateCreation:      exData.originalDateCreation,
 		PublicationStatus: publicationStatus,
 		ParentID:          pgtype.Int4{Int32: exData.id, Valid: exData.id != 0},
 		UserID: pgtype.Text{
 			String: exData.token.ID,
-			Valid:  exData.params.Draft,
+			Valid:  true,
 		},
 	})
 	if err != nil {
