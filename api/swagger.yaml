@@ -2143,6 +2143,11 @@ definitions:
         items:
           type: integer
           format: int32
+      mediaTitles:
+        type: object
+        additionalProperties:
+          type: string
+        description: "Map of media ID to title"
       draft:
         type: boolean
       temoinComment:
@@ -2420,6 +2425,11 @@ definitions:
         items:
           type: integer
           format: int32
+      mediaTitles:
+        type: object
+        additionalProperties:
+          type: string
+        description: "Map of media ID to title"
       draft:
         type: boolean
       temoinComment:
@@ -2716,6 +2726,11 @@ definitions:
         items:
           type: integer
           format: int32
+      mediaTitles:
+        type: object
+        additionalProperties:
+          type: string
+        description: "Map of media ID to title"
       draft:
         type: boolean
       temoinComment:
@@ -3067,6 +3082,11 @@ definitions:
         items:
           type: integer
           format: int32
+      mediaTitles:
+        type: object
+        additionalProperties:
+          type: string
+        description: "Map of media ID to title"
       draft:
         type: boolean
       temoinComment:

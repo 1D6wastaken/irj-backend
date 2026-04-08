@@ -257,6 +257,34 @@ func (b *BusinessService) duplicateMediasIfShared(ctx context.Context, logger *z
 	return result
 }
 
+func (b *BusinessService) applyMediaTitleChanges(
+	ctx context.Context, logger *zerolog.Logger, origIDs, newIDs []int32, mediaTitles map[string]string,
+) {
+	if len(mediaTitles) == 0 {
+		return
+	}
+
+	for i, origID := range origIDs {
+		if i >= len(newIDs) {
+			break
+		}
+
+		title, ok := mediaTitles[strconv.FormatInt(int64(origID), 10)]
+		if !ok {
+			continue
+		}
+
+		err := b.postgresService.Queries.UpdateMediaTitle(ctx, queries.UpdateMediaTitleParams{
+			Title:     pgtype.Text{String: title, Valid: true},
+			JsonTitle: title,
+			ID:        newIDs[i],
+		})
+		if err != nil {
+			logger.Error().Err(err).Int32("media_id", newIDs[i]).Msg("failed to update media title after duplication")
+		}
+	}
+}
+
 func extractMimeType(fileHeader *multipart.FileHeader) (string, *_http.APIError) {
 	mimeType := fileHeader.Header.Get("Content-Type")
 	if !strings.HasPrefix(mimeType, "image/") && mimeType != "" {

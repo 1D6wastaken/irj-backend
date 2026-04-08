@@ -95,6 +95,9 @@ type PersonnePhysiqueCreationBody struct {
 	// linked pers morales
 	LinkedPersMorales []int32 `json:"linkedPersMorales"`
 
+	// Map of media ID to title
+	MediaTitles map[string]string `json:"mediaTitles,omitempty"`
+
 	// draft
 	Draft bool `json:"draft,omitempty"`
 

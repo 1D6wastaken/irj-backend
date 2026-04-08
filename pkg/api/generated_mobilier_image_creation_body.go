@@ -95,6 +95,9 @@ type MobilierImageCreationBody struct {
 	// linked pers physiques
 	LinkedPersPhysiques []int32 `json:"linkedPersPhysiques"`
 
+	// Map of media ID to title
+	MediaTitles map[string]string `json:"mediaTitles,omitempty"`
+
 	// draft
 	Draft bool `json:"draft,omitempty"`
 

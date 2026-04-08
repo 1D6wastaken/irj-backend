@@ -33,8 +33,7 @@ func (b *BusinessService) UpdateMonumentLieu(w http.ResponseWriter, r *http.Requ
 	}
 
 	if !req.Draft {
-		err = req.Validate(nil)
-		if err != nil {
+		if err := req.Validate(nil); err != nil {
 			return _http.ErrBadRequest.Msg("unable to decode request body").Err(err)
 		}
 	}
@@ -219,11 +218,15 @@ func linkUpdatedMonumentLieu(ctx context.Context, s *BusinessService, exData *up
 		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to attach centuries to updated monument lieu")
 	}
 
-	mediaIds := exData.params.Medias
+	origMediaIds := exData.params.Medias
+	mediaIds := origMediaIds
+
 	if exData.parentID != 0 {
 		parentMediaIds, _ := s.postgresService.Queries.GetMediaIdsByMonuLieu(ctx, exData.parentID)
-		mediaIds = s.duplicateMediasIfShared(ctx, exData.logger, mediaIds, parentMediaIds)
+		mediaIds = s.duplicateMediasIfShared(ctx, exData.logger, origMediaIds, parentMediaIds)
 	}
+
+	s.applyMediaTitleChanges(ctx, exData.logger, origMediaIds, mediaIds, exData.params.MediaTitles)
 
 	err = s.postgresService.Queries.AttachMediasToMonuLieu(ctx, queries.AttachMediasToMonuLieuParams{
 		MediaIds: mediaIds,

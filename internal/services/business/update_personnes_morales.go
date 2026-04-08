@@ -32,8 +32,7 @@ func (b *BusinessService) UpdatePersonneMorale(w http.ResponseWriter, r *http.Re
 	}
 
 	if !req.Draft {
-		err = req.Validate(nil)
-		if err != nil {
+		if err := req.Validate(nil); err != nil {
 			return _http.ErrBadRequest.Msg("unable to decode request body").Err(err)
 		}
 	}
@@ -225,11 +224,15 @@ func linkUpdatedPersonneMorale(ctx context.Context, s *BusinessService, exData *
 		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to attach centuries to personne morale")
 	}
 
-	mediaIds := exData.params.Medias
+	origMediaIds := exData.params.Medias
+	mediaIds := origMediaIds
+
 	if exData.parentID != 0 {
 		parentMediaIds, _ := s.postgresService.Queries.GetMediaIdsByPersMo(ctx, exData.parentID)
-		mediaIds = s.duplicateMediasIfShared(ctx, exData.logger, mediaIds, parentMediaIds)
+		mediaIds = s.duplicateMediasIfShared(ctx, exData.logger, origMediaIds, parentMediaIds)
 	}
+
+	s.applyMediaTitleChanges(ctx, exData.logger, origMediaIds, mediaIds, exData.params.MediaTitles)
 
 	err = s.postgresService.Queries.AttachMediasToPersMo(ctx, queries.AttachMediasToPersMoParams{
 		MediaIds: mediaIds,

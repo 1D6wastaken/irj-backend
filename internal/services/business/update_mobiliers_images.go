@@ -32,8 +32,7 @@ func (b *BusinessService) UpdateMobilierImage(w http.ResponseWriter, r *http.Req
 	}
 
 	if !req.Draft {
-		err = req.Validate(nil)
-		if err != nil {
+		if err := req.Validate(nil); err != nil {
 			return _http.ErrBadRequest.Msg("unable to decode request body").Err(err)
 		}
 	}
@@ -221,11 +220,15 @@ func linkUpdatedMobilierImage(ctx context.Context, s *BusinessService, exData *u
 		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to attach centuries to mobilier image")
 	}
 
-	mediaIds := exData.params.Medias
+	origMediaIds := exData.params.Medias
+	mediaIds := origMediaIds
+
 	if exData.parentID != 0 {
 		parentMediaIds, _ := s.postgresService.Queries.GetMediaIdsByMobImg(ctx, exData.parentID)
-		mediaIds = s.duplicateMediasIfShared(ctx, exData.logger, mediaIds, parentMediaIds)
+		mediaIds = s.duplicateMediasIfShared(ctx, exData.logger, origMediaIds, parentMediaIds)
 	}
+
+	s.applyMediaTitleChanges(ctx, exData.logger, origMediaIds, mediaIds, exData.params.MediaTitles)
 
 	err = s.postgresService.Queries.AttachMediasToMobImg(ctx, queries.AttachMediasToMobImgParams{
 		MediaIds: mediaIds,
