@@ -215,8 +215,9 @@ func (b *BusinessService) UpdateMediaTitle(w http.ResponseWriter, r *http.Reques
 	}
 
 	err = b.postgresService.Queries.UpdateMediaTitle(subCtx, queries.UpdateMediaTitleParams{
-		Title: pgtype.Text{String: body.Title, Valid: true},
-		ID:    int32(id),
+		Title:     pgtype.Text{String: body.Title, Valid: true},
+		JsonTitle: body.Title,
+		ID:        int32(id),
 	})
 	if err != nil {
 		return _http.ErrInternalError.Msg("error while updating media title").Err(err)

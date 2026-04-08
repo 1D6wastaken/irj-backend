@@ -158,17 +158,18 @@ func (q *Queries) GetMediaIdsByPersPhy(ctx context.Context, id int32) ([]int32, 
 const updateMediaTitle = `-- name: UpdateMediaTitle :exec
 UPDATE t_medias
 SET titre_media = $1,
-    chemin_media = jsonb_set(chemin_media::jsonb, '{0,title}', to_jsonb($1::text))::text,
+    chemin_media = jsonb_set(chemin_media::jsonb, '{0,title}', to_jsonb($2::text))::text,
     date_maj = NOW()
-WHERE id_media = $2
+WHERE id_media = $3
 `
 
 type UpdateMediaTitleParams struct {
-	Title pgtype.Text
-	ID    int32
+	Title     pgtype.Text
+	JsonTitle string
+	ID        int32
 }
 
 func (q *Queries) UpdateMediaTitle(ctx context.Context, arg UpdateMediaTitleParams) error {
-	_, err := q.db.Exec(ctx, updateMediaTitle, arg.Title, arg.ID)
+	_, err := q.db.Exec(ctx, updateMediaTitle, arg.Title, arg.JsonTitle, arg.ID)
 	return err
 }

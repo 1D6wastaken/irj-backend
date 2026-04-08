@@ -8,7 +8,7 @@ LIMIT 1;
 -- name: UpdateMediaTitle :exec
 UPDATE t_medias
 SET titre_media = sqlc.arg(title),
-    chemin_media = jsonb_set(chemin_media::jsonb, '{0,title}', to_jsonb(sqlc.arg(title)::text))::text,
+    chemin_media = jsonb_set(chemin_media::jsonb, '{0,title}', to_jsonb(sqlc.arg(json_title)::text))::text,
     date_maj = NOW()
 WHERE id_media = sqlc.arg(id);
 
