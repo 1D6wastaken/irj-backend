@@ -30,6 +30,21 @@ func (q *Queries) CreateNewMedia(ctx context.Context, arg CreateNewMediaParams) 
 	return id_media, err
 }
 
+const duplicateMedia = `-- name: DuplicateMedia :one
+INSERT INTO t_medias(titre_media, chemin_media, date_creation)
+SELECT m.titre_media, m.chemin_media, m.date_creation
+FROM t_medias m
+WHERE m.id_media = $1
+RETURNING id_media
+`
+
+func (q *Queries) DuplicateMedia(ctx context.Context, sourceID int32) (int32, error) {
+	row := q.db.QueryRow(ctx, duplicateMedia, sourceID)
+	var id_media int32
+	err := row.Scan(&id_media)
+	return id_media, err
+}
+
 const findRawMediaCheminByID = `-- name: FindRawMediaCheminByID :one
 SELECT chemin_media
 FROM t_medias
@@ -42,4 +57,118 @@ func (q *Queries) FindRawMediaCheminByID(ctx context.Context, idMedia int32) (pg
 	var chemin_media pgtype.Text
 	err := row.Scan(&chemin_media)
 	return chemin_media, err
+}
+
+const getMediaIdsByMobImg = `-- name: GetMediaIdsByMobImg :many
+SELECT media_mob_img_id FROM cor_medias_mob_img WHERE mobilier_image_id = $1
+`
+
+func (q *Queries) GetMediaIdsByMobImg(ctx context.Context, id int32) ([]int32, error) {
+	rows, err := q.db.Query(ctx, getMediaIdsByMobImg, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []int32
+	for rows.Next() {
+		var media_mob_img_id int32
+		if err := rows.Scan(&media_mob_img_id); err != nil {
+			return nil, err
+		}
+		items = append(items, media_mob_img_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getMediaIdsByMonuLieu = `-- name: GetMediaIdsByMonuLieu :many
+SELECT media_monu_lieu_id FROM cor_medias_monu_lieu WHERE monument_lieu_id = $1
+`
+
+func (q *Queries) GetMediaIdsByMonuLieu(ctx context.Context, id int32) ([]int32, error) {
+	rows, err := q.db.Query(ctx, getMediaIdsByMonuLieu, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []int32
+	for rows.Next() {
+		var media_monu_lieu_id int32
+		if err := rows.Scan(&media_monu_lieu_id); err != nil {
+			return nil, err
+		}
+		items = append(items, media_monu_lieu_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getMediaIdsByPersMo = `-- name: GetMediaIdsByPersMo :many
+SELECT media_pers_mo_id FROM cor_medias_pers_mo WHERE pers_morale_id = $1
+`
+
+func (q *Queries) GetMediaIdsByPersMo(ctx context.Context, id int32) ([]int32, error) {
+	rows, err := q.db.Query(ctx, getMediaIdsByPersMo, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []int32
+	for rows.Next() {
+		var media_pers_mo_id int32
+		if err := rows.Scan(&media_pers_mo_id); err != nil {
+			return nil, err
+		}
+		items = append(items, media_pers_mo_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getMediaIdsByPersPhy = `-- name: GetMediaIdsByPersPhy :many
+SELECT media_pers_phy_id FROM cor_medias_pers_phy WHERE pers_physique_id = $1
+`
+
+func (q *Queries) GetMediaIdsByPersPhy(ctx context.Context, id int32) ([]int32, error) {
+	rows, err := q.db.Query(ctx, getMediaIdsByPersPhy, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []int32
+	for rows.Next() {
+		var media_pers_phy_id int32
+		if err := rows.Scan(&media_pers_phy_id); err != nil {
+			return nil, err
+		}
+		items = append(items, media_pers_phy_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updateMediaTitle = `-- name: UpdateMediaTitle :exec
+UPDATE t_medias
+SET titre_media = $1,
+    chemin_media = jsonb_set(chemin_media::jsonb, '{0,title}', to_jsonb($1::text))::text,
+    date_maj = NOW()
+WHERE id_media = $2
+`
+
+type UpdateMediaTitleParams struct {
+	Title pgtype.Text
+	ID    int32
+}
+
+func (q *Queries) UpdateMediaTitle(ctx context.Context, arg UpdateMediaTitleParams) error {
+	_, err := q.db.Exec(ctx, updateMediaTitle, arg.Title, arg.ID)
+	return err
 }

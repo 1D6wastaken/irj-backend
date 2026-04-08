@@ -208,7 +208,7 @@ func updatePersonnePhysique(ctx context.Context, s *BusinessService, exData *upd
 	return linkUpdatedPersonnePhysique
 }
 
-//nolint:lll
+//nolint:lll,cyclop
 func linkUpdatedPersonnePhysique(ctx context.Context, s *BusinessService, exData *updatePersonnePhysiqueExchangeData) updatePersonnePhysiqueState {
 	err := s.postgresService.Queries.AttachSieclesToPersPhy(ctx, queries.AttachSieclesToPersPhyParams{
 		SiecleID: exData.params.Centuries,
@@ -218,8 +218,14 @@ func linkUpdatedPersonnePhysique(ctx context.Context, s *BusinessService, exData
 		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to attach centuries to personne physique")
 	}
 
+	mediaIds := exData.params.Medias
+	if exData.parentID != 0 {
+		parentMediaIds, _ := s.postgresService.Queries.GetMediaIdsByPersPhy(ctx, exData.parentID)
+		mediaIds = s.duplicateMediasIfShared(ctx, exData.logger, mediaIds, parentMediaIds)
+	}
+
 	err = s.postgresService.Queries.AttachMediasToPersPhy(ctx, queries.AttachMediasToPersPhyParams{
-		MediaIds: exData.params.Medias,
+		MediaIds: mediaIds,
 		ID:       exData.id,
 	})
 	if err != nil {

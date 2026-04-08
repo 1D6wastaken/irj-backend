@@ -190,6 +190,72 @@ func (b *BusinessService) UploadImage(w http.ResponseWriter, r *http.Request) *_
 	})
 }
 
+func (b *BusinessService) UpdateMediaTitle(w http.ResponseWriter, r *http.Request) *_http.APIError {
+	subCtx, cancel := context.WithTimeout(r.Context(), defaultTimeOut)
+	defer cancel()
+
+	_, ok := r.Context().Value(catalogs.AccessToken).(jwt.SessionInfo)
+	if !ok {
+		return _http.ErrUnauthorized.Msg("invalid token")
+	}
+
+	params := httprouter.ParamsFromContext(subCtx)
+
+	id, err := strconv.ParseInt(params.ByName("id"), 10, 32)
+	if err != nil {
+		return _http.ErrBadRequest.Msg("id path param is invalid")
+	}
+
+	var body struct {
+		Title string `json:"title"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		return _http.ErrBadRequest.Msg("invalid request body")
+	}
+
+	err = b.postgresService.Queries.UpdateMediaTitle(subCtx, queries.UpdateMediaTitleParams{
+		Title: pgtype.Text{String: body.Title, Valid: true},
+		ID:    int32(id),
+	})
+	if err != nil {
+		return _http.ErrInternalError.Msg("error while updating media title").Err(err)
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+
+	return nil
+}
+
+func (b *BusinessService) duplicateMediasIfShared(ctx context.Context, logger *zerolog.Logger, mediaIds, parentMediaIds []int32) []int32 {
+	parentSet := make(map[int32]bool, len(parentMediaIds))
+	for _, id := range parentMediaIds {
+		parentSet[id] = true
+	}
+
+	result := make([]int32, 0, len(mediaIds))
+
+	for _, id := range mediaIds {
+		if !parentSet[id] {
+			result = append(result, id)
+
+			continue
+		}
+
+		newID, err := b.postgresService.Queries.DuplicateMedia(ctx, id)
+		if err != nil {
+			logger.Error().Err(err).Int32("source_id", id).Msg("failed to duplicate media")
+			result = append(result, id) // fallback: use original
+
+			continue
+		}
+
+		result = append(result, newID)
+	}
+
+	return result
+}
+
 func extractMimeType(fileHeader *multipart.FileHeader) (string, *_http.APIError) {
 	mimeType := fileHeader.Header.Get("Content-Type")
 	if !strings.HasPrefix(mimeType, "image/") && mimeType != "" {

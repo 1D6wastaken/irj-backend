@@ -168,6 +168,7 @@ func (e *Env) Routes(router *httprouter.Router) {
 	router.HandlerFunc(http.MethodGet, "/api/v1/admin/contributions", protected(_http.HandlerMiddleware(e.UserService.GetAdminHistoryDashboard)))
 
 	router.HandlerFunc(http.MethodPost, "/api/v1/medias", protected(_http.HandlerMiddleware(e.BusinessService.UploadImage)))
+	router.HandlerFunc(http.MethodPatch, "/api/v1/medias/:id", protected(_http.HandlerMiddleware(e.BusinessService.UpdateMediaTitle)))
 	router.HandlerFunc(http.MethodPost, "/api/v1/monuments_lieux", protected(_http.HandlerMiddleware(e.BusinessService.CreateMonumentLieu)))
 	router.HandlerFunc(http.MethodPost, "/api/v1/mobiliers_images", protected(_http.HandlerMiddleware(e.BusinessService.CreateMobilierImage)))
 	router.HandlerFunc(http.MethodPost, "/api/v1/personnes_morales", protected(_http.HandlerMiddleware(e.BusinessService.CreatePersonneMorale)))

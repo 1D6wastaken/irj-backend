@@ -221,8 +221,14 @@ func linkUpdatedMobilierImage(ctx context.Context, s *BusinessService, exData *u
 		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to attach centuries to mobilier image")
 	}
 
+	mediaIds := exData.params.Medias
+	if exData.parentID != 0 {
+		parentMediaIds, _ := s.postgresService.Queries.GetMediaIdsByMobImg(ctx, exData.parentID)
+		mediaIds = s.duplicateMediasIfShared(ctx, exData.logger, mediaIds, parentMediaIds)
+	}
+
 	err = s.postgresService.Queries.AttachMediasToMobImg(ctx, queries.AttachMediasToMobImgParams{
-		MediaIds: exData.params.Medias,
+		MediaIds: mediaIds,
 		ID:       exData.id,
 	})
 	if err != nil {

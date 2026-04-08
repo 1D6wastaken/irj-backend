@@ -209,6 +209,7 @@ func updateMonumentLieu(ctx context.Context, s *BusinessService, exData *updateM
 	return linkUpdatedMonumentLieu
 }
 
+//nolint:cyclop
 func linkUpdatedMonumentLieu(ctx context.Context, s *BusinessService, exData *updateMonumentLieuExchangeData) updateMonumentLieuState {
 	err := s.postgresService.Queries.AttachSieclesToMonuLieu(ctx, queries.AttachSieclesToMonuLieuParams{
 		SiecleID: exData.params.Centuries,
@@ -218,8 +219,14 @@ func linkUpdatedMonumentLieu(ctx context.Context, s *BusinessService, exData *up
 		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to attach centuries to updated monument lieu")
 	}
 
+	mediaIds := exData.params.Medias
+	if exData.parentID != 0 {
+		parentMediaIds, _ := s.postgresService.Queries.GetMediaIdsByMonuLieu(ctx, exData.parentID)
+		mediaIds = s.duplicateMediasIfShared(ctx, exData.logger, mediaIds, parentMediaIds)
+	}
+
 	err = s.postgresService.Queries.AttachMediasToMonuLieu(ctx, queries.AttachMediasToMonuLieuParams{
-		MediaIds: exData.params.Medias,
+		MediaIds: mediaIds,
 		ID:       exData.id,
 	})
 	if err != nil {

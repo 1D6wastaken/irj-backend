@@ -225,8 +225,14 @@ func linkUpdatedPersonneMorale(ctx context.Context, s *BusinessService, exData *
 		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to attach centuries to personne morale")
 	}
 
+	mediaIds := exData.params.Medias
+	if exData.parentID != 0 {
+		parentMediaIds, _ := s.postgresService.Queries.GetMediaIdsByPersMo(ctx, exData.parentID)
+		mediaIds = s.duplicateMediasIfShared(ctx, exData.logger, mediaIds, parentMediaIds)
+	}
+
 	err = s.postgresService.Queries.AttachMediasToPersMo(ctx, queries.AttachMediasToPersMoParams{
-		MediaIds: exData.params.Medias,
+		MediaIds: mediaIds,
 		ID:       exData.id,
 	})
 	if err != nil {
