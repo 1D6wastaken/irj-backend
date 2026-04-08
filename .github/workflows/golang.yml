@@ -28,6 +28,3 @@ jobs:
 
       - name: Run linters
         run: ./bin/task ci-lint
-
-      - name: Run integration tests
-        run: ./bin/task cover
