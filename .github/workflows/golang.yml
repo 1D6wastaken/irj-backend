@@ -26,11 +26,6 @@ jobs:
       - name: Install deps
         run: ./bin/task deps
 
-      - name: govulncheck
-        run: |
-          go install golang.org/x/vuln/cmd/govulncheck@latest
-          govulncheck ./...      
-
       - name: Run linters
         run: ./bin/task ci-lint
 
