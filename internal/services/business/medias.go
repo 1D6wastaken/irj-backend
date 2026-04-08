@@ -148,7 +148,7 @@ func (b *BusinessService) UploadImage(w http.ResponseWriter, r *http.Request) *_
 
 	logger.Info().Str("db_path", savePath).Str("path", realPath).Msg("Uploading image")
 
-	dst, err := os.Create(realPath)
+	dst, err := os.Create(realPath) //nolint:gosec // G703: path is constructed server-side from UUID, not user input
 	if err != nil {
 		return _http.ErrInternalError.Msg("Erreur écriture fichier").Err(err)
 	}

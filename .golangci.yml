@@ -19,7 +19,11 @@ linters:
     - varnamelen
     - wrapcheck
     - wsl
+    - modernize
   settings:
+    gosec:
+      excludes:
+        - G118
     depguard:
       rules:
         logger:

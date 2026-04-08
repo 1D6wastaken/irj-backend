@@ -150,17 +150,17 @@ VALUES ($1,
         $6,
         $7,
         $8,
+        COALESCE($9, NOW()),
         NOW(),
-        NOW(),
-        $9,
         $10,
         $11,
         $12,
         $13,
-        false,
         $14,
+        false,
         $15,
-        $16)
+        $16,
+        $17)
 RETURNING id_monument_lieu
 `
 
@@ -173,6 +173,7 @@ type CreateMonumentLieuParams struct {
 	Protection             pgtype.Bool
 	ProtectionCommentaires pgtype.Text
 	Source                 pgtype.Text
+	DateCreation           interface{}
 	Contributeurs          pgtype.Text
 	IDCommune              pgtype.Int4
 	IDDepartement          pgtype.Int4
@@ -193,6 +194,7 @@ func (q *Queries) CreateMonumentLieu(ctx context.Context, arg CreateMonumentLieu
 		arg.Protection,
 		arg.ProtectionCommentaires,
 		arg.Source,
+		arg.DateCreation,
 		arg.Contributeurs,
 		arg.IDCommune,
 		arg.IDDepartement,

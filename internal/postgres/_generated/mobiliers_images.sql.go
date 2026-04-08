@@ -171,18 +171,18 @@ VALUES ($1,
         $8,
         $9,
         $10,
+        COALESCE($11, NOW()),
         NOW(),
-        NOW(),
-        $11,
         $12,
         $13,
         $14,
         $15,
-        false,
         $16,
+        false,
         $17,
         $18,
-        $19)
+        $19,
+        $20)
 RETURNING id_mobilier_image
 `
 
@@ -197,6 +197,7 @@ type CreateMobilierImageParams struct {
 	Protection         pgtype.Bool
 	ProtectionComment  pgtype.Text
 	Source             pgtype.Text
+	DateCrAtion        interface{}
 	Contributors       pgtype.Text
 	IDCommune          pgtype.Int4
 	IDDepartement      pgtype.Int4
@@ -220,6 +221,7 @@ func (q *Queries) CreateMobilierImage(ctx context.Context, arg CreateMobilierIma
 		arg.Protection,
 		arg.ProtectionComment,
 		arg.Source,
+		arg.DateCrAtion,
 		arg.Contributors,
 		arg.IDCommune,
 		arg.IDDepartement,

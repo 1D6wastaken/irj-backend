@@ -124,17 +124,17 @@ VALUES ($1,
         $9,
         $10,
         $11,
+        COALESCE($12, NOW()),
         NOW(),
-        NOW(),
-        $12,
         $13,
         $14,
         $15,
         $16,
-        false,
         $17,
+        false,
         $18,
-        $19)
+        $19,
+        $20)
 RETURNING id_pers_morale
 `
 
@@ -150,6 +150,7 @@ type CreatePersMoraleParams struct {
 	Objets              pgtype.Text
 	Bibliographie       pgtype.Text
 	Sources             pgtype.Text
+	DateCreation        interface{}
 	Contributeurs       pgtype.Text
 	IDCommune           pgtype.Int4
 	IDDepartement       pgtype.Int4
@@ -173,6 +174,7 @@ func (q *Queries) CreatePersMorale(ctx context.Context, arg CreatePersMoralePara
 		arg.Objets,
 		arg.Bibliographie,
 		arg.Sources,
+		arg.DateCreation,
 		arg.Contributeurs,
 		arg.IDCommune,
 		arg.IDDepartement,
