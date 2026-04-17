@@ -51,6 +51,51 @@ type PersonneMorale struct {
 	// Linked objects
 	Objects string `json:"objects,omitempty"`
 
+	// assets
+	Biens string `json:"biens,omitempty"`
+
+	// first mention date
+	DatePremiereMention string `json:"date_premiere_mention,omitempty"`
+
+	// last mention date
+	DateDerniereMention string `json:"date_derniere_mention,omitempty"`
+
+	// refoundation date
+	RefondationDate string `json:"refondation_date,omitempty"`
+
+	// end date
+	DateFin string `json:"date_fin,omitempty"`
+
+	// social/professional origin
+	OrigineSocialeProf string `json:"origine_sociale_prof,omitempty"`
+
+	// known members
+	MembresConnus string `json:"membres_connus,omitempty"`
+
+	// meeting frequency
+	FrequenceReunions string `json:"frequence_reunions,omitempty"`
+
+	// political involvement
+	ParticipationViePol string `json:"participation_vie_pol,omitempty"`
+
+	// funerals
+	Funerailles string `json:"funerailles,omitempty"`
+
+	// other celebrations
+	AutresFetes string `json:"autres_fetes,omitempty"`
+
+	// burial/costume
+	InhumationCostume string `json:"inhumation_costume,omitempty"`
+
+	// founders
+	Fondateurs string `json:"fondateurs,omitempty"`
+
+	// statutes
+	Statuts string `json:"statuts,omitempty"`
+
+	// authorizations
+	Autorisations string `json:"autorisations,omitempty"`
+
 	// sources of the legal entity
 	Sources string `json:"sources,omitempty"`
 

@@ -65,6 +65,30 @@ type MonumentLieu struct {
 	// Sources of the information
 	Sources string `json:"sources,omitempty"`
 
+	// dimensions of the monument
+	Dimensions string `json:"dimensions,omitempty"`
+
+	// altitude
+	Altitude string `json:"altitude,omitempty"`
+
+	// location
+	Emplacement string `json:"emplacement,omitempty"`
+
+	// construction date
+	DateConstruction string `json:"date_construction,omitempty"`
+
+	// first mention date
+	PremiereMention string `json:"premiere_mention,omitempty"`
+
+	// current owner
+	ProprietaireActuel string `json:"proprietaire_actuel,omitempty"`
+
+	// architect
+	Architecte string `json:"architecte,omitempty"`
+
+	// commissioner
+	Commanditaire string `json:"commanditaire,omitempty"`
+
 	// city of the monument lieu
 	City *BasicFilter `json:"city,omitempty"`
 

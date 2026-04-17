@@ -112,7 +112,22 @@ INSERT INTO t_pers_morales
  publie,
  publication_status,
  parent_id,
- user_id)
+ user_id,
+ biens,
+ date_premiere_mention,
+ date_derniere_mention,
+ refondation_date,
+ date_fin,
+ origine_sociale_prof,
+ membres_connus,
+ frequence_reunions,
+ participation_vie_pol,
+ funerailles,
+ autres_fetes,
+ inhumation_costume,
+ fondateurs,
+ statuts,
+ autorisations)
 VALUES ($1,
         $2,
         $3,
@@ -134,7 +149,22 @@ VALUES ($1,
         false,
         $18,
         $19,
-        $20)
+        $20,
+        $21,
+        $22,
+        $23,
+        $24,
+        $25,
+        $26,
+        $27,
+        $28,
+        $29,
+        $30,
+        $31,
+        $32,
+        $33,
+        $34,
+        $35)
 RETURNING id_pers_morale
 `
 
@@ -159,6 +189,21 @@ type CreatePersMoraleParams struct {
 	PublicationStatus   PublicationStatus
 	ParentID            pgtype.Int4
 	UserID              pgtype.Text
+	Biens               pgtype.Text
+	DatePremiereMention pgtype.Text
+	DateDerniereMention pgtype.Text
+	RefondationDate     pgtype.Text
+	DateFin             pgtype.Text
+	OrigineSocialeProf  pgtype.Text
+	MembresConnus       pgtype.Text
+	FrequenceReunions   pgtype.Text
+	ParticipationViePol pgtype.Text
+	Funerailles         pgtype.Text
+	AutresFetes         pgtype.Text
+	InhumationCostume   pgtype.Text
+	Fondateurs          pgtype.Text
+	Statuts             pgtype.Text
+	Autorisations       pgtype.Text
 }
 
 func (q *Queries) CreatePersMorale(ctx context.Context, arg CreatePersMoraleParams) (int32, error) {
@@ -183,6 +228,21 @@ func (q *Queries) CreatePersMorale(ctx context.Context, arg CreatePersMoralePara
 		arg.PublicationStatus,
 		arg.ParentID,
 		arg.UserID,
+		arg.Biens,
+		arg.DatePremiereMention,
+		arg.DateDerniereMention,
+		arg.RefondationDate,
+		arg.DateFin,
+		arg.OrigineSocialeProf,
+		arg.MembresConnus,
+		arg.FrequenceReunions,
+		arg.ParticipationViePol,
+		arg.Funerailles,
+		arg.AutresFetes,
+		arg.InhumationCostume,
+		arg.Fondateurs,
+		arg.Statuts,
+		arg.Autorisations,
 	)
 	var id_pers_morale int32
 	err := row.Scan(&id_pers_morale)
@@ -272,6 +332,22 @@ SELECT p.id_pers_morale       AS id,
        p.contributeurs,
        p.commentaires,
        p.parent_id,
+       p.biens,
+       p.date_premiere_mention,
+       p.date_derniere_mention,
+       p.refondation_date,
+       p.date_fin,
+       p.texte_statuts,
+       p.origine_sociale_prof,
+       p.membres_connus,
+       p.frequence_reunions,
+       p.participation_vie_pol,
+       p.funerailles,
+       p.autres_fetes,
+       p.inhumation_costume,
+       p.fondateurs,
+       p.statuts,
+       p.autorisations,
        -- Redacteurs (auteurs fiche)
        COALESCE(array_agg(DISTINCT baf.auteur_fiche_nom) FILTER (WHERE baf.auteur_fiche_nom IS NOT NULL),
                 '{}')         AS redacteurs,
@@ -358,6 +434,22 @@ type GetDraftPersonnesMoralesRow struct {
 	Contributeurs           pgtype.Text
 	Commentaires            pgtype.Text
 	ParentID                pgtype.Int4
+	Biens                   pgtype.Text
+	DatePremiereMention     pgtype.Text
+	DateDerniereMention     pgtype.Text
+	RefondationDate         pgtype.Text
+	DateFin                 pgtype.Text
+	TexteStatuts            pgtype.Bool
+	OrigineSocialeProf      pgtype.Text
+	MembresConnus           pgtype.Text
+	FrequenceReunions       pgtype.Text
+	ParticipationViePol     pgtype.Text
+	Funerailles             pgtype.Text
+	AutresFetes             pgtype.Text
+	InhumationCostume       pgtype.Text
+	Fondateurs              pgtype.Text
+	Statuts                 pgtype.Text
+	Autorisations           pgtype.Text
 	Redacteurs              interface{}
 	Commune                 interface{}
 	Departement             interface{}
@@ -398,6 +490,22 @@ func (q *Queries) GetDraftPersonnesMorales(ctx context.Context, userID pgtype.Te
 			&i.Contributeurs,
 			&i.Commentaires,
 			&i.ParentID,
+			&i.Biens,
+			&i.DatePremiereMention,
+			&i.DateDerniereMention,
+			&i.RefondationDate,
+			&i.DateFin,
+			&i.TexteStatuts,
+			&i.OrigineSocialeProf,
+			&i.MembresConnus,
+			&i.FrequenceReunions,
+			&i.ParticipationViePol,
+			&i.Funerailles,
+			&i.AutresFetes,
+			&i.InhumationCostume,
+			&i.Fondateurs,
+			&i.Statuts,
+			&i.Autorisations,
 			&i.Redacteurs,
 			&i.Commune,
 			&i.Departement,
@@ -544,6 +652,22 @@ SELECT p.id_pers_morale       AS id,
        p.contributeurs,
        p.commentaires,
        p.parent_id,
+       p.biens,
+       p.date_premiere_mention,
+       p.date_derniere_mention,
+       p.refondation_date,
+       p.date_fin,
+       p.texte_statuts,
+       p.origine_sociale_prof,
+       p.membres_connus,
+       p.frequence_reunions,
+       p.participation_vie_pol,
+       p.funerailles,
+       p.autres_fetes,
+       p.inhumation_costume,
+       p.fondateurs,
+       p.statuts,
+       p.autorisations,
        -- Redacteurs (auteurs fiche)
        COALESCE(array_agg(DISTINCT baf.auteur_fiche_nom) FILTER (WHERE baf.auteur_fiche_nom IS NOT NULL),
                 '{}')         AS redacteurs,
@@ -629,6 +753,22 @@ type GetPendingPersonnesMoralesRow struct {
 	Contributeurs           pgtype.Text
 	Commentaires            pgtype.Text
 	ParentID                pgtype.Int4
+	Biens                   pgtype.Text
+	DatePremiereMention     pgtype.Text
+	DateDerniereMention     pgtype.Text
+	RefondationDate         pgtype.Text
+	DateFin                 pgtype.Text
+	TexteStatuts            pgtype.Bool
+	OrigineSocialeProf      pgtype.Text
+	MembresConnus           pgtype.Text
+	FrequenceReunions       pgtype.Text
+	ParticipationViePol     pgtype.Text
+	Funerailles             pgtype.Text
+	AutresFetes             pgtype.Text
+	InhumationCostume       pgtype.Text
+	Fondateurs              pgtype.Text
+	Statuts                 pgtype.Text
+	Autorisations           pgtype.Text
 	Redacteurs              interface{}
 	Commune                 interface{}
 	Departement             interface{}
@@ -669,6 +809,22 @@ func (q *Queries) GetPendingPersonnesMorales(ctx context.Context) ([]GetPendingP
 			&i.Contributeurs,
 			&i.Commentaires,
 			&i.ParentID,
+			&i.Biens,
+			&i.DatePremiereMention,
+			&i.DateDerniereMention,
+			&i.RefondationDate,
+			&i.DateFin,
+			&i.TexteStatuts,
+			&i.OrigineSocialeProf,
+			&i.MembresConnus,
+			&i.FrequenceReunions,
+			&i.ParticipationViePol,
+			&i.Funerailles,
+			&i.AutresFetes,
+			&i.InhumationCostume,
+			&i.Fondateurs,
+			&i.Statuts,
+			&i.Autorisations,
 			&i.Redacteurs,
 			&i.Commune,
 			&i.Departement,
@@ -709,6 +865,22 @@ SELECT p.id_pers_morale  AS id,
        p.contributeurs,
        p.commentaires,
        p.user_id,
+       p.biens,
+       p.date_premiere_mention,
+       p.date_derniere_mention,
+       p.refondation_date,
+       p.date_fin,
+       p.texte_statuts,
+       p.origine_sociale_prof,
+       p.membres_connus,
+       p.frequence_reunions,
+       p.participation_vie_pol,
+       p.funerailles,
+       p.autres_fetes,
+       p.inhumation_costume,
+       p.fondateurs,
+       p.statuts,
+       p.autorisations,
        -- Redacteurs (auteurs fiche)
        COALESCE(
                        jsonb_agg(
@@ -843,6 +1015,22 @@ type GetPersonneMoraleByIDRow struct {
 	Contributeurs           pgtype.Text
 	Commentaires            pgtype.Text
 	UserID                  pgtype.Text
+	Biens                   pgtype.Text
+	DatePremiereMention     pgtype.Text
+	DateDerniereMention     pgtype.Text
+	RefondationDate         pgtype.Text
+	DateFin                 pgtype.Text
+	TexteStatuts            pgtype.Bool
+	OrigineSocialeProf      pgtype.Text
+	MembresConnus           pgtype.Text
+	FrequenceReunions       pgtype.Text
+	ParticipationViePol     pgtype.Text
+	Funerailles             pgtype.Text
+	AutresFetes             pgtype.Text
+	InhumationCostume       pgtype.Text
+	Fondateurs              pgtype.Text
+	Statuts                 pgtype.Text
+	Autorisations           pgtype.Text
 	Authors                 interface{}
 	City                    []byte
 	Department              []byte
@@ -879,6 +1067,22 @@ func (q *Queries) GetPersonneMoraleByID(ctx context.Context, idPersMorale int32)
 		&i.Contributeurs,
 		&i.Commentaires,
 		&i.UserID,
+		&i.Biens,
+		&i.DatePremiereMention,
+		&i.DateDerniereMention,
+		&i.RefondationDate,
+		&i.DateFin,
+		&i.TexteStatuts,
+		&i.OrigineSocialeProf,
+		&i.MembresConnus,
+		&i.FrequenceReunions,
+		&i.ParticipationViePol,
+		&i.Funerailles,
+		&i.AutresFetes,
+		&i.InhumationCostume,
+		&i.Fondateurs,
+		&i.Statuts,
+		&i.Autorisations,
 		&i.Authors,
 		&i.City,
 		&i.Department,

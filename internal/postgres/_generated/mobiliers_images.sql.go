@@ -160,7 +160,16 @@ INSERT INTO t_mobiliers_images
  publication_status,
  parent_id,
  user_id,
- temoin_commentaires)
+ temoin_commentaires,
+ cote_reference,
+ date_fabrication,
+ auteur_oeuvre,
+ commanditaire,
+ emplacement,
+ support,
+ proprietaire_actuel,
+ dimensions_support,
+ dimensions_image)
 VALUES ($1,
         $2,
         $3,
@@ -182,7 +191,16 @@ VALUES ($1,
         $17,
         $18,
         $19,
-        $20)
+        $20,
+        $21,
+        $22,
+        $23,
+        $24,
+        $25,
+        $26,
+        $27,
+        $28,
+        $29)
 RETURNING id_mobilier_image
 `
 
@@ -207,6 +225,15 @@ type CreateMobilierImageParams struct {
 	ParentID           pgtype.Int4
 	UserID             pgtype.Text
 	TemoinCommentaires pgtype.Text
+	CoteReference      pgtype.Text
+	DateFabrication    pgtype.Text
+	AuteurOeuvre       pgtype.Text
+	Commanditaire      pgtype.Text
+	Emplacement        pgtype.Text
+	Support            pgtype.Text
+	ProprietaireActuel pgtype.Text
+	DimensionsSupport  pgtype.Text
+	DimensionsImage    pgtype.Text
 }
 
 func (q *Queries) CreateMobilierImage(ctx context.Context, arg CreateMobilierImageParams) (int32, error) {
@@ -231,6 +258,15 @@ func (q *Queries) CreateMobilierImage(ctx context.Context, arg CreateMobilierIma
 		arg.ParentID,
 		arg.UserID,
 		arg.TemoinCommentaires,
+		arg.CoteReference,
+		arg.DateFabrication,
+		arg.AuteurOeuvre,
+		arg.Commanditaire,
+		arg.Emplacement,
+		arg.Support,
+		arg.ProprietaireActuel,
+		arg.DimensionsSupport,
+		arg.DimensionsImage,
 	)
 	var id_mobilier_image int32
 	err := row.Scan(&id_mobilier_image)
@@ -354,6 +390,15 @@ SELECT m.id_mobilier_image    AS id,
        m.lieu_origine,
        m.parent_id,
        m.temoin_commentaires,
+       m.cote_reference,
+       m.date_fabrication,
+       m.auteur_oeuvre,
+       m.commanditaire,
+       m.emplacement,
+       m.support,
+       m.proprietaire_actuel,
+       m.dimensions_support,
+       m.dimensions_image,
        -- Redacteurs (auteurs fiche)
        COALESCE(array_agg(DISTINCT baf.auteur_fiche_nom) FILTER (WHERE baf.auteur_fiche_nom IS NOT NULL),
                 '{}')         AS redacteurs,
@@ -456,6 +501,15 @@ type GetDraftMobiliersImagesRow struct {
 	LieuOrigine             pgtype.Text
 	ParentID                pgtype.Int4
 	TemoinCommentaires      pgtype.Text
+	CoteReference           pgtype.Text
+	DateFabrication         pgtype.Text
+	AuteurOeuvre            pgtype.Text
+	Commanditaire           pgtype.Text
+	Emplacement             pgtype.Text
+	Support                 pgtype.Text
+	ProprietaireActuel      pgtype.Text
+	DimensionsSupport       pgtype.Text
+	DimensionsImage         pgtype.Text
 	Redacteurs              interface{}
 	Commune                 interface{}
 	Departement             interface{}
@@ -500,6 +554,15 @@ func (q *Queries) GetDraftMobiliersImages(ctx context.Context, userID pgtype.Tex
 			&i.LieuOrigine,
 			&i.ParentID,
 			&i.TemoinCommentaires,
+			&i.CoteReference,
+			&i.DateFabrication,
+			&i.AuteurOeuvre,
+			&i.Commanditaire,
+			&i.Emplacement,
+			&i.Support,
+			&i.ProprietaireActuel,
+			&i.DimensionsSupport,
+			&i.DimensionsImage,
 			&i.Redacteurs,
 			&i.Commune,
 			&i.Departement,
@@ -661,6 +724,15 @@ SELECT m.id_mobilier_image AS id,
        m.lieu_origine,
        m.user_id,
        m.temoin_commentaires,
+       m.cote_reference,
+       m.date_fabrication,
+       m.auteur_oeuvre,
+       m.commanditaire,
+       m.emplacement,
+       m.support,
+       m.proprietaire_actuel,
+       m.dimensions_support,
+       m.dimensions_image,
        -- Redacteurs (auteurs fiche)
        COALESCE(
                        jsonb_agg(
@@ -829,6 +901,15 @@ type GetMobilierImageByIDRow struct {
 	LieuOrigine             pgtype.Text
 	UserID                  pgtype.Text
 	TemoinCommentaires      pgtype.Text
+	CoteReference           pgtype.Text
+	DateFabrication         pgtype.Text
+	AuteurOeuvre            pgtype.Text
+	Commanditaire           pgtype.Text
+	Emplacement             pgtype.Text
+	Support                 pgtype.Text
+	ProprietaireActuel      pgtype.Text
+	DimensionsSupport       pgtype.Text
+	DimensionsImage         pgtype.Text
 	Authors                 interface{}
 	City                    []byte
 	Department              []byte
@@ -869,6 +950,15 @@ func (q *Queries) GetMobilierImageByID(ctx context.Context, idMobilierImage int3
 		&i.LieuOrigine,
 		&i.UserID,
 		&i.TemoinCommentaires,
+		&i.CoteReference,
+		&i.DateFabrication,
+		&i.AuteurOeuvre,
+		&i.Commanditaire,
+		&i.Emplacement,
+		&i.Support,
+		&i.ProprietaireActuel,
+		&i.DimensionsSupport,
+		&i.DimensionsImage,
 		&i.Authors,
 		&i.City,
 		&i.Department,
@@ -908,6 +998,15 @@ SELECT m.id_mobilier_image    AS id,
        m.lieu_origine,
        m.parent_id,
        m.temoin_commentaires,
+       m.cote_reference,
+       m.date_fabrication,
+       m.auteur_oeuvre,
+       m.commanditaire,
+       m.emplacement,
+       m.support,
+       m.proprietaire_actuel,
+       m.dimensions_support,
+       m.dimensions_image,
        -- Redacteurs (auteurs fiche)
        COALESCE(array_agg(DISTINCT baf.auteur_fiche_nom) FILTER (WHERE baf.auteur_fiche_nom IS NOT NULL),
                 '{}')         AS redacteurs,
@@ -1009,6 +1108,15 @@ type GetPendingMobiliersImagesRow struct {
 	LieuOrigine             pgtype.Text
 	ParentID                pgtype.Int4
 	TemoinCommentaires      pgtype.Text
+	CoteReference           pgtype.Text
+	DateFabrication         pgtype.Text
+	AuteurOeuvre            pgtype.Text
+	Commanditaire           pgtype.Text
+	Emplacement             pgtype.Text
+	Support                 pgtype.Text
+	ProprietaireActuel      pgtype.Text
+	DimensionsSupport       pgtype.Text
+	DimensionsImage         pgtype.Text
 	Redacteurs              interface{}
 	Commune                 interface{}
 	Departement             interface{}
@@ -1053,6 +1161,15 @@ func (q *Queries) GetPendingMobiliersImages(ctx context.Context) ([]GetPendingMo
 			&i.LieuOrigine,
 			&i.ParentID,
 			&i.TemoinCommentaires,
+			&i.CoteReference,
+			&i.DateFabrication,
+			&i.AuteurOeuvre,
+			&i.Commanditaire,
+			&i.Emplacement,
+			&i.Support,
+			&i.ProprietaireActuel,
+			&i.DimensionsSupport,
+			&i.DimensionsImage,
 			&i.Redacteurs,
 			&i.Commune,
 			&i.Departement,

@@ -83,6 +83,33 @@ type PersonnePhysiqueCreationBody struct {
 	// bibliography
 	Bibliography string `json:"bibliography,omitempty"`
 
+	// historiography
+	Historiography string `json:"historiography,omitempty"`
+
+	// evenements
+	Evenements string `json:"evenements,omitempty"`
+
+	// preparatifs
+	Preparatifs string `json:"preparatifs,omitempty"`
+
+	// chemin suivi
+	CheminSuivi string `json:"chemin_suivi,omitempty"`
+
+	// arrivee
+	Arrivee string `json:"arrivee,omitempty"`
+
+	// retour
+	Retour string `json:"retour,omitempty"`
+
+	// non execution
+	NonExecution string `json:"non_execution,omitempty"`
+
+	// age
+	Age string `json:"age,omitempty"`
+
+	// composition groupe
+	CompositionGroupe string `json:"composition_groupe,omitempty"`
+
 	// comment
 	Comment string `json:"comment,omitempty"`
 

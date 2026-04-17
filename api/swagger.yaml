@@ -2019,6 +2019,33 @@ definitions:
           $ref: "#/definitions/basicFilter"
       event_nature:
         type: string
+      historiography:
+        type: string
+        description: historiography
+      evenements:
+        type: string
+        description: events
+      preparatifs:
+        type: string
+        description: preparations
+      chemin_suivi:
+        type: string
+        description: path followed
+      arrivee:
+        type: string
+        description: arrival
+      retour:
+        type: string
+        description: return
+      non_execution:
+        type: string
+        description: non-execution
+      age:
+        type: string
+        description: age
+      composition_groupe:
+        type: string
+        description: group composition
       medias:
         type: array
         items:
@@ -2125,6 +2152,24 @@ definitions:
       commutation:
         type: string
       bibliography:
+        type: string
+      historiography:
+        type: string
+      evenements:
+        type: string
+      preparatifs:
+        type: string
+      chemin_suivi:
+        type: string
+      arrivee:
+        type: string
+      retour:
+        type: string
+      non_execution:
+        type: string
+      age:
+        type: string
+      composition_groupe:
         type: string
       comment:
         type: string
@@ -2269,6 +2314,51 @@ definitions:
       objects:
         type: string
         description: Linked objects
+      biens:
+        type: string
+        description: assets
+      date_premiere_mention:
+        type: string
+        description: first mention date
+      date_derniere_mention:
+        type: string
+        description: last mention date
+      refondation_date:
+        type: string
+        description: refoundation date
+      date_fin:
+        type: string
+        description: end date
+      origine_sociale_prof:
+        type: string
+        description: social/professional origin
+      membres_connus:
+        type: string
+        description: known members
+      frequence_reunions:
+        type: string
+        description: meeting frequency
+      participation_vie_pol:
+        type: string
+        description: political involvement
+      funerailles:
+        type: string
+        description: funerals
+      autres_fetes:
+        type: string
+        description: other celebrations
+      inhumation_costume:
+        type: string
+        description: burial/costume
+      fondateurs:
+        type: string
+        description: founders
+      statuts:
+        type: string
+        description: statutes
+      autorisations:
+        type: string
+        description: authorizations
       sources:
         type: string
         description: sources of the legal entity
@@ -2402,6 +2492,36 @@ definitions:
       linked_objects:
         type: string
       bibliography:
+        type: string
+      biens:
+        type: string
+      date_premiere_mention:
+        type: string
+      date_derniere_mention:
+        type: string
+      refondation_date:
+        type: string
+      date_fin:
+        type: string
+      origine_sociale_prof:
+        type: string
+      membres_connus:
+        type: string
+      frequence_reunions:
+        type: string
+      participation_vie_pol:
+        type: string
+      funerailles:
+        type: string
+      autres_fetes:
+        type: string
+      inhumation_costume:
+        type: string
+      fondateurs:
+        type: string
+      statuts:
+        type: string
+      autorisations:
         type: string
       natures:
         type: array
@@ -2600,6 +2720,33 @@ definitions:
         description: images ID of the monument lieu
       sources:
         type: string
+      cote_reference:
+        type: string
+        description: reference code
+      date_fabrication:
+        type: string
+        description: fabrication date
+      auteur_oeuvre:
+        type: string
+        description: work author
+      commanditaire:
+        type: string
+        description: commissioner
+      emplacement:
+        type: string
+        description: location
+      support:
+        type: string
+        description: support
+      proprietaire_actuel:
+        type: string
+        description: current owner
+      dimensions_support:
+        type: string
+        description: support dimensions
+      dimensions_image:
+        type: string
+        description: image dimensions
       centuries:
         type: array
         items:
@@ -2710,6 +2857,24 @@ definitions:
       originPlace:
         type: string
       presentPlace:
+        type: string
+      cote_reference:
+        type: string
+      date_fabrication:
+        type: string
+      auteur_oeuvre:
+        type: string
+      commanditaire:
+        type: string
+      emplacement:
+        type: string
+      support:
+        type: string
+      proprietaire_actuel:
+        type: string
+      dimensions_support:
+        type: string
+      dimensions_image:
         type: string
       linkedMonumentsLieux:
         type: array
@@ -2884,6 +3049,30 @@ definitions:
       sources:
         type: string
         description: Sources of the information
+      dimensions:
+        type: string
+        description: dimensions of the monument
+      altitude:
+        type: string
+        description: altitude
+      emplacement:
+        type: string
+        description: location
+      date_construction:
+        type: string
+        description: construction date
+      premiere_mention:
+        type: string
+        description: first mention date
+      proprietaire_actuel:
+        type: string
+        description: current owner
+      architecte:
+        type: string
+        description: architect
+      commanditaire:
+        type: string
+        description: commissioner
       city:
         $ref: "#/definitions/basicFilter"
         description: city of the monument lieu
@@ -3066,6 +3255,22 @@ definitions:
       latitude:
         type: string
       longitude:
+        type: string
+      dimensions:
+        type: string
+      altitude:
+        type: string
+      emplacement:
+        type: string
+      date_construction:
+        type: string
+      premiere_mention:
+        type: string
+      proprietaire_actuel:
+        type: string
+      architecte:
+        type: string
+      commanditaire:
         type: string
       linkedMobiliersImages:
         type: array

@@ -95,6 +95,33 @@ type PersonnePhysique struct {
 	// event nature
 	EventNature string `json:"event_nature,omitempty"`
 
+	// historiography
+	Historiography string `json:"historiography,omitempty"`
+
+	// events
+	Evenements string `json:"evenements,omitempty"`
+
+	// preparations
+	Preparatifs string `json:"preparatifs,omitempty"`
+
+	// path followed
+	CheminSuivi string `json:"chemin_suivi,omitempty"`
+
+	// arrival
+	Arrivee string `json:"arrivee,omitempty"`
+
+	// return
+	Retour string `json:"retour,omitempty"`
+
+	// non-execution
+	NonExecution string `json:"non_execution,omitempty"`
+
+	// age
+	Age string `json:"age,omitempty"`
+
+	// group composition
+	CompositionGroupe string `json:"composition_groupe,omitempty"`
+
 	// images ID of the monument lieu
 	Medias []*Media `json:"medias"`
 

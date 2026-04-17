@@ -141,7 +141,15 @@ INSERT INTO t_monuments_lieux
  publie,
  publication_status,
  parent_id,
- user_id)
+ user_id,
+ dimensions,
+ altitude,
+ emplacement,
+ date_construction,
+ premiere_mention,
+ proprietaire_actuel,
+ architecte,
+ commanditaire)
 VALUES ($1,
         $2,
         $3,
@@ -160,7 +168,15 @@ VALUES ($1,
         false,
         $15,
         $16,
-        $17)
+        $17,
+        $18,
+        $19,
+        $20,
+        $21,
+        $22,
+        $23,
+        $24,
+        $25)
 RETURNING id_monument_lieu
 `
 
@@ -182,6 +198,14 @@ type CreateMonumentLieuParams struct {
 	PublicationStatus      PublicationStatus
 	ParentID               pgtype.Int4
 	UserID                 pgtype.Text
+	Dimensions             pgtype.Text
+	Altitude               pgtype.Text
+	Emplacement            pgtype.Text
+	DateConstruction       pgtype.Text
+	PremiereMention        pgtype.Text
+	ProprietaireActuel     pgtype.Text
+	Architecte             pgtype.Text
+	Commanditaire          pgtype.Text
 }
 
 func (q *Queries) CreateMonumentLieu(ctx context.Context, arg CreateMonumentLieuParams) (int32, error) {
@@ -203,6 +227,14 @@ func (q *Queries) CreateMonumentLieu(ctx context.Context, arg CreateMonumentLieu
 		arg.PublicationStatus,
 		arg.ParentID,
 		arg.UserID,
+		arg.Dimensions,
+		arg.Altitude,
+		arg.Emplacement,
+		arg.DateConstruction,
+		arg.PremiereMention,
+		arg.ProprietaireActuel,
+		arg.Architecte,
+		arg.Commanditaire,
 	)
 	var id_monument_lieu int32
 	err := row.Scan(&id_monument_lieu)
@@ -312,6 +344,14 @@ SELECT m.id_monument_lieu     AS id,
        m.protection_commentaires,
        m.source,
        m.parent_id,
+       m.dimensions,
+       m.altitude,
+       m.emplacement,
+       m.date_construction,
+       m.premiere_mention,
+       m.proprietaire_actuel,
+       m.architecte,
+       m.commanditaire,
        -- Redacteurs (auteurs fiche)
        COALESCE(array_agg(DISTINCT baf.auteur_fiche_nom) FILTER (WHERE baf.auteur_fiche_nom IS NOT NULL),
                 '{}')         AS redacteurs,
@@ -406,6 +446,14 @@ type GetDraftMonumentsLieuxRow struct {
 	ProtectionCommentaires  pgtype.Text
 	Source                  pgtype.Text
 	ParentID                pgtype.Int4
+	Dimensions              pgtype.Text
+	Altitude                pgtype.Text
+	Emplacement             pgtype.Text
+	DateConstruction        pgtype.Text
+	PremiereMention         pgtype.Text
+	ProprietaireActuel      pgtype.Text
+	Architecte              pgtype.Text
+	Commanditaire           pgtype.Text
 	Redacteurs              interface{}
 	Commune                 interface{}
 	Departement             interface{}
@@ -446,6 +494,14 @@ func (q *Queries) GetDraftMonumentsLieux(ctx context.Context, userID pgtype.Text
 			&i.ProtectionCommentaires,
 			&i.Source,
 			&i.ParentID,
+			&i.Dimensions,
+			&i.Altitude,
+			&i.Emplacement,
+			&i.DateConstruction,
+			&i.PremiereMention,
+			&i.ProprietaireActuel,
+			&i.Architecte,
+			&i.Commanditaire,
 			&i.Redacteurs,
 			&i.Commune,
 			&i.Departement,
@@ -598,6 +654,14 @@ SELECT m.id_monument_lieu AS id,
        m.protection_commentaires,
        m.source,
        m.user_id,
+       m.dimensions,
+       m.altitude,
+       m.emplacement,
+       m.date_construction,
+       m.premiere_mention,
+       m.proprietaire_actuel,
+       m.architecte,
+       m.commanditaire,
        -- Redacteurs (auteurs fiche)
        COALESCE(
                        jsonb_agg(
@@ -751,6 +815,14 @@ type GetMonumentLieuByIDRow struct {
 	ProtectionCommentaires  pgtype.Text
 	Source                  pgtype.Text
 	UserID                  pgtype.Text
+	Dimensions              pgtype.Text
+	Altitude                pgtype.Text
+	Emplacement             pgtype.Text
+	DateConstruction        pgtype.Text
+	PremiereMention         pgtype.Text
+	ProprietaireActuel      pgtype.Text
+	Architecte              pgtype.Text
+	Commanditaire           pgtype.Text
 	Authors                 interface{}
 	City                    []byte
 	Department              []byte
@@ -787,6 +859,14 @@ func (q *Queries) GetMonumentLieuByID(ctx context.Context, idMonumentLieu int32)
 		&i.ProtectionCommentaires,
 		&i.Source,
 		&i.UserID,
+		&i.Dimensions,
+		&i.Altitude,
+		&i.Emplacement,
+		&i.DateConstruction,
+		&i.PremiereMention,
+		&i.ProprietaireActuel,
+		&i.Architecte,
+		&i.Commanditaire,
 		&i.Authors,
 		&i.City,
 		&i.Department,
@@ -822,6 +902,14 @@ SELECT m.id_monument_lieu     AS id,
        m.protection_commentaires,
        m.source,
        m.parent_id,
+       m.dimensions,
+       m.altitude,
+       m.emplacement,
+       m.date_construction,
+       m.premiere_mention,
+       m.proprietaire_actuel,
+       m.architecte,
+       m.commanditaire,
        -- Redacteurs (auteurs fiche)
        COALESCE(array_agg(DISTINCT baf.auteur_fiche_nom) FILTER (WHERE baf.auteur_fiche_nom IS NOT NULL),
                 '{}')         AS redacteurs,
@@ -915,6 +1003,14 @@ type GetPendingMonumentsLieuxRow struct {
 	ProtectionCommentaires  pgtype.Text
 	Source                  pgtype.Text
 	ParentID                pgtype.Int4
+	Dimensions              pgtype.Text
+	Altitude                pgtype.Text
+	Emplacement             pgtype.Text
+	DateConstruction        pgtype.Text
+	PremiereMention         pgtype.Text
+	ProprietaireActuel      pgtype.Text
+	Architecte              pgtype.Text
+	Commanditaire           pgtype.Text
 	Redacteurs              interface{}
 	Commune                 interface{}
 	Departement             interface{}
@@ -955,6 +1051,14 @@ func (q *Queries) GetPendingMonumentsLieux(ctx context.Context) ([]GetPendingMon
 			&i.ProtectionCommentaires,
 			&i.Source,
 			&i.ParentID,
+			&i.Dimensions,
+			&i.Altitude,
+			&i.Emplacement,
+			&i.DateConstruction,
+			&i.PremiereMention,
+			&i.ProprietaireActuel,
+			&i.Architecte,
+			&i.Commanditaire,
 			&i.Redacteurs,
 			&i.Commune,
 			&i.Departement,

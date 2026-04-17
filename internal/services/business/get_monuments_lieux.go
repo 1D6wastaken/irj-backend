@@ -261,5 +261,13 @@ func (b *BusinessService) GetMonumentLieu(w http.ResponseWriter, r *http.Request
 		LinkedLegalEntities:   collections.InterfaceToInt32Slice(monument.PersonnesMoralesLiees),
 		Themes:                interfaceSliceToBasicFilterSlice(monument.Themes.([]any)),
 		ParentID:              monument.ParentID.Int32,
+		Dimensions:            monument.Dimensions.String,
+		Altitude:              monument.Altitude.String,
+		Emplacement:           monument.Emplacement.String,
+		DateConstruction:      monument.DateConstruction.String,
+		PremiereMention:       monument.PremiereMention.String,
+		ProprietaireActuel:    monument.ProprietaireActuel.String,
+		Architecte:            monument.Architecte.String,
+		Commanditaire:         monument.Commanditaire.String,
 	})
 }

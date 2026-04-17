@@ -193,6 +193,15 @@ func updateMobilierImage(ctx context.Context, s *BusinessService, exData *update
 			String: exData.params.TemoinComment,
 			Valid:  exData.params.TemoinComment != "",
 		},
+		CoteReference:      pgtype.Text{String: exData.params.CoteReference, Valid: exData.params.CoteReference != ""},
+		DateFabrication:    pgtype.Text{String: exData.params.DateFabrication, Valid: exData.params.DateFabrication != ""},
+		AuteurOeuvre:       pgtype.Text{String: exData.params.AuteurOeuvre, Valid: exData.params.AuteurOeuvre != ""},
+		Commanditaire:      pgtype.Text{String: exData.params.Commanditaire, Valid: exData.params.Commanditaire != ""},
+		Emplacement:        pgtype.Text{String: exData.params.Emplacement, Valid: exData.params.Emplacement != ""},
+		Support:            pgtype.Text{String: exData.params.Support, Valid: exData.params.Support != ""},
+		ProprietaireActuel: pgtype.Text{String: exData.params.ProprietaireActuel, Valid: exData.params.ProprietaireActuel != ""},
+		DimensionsSupport:  pgtype.Text{String: exData.params.DimensionsSupport, Valid: exData.params.DimensionsSupport != ""},
+		DimensionsImage:    pgtype.Text{String: exData.params.DimensionsImage, Valid: exData.params.DimensionsImage != ""},
 	})
 	if err != nil {
 		exData.logger.Error().Err(err).Msg("failed to insert mobilier image")

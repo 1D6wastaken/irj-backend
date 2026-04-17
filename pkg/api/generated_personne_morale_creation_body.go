@@ -74,6 +74,51 @@ type PersonneMoraleCreationBody struct {
 	// bibliography
 	Bibliography string `json:"bibliography,omitempty"`
 
+	// biens
+	Biens string `json:"biens,omitempty"`
+
+	// date premiere mention
+	DatePremiereMention string `json:"date_premiere_mention,omitempty"`
+
+	// date derniere mention
+	DateDerniereMention string `json:"date_derniere_mention,omitempty"`
+
+	// refondation date
+	RefondationDate string `json:"refondation_date,omitempty"`
+
+	// date fin
+	DateFin string `json:"date_fin,omitempty"`
+
+	// origine sociale prof
+	OrigineSocialeProf string `json:"origine_sociale_prof,omitempty"`
+
+	// membres connus
+	MembresConnus string `json:"membres_connus,omitempty"`
+
+	// frequence reunions
+	FrequenceReunions string `json:"frequence_reunions,omitempty"`
+
+	// participation vie pol
+	ParticipationViePol string `json:"participation_vie_pol,omitempty"`
+
+	// funerailles
+	Funerailles string `json:"funerailles,omitempty"`
+
+	// autres fetes
+	AutresFetes string `json:"autres_fetes,omitempty"`
+
+	// inhumation costume
+	InhumationCostume string `json:"inhumation_costume,omitempty"`
+
+	// fondateurs
+	Fondateurs string `json:"fondateurs,omitempty"`
+
+	// statuts
+	Statuts string `json:"statuts,omitempty"`
+
+	// autorisations
+	Autorisations string `json:"autorisations,omitempty"`
+
 	// natures
 	Natures []int32 `json:"natures"`
 

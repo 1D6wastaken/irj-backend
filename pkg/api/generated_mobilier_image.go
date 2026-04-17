@@ -95,6 +95,33 @@ type MobilierImage struct {
 	// sources
 	Sources string `json:"sources,omitempty"`
 
+	// reference code
+	CoteReference string `json:"cote_reference,omitempty"`
+
+	// fabrication date
+	DateFabrication string `json:"date_fabrication,omitempty"`
+
+	// work author
+	AuteurOeuvre string `json:"auteur_oeuvre,omitempty"`
+
+	// commissioner
+	Commanditaire string `json:"commanditaire,omitempty"`
+
+	// location
+	Emplacement string `json:"emplacement,omitempty"`
+
+	// support
+	Support string `json:"support,omitempty"`
+
+	// current owner
+	ProprietaireActuel string `json:"proprietaire_actuel,omitempty"`
+
+	// support dimensions
+	DimensionsSupport string `json:"dimensions_support,omitempty"`
+
+	// image dimensions
+	DimensionsImage string `json:"dimensions_image,omitempty"`
+
 	// time period of the monument lieu
 	Centuries []*BasicFilter `json:"centuries"`
 

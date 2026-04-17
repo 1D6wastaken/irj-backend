@@ -264,5 +264,14 @@ func (b *BusinessService) GetPersonnePhysique(w http.ResponseWriter, r *http.Req
 		LinkedFurnitureImages: collections.InterfaceToInt32Slice(ppy.MobiliersImagesLiees),
 		Themes:                interfaceSliceToBasicFilterSlice(ppy.Themes.([]any)),
 		ParentID:              ppy.ParentID.Int32,
+		Historiography:        ppy.Historiographie.String,
+		Evenements:            ppy.Evenements.String,
+		Preparatifs:           ppy.Preparatifs.String,
+		CheminSuivi:           ppy.CheminSuivi.String,
+		Arrivee:               ppy.Arrivee.String,
+		Retour:                ppy.Retour.String,
+		NonExecution:          ppy.NonExecution.String,
+		Age:                   ppy.Age.String,
+		CompositionGroupe:     ppy.CompositionGroupe.String,
 	})
 }

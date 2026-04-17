@@ -80,6 +80,30 @@ type MonumentsLieuxCreationBody struct {
 	// longitude
 	Longitude string `json:"longitude,omitempty"`
 
+	// dimensions
+	Dimensions string `json:"dimensions,omitempty"`
+
+	// altitude
+	Altitude string `json:"altitude,omitempty"`
+
+	// emplacement
+	Emplacement string `json:"emplacement,omitempty"`
+
+	// date construction
+	DateConstruction string `json:"date_construction,omitempty"`
+
+	// premiere mention
+	PremiereMention string `json:"premiere_mention,omitempty"`
+
+	// proprietaire actuel
+	ProprietaireActuel string `json:"proprietaire_actuel,omitempty"`
+
+	// architecte
+	Architecte string `json:"architecte,omitempty"`
+
+	// commanditaire
+	Commanditaire string `json:"commanditaire,omitempty"`
+
 	// linked mobiliers images
 	LinkedMobiliersImages []int32 `json:"linkedMobiliersImages"`
 

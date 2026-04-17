@@ -142,7 +142,16 @@ INSERT INTO t_pers_physiques
  publie,
  publication_status,
  parent_id,
- user_id)
+ user_id,
+ historiographie,
+ evenements,
+ preparatifs,
+ chemin_suivi,
+ arrivee,
+ retour,
+ non_execution,
+ age,
+ composition_groupe)
 VALUES ($1,
         $2,
         $3,
@@ -164,7 +173,16 @@ VALUES ($1,
         false,
         $18,
         $19,
-        $20)
+        $20,
+        $21,
+        $22,
+        $23,
+        $24,
+        $25,
+        $26,
+        $27,
+        $28,
+        $29)
 RETURNING id_pers_physique
 `
 
@@ -189,6 +207,15 @@ type CreatePersPhysiqueParams struct {
 	PublicationStatus     PublicationStatus
 	ParentID              pgtype.Int4
 	UserID                pgtype.Text
+	Historiographie       pgtype.Text
+	Evenements            pgtype.Text
+	Preparatifs           pgtype.Text
+	CheminSuivi           pgtype.Text
+	Arrivee               pgtype.Text
+	Retour                pgtype.Text
+	NonExecution          pgtype.Text
+	Age                   pgtype.Text
+	CompositionGroupe     pgtype.Text
 }
 
 func (q *Queries) CreatePersPhysique(ctx context.Context, arg CreatePersPhysiqueParams) (int32, error) {
@@ -213,6 +240,15 @@ func (q *Queries) CreatePersPhysique(ctx context.Context, arg CreatePersPhysique
 		arg.PublicationStatus,
 		arg.ParentID,
 		arg.UserID,
+		arg.Historiographie,
+		arg.Evenements,
+		arg.Preparatifs,
+		arg.CheminSuivi,
+		arg.Arrivee,
+		arg.Retour,
+		arg.NonExecution,
+		arg.Age,
+		arg.CompositionGroupe,
 	)
 	var id_pers_physique int32
 	err := row.Scan(&id_pers_physique)
@@ -313,6 +349,15 @@ SELECT p.id_pers_physique     AS id,
        p.date_naissance,
        p.date_deces,
        p.attestation,
+       p.historiographie,
+       p.evenements,
+       p.preparatifs,
+       p.chemin_suivi,
+       p.arrivee,
+       p.retour,
+       p.non_execution,
+       p.age,
+       p.composition_groupe,
        -- Periode historique
        COALESCE(array_agg(DISTINCT bph.periode_historique_type) FILTER (WHERE bph.periode_historique_type IS NOT NULL),
                 '{}')         AS historical_period,
@@ -410,6 +455,15 @@ type GetDraftPersonnesPhysiquesRow struct {
 	DateNaissance         pgtype.Text
 	DateDeces             pgtype.Text
 	Attestation           pgtype.Text
+	Historiographie       pgtype.Text
+	Evenements            pgtype.Text
+	Preparatifs           pgtype.Text
+	CheminSuivi           pgtype.Text
+	Arrivee               pgtype.Text
+	Retour                pgtype.Text
+	NonExecution          pgtype.Text
+	Age                   pgtype.Text
+	CompositionGroupe     pgtype.Text
 	HistoricalPeriod      interface{}
 	Bibliographie         pgtype.Text
 	ElementsBiographiques pgtype.Text
@@ -453,6 +507,15 @@ func (q *Queries) GetDraftPersonnesPhysiques(ctx context.Context, userID pgtype.
 			&i.DateNaissance,
 			&i.DateDeces,
 			&i.Attestation,
+			&i.Historiographie,
+			&i.Evenements,
+			&i.Preparatifs,
+			&i.CheminSuivi,
+			&i.Arrivee,
+			&i.Retour,
+			&i.NonExecution,
+			&i.Age,
+			&i.CompositionGroupe,
 			&i.HistoricalPeriod,
 			&i.Bibliographie,
 			&i.ElementsBiographiques,
@@ -601,6 +664,15 @@ SELECT p.id_pers_physique     AS id,
        p.date_naissance,
        p.date_deces,
        p.attestation,
+       p.historiographie,
+       p.evenements,
+       p.preparatifs,
+       p.chemin_suivi,
+       p.arrivee,
+       p.retour,
+       p.non_execution,
+       p.age,
+       p.composition_groupe,
        -- Periode historique
        COALESCE(array_agg(DISTINCT bph.periode_historique_type) FILTER (WHERE bph.periode_historique_type IS NOT NULL),
                 '{}')         AS historical_period,
@@ -697,6 +769,15 @@ type GetPendingPersonnesPhysiquesRow struct {
 	DateNaissance         pgtype.Text
 	DateDeces             pgtype.Text
 	Attestation           pgtype.Text
+	Historiographie       pgtype.Text
+	Evenements            pgtype.Text
+	Preparatifs           pgtype.Text
+	CheminSuivi           pgtype.Text
+	Arrivee               pgtype.Text
+	Retour                pgtype.Text
+	NonExecution          pgtype.Text
+	Age                   pgtype.Text
+	CompositionGroupe     pgtype.Text
 	HistoricalPeriod      interface{}
 	Bibliographie         pgtype.Text
 	ElementsBiographiques pgtype.Text
@@ -740,6 +821,15 @@ func (q *Queries) GetPendingPersonnesPhysiques(ctx context.Context) ([]GetPendin
 			&i.DateNaissance,
 			&i.DateDeces,
 			&i.Attestation,
+			&i.Historiographie,
+			&i.Evenements,
+			&i.Preparatifs,
+			&i.CheminSuivi,
+			&i.Arrivee,
+			&i.Retour,
+			&i.NonExecution,
+			&i.Age,
+			&i.CompositionGroupe,
 			&i.HistoricalPeriod,
 			&i.Bibliographie,
 			&i.ElementsBiographiques,
@@ -783,6 +873,15 @@ SELECT p.id_pers_physique    AS id,
        p.date_naissance,
        p.date_deces,
        p.attestation,
+       p.historiographie,
+       p.evenements,
+       p.preparatifs,
+       p.chemin_suivi,
+       p.arrivee,
+       p.retour,
+       p.non_execution,
+       p.age,
+       p.composition_groupe,
        -- Periode historique
        COALESCE(
                        jsonb_agg(
@@ -939,6 +1038,15 @@ type GetPersonnePhysiqueByIDRow struct {
 	DateNaissance         pgtype.Text
 	DateDeces             pgtype.Text
 	Attestation           pgtype.Text
+	Historiographie       pgtype.Text
+	Evenements            pgtype.Text
+	Preparatifs           pgtype.Text
+	CheminSuivi           pgtype.Text
+	Arrivee               pgtype.Text
+	Retour                pgtype.Text
+	NonExecution          pgtype.Text
+	Age                   pgtype.Text
+	CompositionGroupe     pgtype.Text
 	HistoricalPeriod      interface{}
 	Bibliographie         pgtype.Text
 	ElementsBiographiques pgtype.Text
@@ -978,6 +1086,15 @@ func (q *Queries) GetPersonnePhysiqueByID(ctx context.Context, idPersPhysique in
 		&i.DateNaissance,
 		&i.DateDeces,
 		&i.Attestation,
+		&i.Historiographie,
+		&i.Evenements,
+		&i.Preparatifs,
+		&i.CheminSuivi,
+		&i.Arrivee,
+		&i.Retour,
+		&i.NonExecution,
+		&i.Age,
+		&i.CompositionGroupe,
 		&i.HistoricalPeriod,
 		&i.Bibliographie,
 		&i.ElementsBiographiques,

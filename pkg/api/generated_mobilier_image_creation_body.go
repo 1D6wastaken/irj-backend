@@ -86,6 +86,33 @@ type MobilierImageCreationBody struct {
 	// present place
 	PresentPlace string `json:"presentPlace,omitempty"`
 
+	// cote reference
+	CoteReference string `json:"cote_reference,omitempty"`
+
+	// date fabrication
+	DateFabrication string `json:"date_fabrication,omitempty"`
+
+	// auteur oeuvre
+	AuteurOeuvre string `json:"auteur_oeuvre,omitempty"`
+
+	// commanditaire
+	Commanditaire string `json:"commanditaire,omitempty"`
+
+	// emplacement
+	Emplacement string `json:"emplacement,omitempty"`
+
+	// support
+	Support string `json:"support,omitempty"`
+
+	// proprietaire actuel
+	ProprietaireActuel string `json:"proprietaire_actuel,omitempty"`
+
+	// dimensions support
+	DimensionsSupport string `json:"dimensions_support,omitempty"`
+
+	// dimensions image
+	DimensionsImage string `json:"dimensions_image,omitempty"`
+
 	// linked monuments lieux
 	LinkedMonumentsLieux []int32 `json:"linkedMonumentsLieux"`
 
