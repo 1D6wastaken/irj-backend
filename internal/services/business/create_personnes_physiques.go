@@ -271,6 +271,14 @@ func linkPersonnePhysique(ctx context.Context, s *BusinessService, exData *creat
 		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to link personnes morales document to personne physique")
 	}
 
+	err = s.postgresService.Queries.LinkPersPhyToPersPhy(ctx, queries.LinkPersPhyToPersPhyParams{
+		PersPhyIds: exData.params.LinkedPersPhysiques,
+		ID:         exData.id,
+	})
+	if err != nil {
+		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to link personnes physiques document to personne physique")
+	}
+
 	return addAuteurToPersonnePhysique
 }
 

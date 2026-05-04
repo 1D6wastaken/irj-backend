@@ -131,6 +131,9 @@ type PersonneMoraleCreationBody struct {
 	// linked mobiliers images
 	LinkedMobiliersImages []int32 `json:"linkedMobiliersImages"`
 
+	// linked pers morales
+	LinkedPersMorales []int32 `json:"linkedPersMorales"`
+
 	// linked pers physiques
 	LinkedPersPhysiques []int32 `json:"linkedPersPhysiques"`
 

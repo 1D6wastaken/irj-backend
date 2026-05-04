@@ -152,6 +152,13 @@ SELECT m.id_monument_lieu AS id,
        -- Personnes physiques (IDs uniquement)
        COALESCE(array_agg(DISTINCT cpp.pers_phy_id) FILTER (WHERE cpp.pers_phy_id IS NOT NULL),
                 '{}')     AS personnes_physiques_liees,
+       -- Monuments lieux liés (même type, symétrique)
+       COALESCE(array_agg(DISTINCT
+           CASE WHEN cmlml.monument_lieu_id_1 = m.id_monument_lieu
+                THEN cmlml.monument_lieu_id_2
+                ELSE cmlml.monument_lieu_id_1
+           END) FILTER (WHERE cmlml.monument_lieu_id_1 IS NOT NULL),
+                '{}')     AS monuments_lieux_liees,
        -- Siècles
        COALESCE(
                        jsonb_agg(
@@ -192,6 +199,7 @@ FROM t_monuments_lieux m
          LEFT JOIN cor_monu_lieu_mob_img cmi ON m.id_monument_lieu = cmi.monument_lieu_id
          LEFT JOIN cor_monu_lieu_pers_mo cpm ON m.id_monument_lieu = cpm.monument_lieu_id
          LEFT JOIN cor_monu_lieu_pers_phy cpp ON m.id_monument_lieu = cpp.monu_lieu_id
+         LEFT JOIN cor_monu_lieu_monu_lieu cmlml ON m.id_monument_lieu = cmlml.monument_lieu_id_1 OR m.id_monument_lieu = cmlml.monument_lieu_id_2
          LEFT JOIN cor_siecles_monu_lieu csl ON m.id_monument_lieu = csl.monument_lieu_id
          LEFT JOIN bib_siecle bs ON csl.siecle_monu_lieu_id = bs.id_siecle
          LEFT JOIN cor_themes_monu_lieu ctml ON m.id_monument_lieu = ctml.monu_lieu_id
@@ -272,6 +280,13 @@ SELECT m.id_monument_lieu     AS id,
        -- Personnes physiques (IDs uniquement)
        COALESCE(array_agg(DISTINCT cpp.pers_phy_id) FILTER (WHERE cpp.pers_phy_id IS NOT NULL),
                 '{}')         AS personnes_physiques_liees,
+       -- Monuments lieux liés (même type, symétrique)
+       COALESCE(array_agg(DISTINCT
+           CASE WHEN cmlml.monument_lieu_id_1 = m.id_monument_lieu
+                THEN cmlml.monument_lieu_id_2
+                ELSE cmlml.monument_lieu_id_1
+           END) FILTER (WHERE cmlml.monument_lieu_id_1 IS NOT NULL),
+                '{}')         AS monuments_lieux_liees,
        -- Siècles
        COALESCE(array_agg(DISTINCT bs.siecle_list) FILTER (WHERE bs.siecle_list IS NOT NULL),
                 '{}')         AS siecles,
@@ -296,6 +311,7 @@ FROM t_monuments_lieux m
          LEFT JOIN cor_monu_lieu_mob_img cmi ON m.id_monument_lieu = cmi.monument_lieu_id
          LEFT JOIN cor_monu_lieu_pers_mo cpm ON m.id_monument_lieu = cpm.monument_lieu_id
          LEFT JOIN cor_monu_lieu_pers_phy cpp ON m.id_monument_lieu = cpp.monu_lieu_id
+         LEFT JOIN cor_monu_lieu_monu_lieu cmlml ON m.id_monument_lieu = cmlml.monument_lieu_id_1 OR m.id_monument_lieu = cmlml.monument_lieu_id_2
          LEFT JOIN cor_siecles_monu_lieu csl ON m.id_monument_lieu = csl.monument_lieu_id
          LEFT JOIN bib_siecle bs ON csl.siecle_monu_lieu_id = bs.id_siecle
          LEFT JOIN cor_themes_monu_lieu ctml ON m.id_monument_lieu = ctml.monu_lieu_id
@@ -372,6 +388,13 @@ SELECT m.id_monument_lieu     AS id,
        -- Personnes physiques (IDs uniquement)
        COALESCE(array_agg(DISTINCT cpp.pers_phy_id) FILTER (WHERE cpp.pers_phy_id IS NOT NULL),
                 '{}')         AS personnes_physiques_liees,
+       -- Monuments lieux liés (même type, symétrique)
+       COALESCE(array_agg(DISTINCT
+           CASE WHEN cmlml.monument_lieu_id_1 = m.id_monument_lieu
+                THEN cmlml.monument_lieu_id_2
+                ELSE cmlml.monument_lieu_id_1
+           END) FILTER (WHERE cmlml.monument_lieu_id_1 IS NOT NULL),
+                '{}')         AS monuments_lieux_liees,
        -- Siècles
        COALESCE(array_agg(DISTINCT bs.siecle_list) FILTER (WHERE bs.siecle_list IS NOT NULL),
                 '{}')         AS siecles,
@@ -396,6 +419,7 @@ FROM t_monuments_lieux m
          LEFT JOIN cor_monu_lieu_mob_img cmi ON m.id_monument_lieu = cmi.monument_lieu_id
          LEFT JOIN cor_monu_lieu_pers_mo cpm ON m.id_monument_lieu = cpm.monument_lieu_id
          LEFT JOIN cor_monu_lieu_pers_phy cpp ON m.id_monument_lieu = cpp.monu_lieu_id
+         LEFT JOIN cor_monu_lieu_monu_lieu cmlml ON m.id_monument_lieu = cmlml.monument_lieu_id_1 OR m.id_monument_lieu = cmlml.monument_lieu_id_2
          LEFT JOIN cor_siecles_monu_lieu csl ON m.id_monument_lieu = csl.monument_lieu_id
          LEFT JOIN bib_siecle bs ON csl.siecle_monu_lieu_id = bs.id_siecle
          LEFT JOIN cor_themes_monu_lieu ctml ON m.id_monument_lieu = ctml.monu_lieu_id
@@ -578,3 +602,14 @@ WHERE monument_lieu_id = sqlc.arg(id);
 DELETE
 FROM cor_monu_lieu_pers_phy
 WHERE monu_lieu_id = sqlc.arg(id);
+
+-- name: LinkMonuLieuToMonuLieu :exec
+INSERT INTO cor_monu_lieu_monu_lieu
+    (monument_lieu_id_1, monument_lieu_id_2)
+SELECT sqlc.arg(id), unnest(sqlc.arg(monu_lieu_ids)::int[]);
+
+-- name: UnlinkMonuLieuFromMonuLieu :exec
+DELETE
+FROM cor_monu_lieu_monu_lieu
+WHERE monument_lieu_id_1 = sqlc.arg(id)
+   OR monument_lieu_id_2 = sqlc.arg(id);

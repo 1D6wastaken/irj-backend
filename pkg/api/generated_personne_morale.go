@@ -149,6 +149,9 @@ type PersonneMorale struct {
 	// linked furniture images
 	LinkedFurnitureImages []int32 `json:"linked_furniture_images"`
 
+	// linked legal entities
+	LinkedLegalEntities []int32 `json:"linked_legal_entities"`
+
 	// themes
 	Themes []*BasicFilter `json:"themes"`
 

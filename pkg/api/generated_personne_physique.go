@@ -137,6 +137,9 @@ type PersonnePhysique struct {
 	// linked furniture images
 	LinkedFurnitureImages []int32 `json:"linked_furniture_images"`
 
+	// linked individuals
+	LinkedIndividuals []int32 `json:"linked_individuals"`
+
 	// themes
 	Themes []*BasicFilter `json:"themes"`
 

@@ -125,6 +125,9 @@ type MonumentLieu struct {
 	// linked legal entities
 	LinkedLegalEntities []int32 `json:"linked_legal_entities"`
 
+	// linked monuments places
+	LinkedMonumentsPlaces []int32 `json:"linked_monuments_places"`
+
 	// themes
 	Themes []*BasicFilter `json:"themes"`
 

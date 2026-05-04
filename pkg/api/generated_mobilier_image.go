@@ -137,6 +137,9 @@ type MobilierImage struct {
 	// linked legal entities
 	LinkedLegalEntities []int32 `json:"linked_legal_entities"`
 
+	// linked furniture images
+	LinkedFurnitureImages []int32 `json:"linked_furniture_images"`
+
 	// themes
 	Themes []*BasicFilter `json:"themes"`
 

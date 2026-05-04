@@ -262,6 +262,7 @@ func (b *BusinessService) GetMobilierImage(w http.ResponseWriter, r *http.Reques
 		LinkedMonumentsPlaces: collections.InterfaceToInt32Slice(mobilier.MonumentsLieuxLiees),
 		LinkedIndividuals:     collections.InterfaceToInt32Slice(mobilier.PersonnesPhysiquesLiees),
 		LinkedLegalEntities:   collections.InterfaceToInt32Slice(mobilier.PersonnesMoralesLiees),
+		LinkedFurnitureImages: collections.InterfaceToInt32Slice(mobilier.MobiliersImagesLiees),
 		Themes:                interfaceSliceToBasicFilterSlice(mobilier.Themes.([]any)),
 		ParentID:              mobilier.ParentID.Int32,
 		TemoinComment:         mobilier.TemoinCommentaires.String,

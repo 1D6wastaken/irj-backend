@@ -398,6 +398,13 @@ SELECT m.id_monument_lieu     AS id,
        -- Personnes physiques (IDs uniquement)
        COALESCE(array_agg(DISTINCT cpp.pers_phy_id) FILTER (WHERE cpp.pers_phy_id IS NOT NULL),
                 '{}')         AS personnes_physiques_liees,
+       -- Monuments lieux liés (même type, symétrique)
+       COALESCE(array_agg(DISTINCT
+           CASE WHEN cmlml.monument_lieu_id_1 = m.id_monument_lieu
+                THEN cmlml.monument_lieu_id_2
+                ELSE cmlml.monument_lieu_id_1
+           END) FILTER (WHERE cmlml.monument_lieu_id_1 IS NOT NULL),
+                '{}')         AS monuments_lieux_liees,
        -- Siècles
        COALESCE(array_agg(DISTINCT bs.siecle_list) FILTER (WHERE bs.siecle_list IS NOT NULL),
                 '{}')         AS siecles,
@@ -422,6 +429,7 @@ FROM t_monuments_lieux m
          LEFT JOIN cor_monu_lieu_mob_img cmi ON m.id_monument_lieu = cmi.monument_lieu_id
          LEFT JOIN cor_monu_lieu_pers_mo cpm ON m.id_monument_lieu = cpm.monument_lieu_id
          LEFT JOIN cor_monu_lieu_pers_phy cpp ON m.id_monument_lieu = cpp.monu_lieu_id
+         LEFT JOIN cor_monu_lieu_monu_lieu cmlml ON m.id_monument_lieu = cmlml.monument_lieu_id_1 OR m.id_monument_lieu = cmlml.monument_lieu_id_2
          LEFT JOIN cor_siecles_monu_lieu csl ON m.id_monument_lieu = csl.monument_lieu_id
          LEFT JOIN bib_siecle bs ON csl.siecle_monu_lieu_id = bs.id_siecle
          LEFT JOIN cor_themes_monu_lieu ctml ON m.id_monument_lieu = ctml.monu_lieu_id
@@ -466,6 +474,7 @@ type GetDraftMonumentsLieuxRow struct {
 	MobiliersImagesLiees    interface{}
 	PersonnesMoralesLiees   interface{}
 	PersonnesPhysiquesLiees interface{}
+	MonumentsLieuxLiees     interface{}
 	Siecles                 interface{}
 	Themes                  interface{}
 }
@@ -514,6 +523,7 @@ func (q *Queries) GetDraftMonumentsLieux(ctx context.Context, userID pgtype.Text
 			&i.MobiliersImagesLiees,
 			&i.PersonnesMoralesLiees,
 			&i.PersonnesPhysiquesLiees,
+			&i.MonumentsLieuxLiees,
 			&i.Siecles,
 			&i.Themes,
 		); err != nil {
@@ -748,6 +758,13 @@ SELECT m.id_monument_lieu AS id,
        -- Personnes physiques (IDs uniquement)
        COALESCE(array_agg(DISTINCT cpp.pers_phy_id) FILTER (WHERE cpp.pers_phy_id IS NOT NULL),
                 '{}')     AS personnes_physiques_liees,
+       -- Monuments lieux liés (même type, symétrique)
+       COALESCE(array_agg(DISTINCT
+           CASE WHEN cmlml.monument_lieu_id_1 = m.id_monument_lieu
+                THEN cmlml.monument_lieu_id_2
+                ELSE cmlml.monument_lieu_id_1
+           END) FILTER (WHERE cmlml.monument_lieu_id_1 IS NOT NULL),
+                '{}')     AS monuments_lieux_liees,
        -- Siècles
        COALESCE(
                        jsonb_agg(
@@ -788,6 +805,7 @@ FROM t_monuments_lieux m
          LEFT JOIN cor_monu_lieu_mob_img cmi ON m.id_monument_lieu = cmi.monument_lieu_id
          LEFT JOIN cor_monu_lieu_pers_mo cpm ON m.id_monument_lieu = cpm.monument_lieu_id
          LEFT JOIN cor_monu_lieu_pers_phy cpp ON m.id_monument_lieu = cpp.monu_lieu_id
+         LEFT JOIN cor_monu_lieu_monu_lieu cmlml ON m.id_monument_lieu = cmlml.monument_lieu_id_1 OR m.id_monument_lieu = cmlml.monument_lieu_id_2
          LEFT JOIN cor_siecles_monu_lieu csl ON m.id_monument_lieu = csl.monument_lieu_id
          LEFT JOIN bib_siecle bs ON csl.siecle_monu_lieu_id = bs.id_siecle
          LEFT JOIN cor_themes_monu_lieu ctml ON m.id_monument_lieu = ctml.monu_lieu_id
@@ -835,6 +853,7 @@ type GetMonumentLieuByIDRow struct {
 	MobiliersImagesLiees    interface{}
 	PersonnesMoralesLiees   interface{}
 	PersonnesPhysiquesLiees interface{}
+	MonumentsLieuxLiees     interface{}
 	Centuries               interface{}
 	Themes                  interface{}
 	PublicationStatus       PublicationStatus
@@ -879,6 +898,7 @@ func (q *Queries) GetMonumentLieuByID(ctx context.Context, idMonumentLieu int32)
 		&i.MobiliersImagesLiees,
 		&i.PersonnesMoralesLiees,
 		&i.PersonnesPhysiquesLiees,
+		&i.MonumentsLieuxLiees,
 		&i.Centuries,
 		&i.Themes,
 		&i.PublicationStatus,
@@ -956,6 +976,13 @@ SELECT m.id_monument_lieu     AS id,
        -- Personnes physiques (IDs uniquement)
        COALESCE(array_agg(DISTINCT cpp.pers_phy_id) FILTER (WHERE cpp.pers_phy_id IS NOT NULL),
                 '{}')         AS personnes_physiques_liees,
+       -- Monuments lieux liés (même type, symétrique)
+       COALESCE(array_agg(DISTINCT
+           CASE WHEN cmlml.monument_lieu_id_1 = m.id_monument_lieu
+                THEN cmlml.monument_lieu_id_2
+                ELSE cmlml.monument_lieu_id_1
+           END) FILTER (WHERE cmlml.monument_lieu_id_1 IS NOT NULL),
+                '{}')         AS monuments_lieux_liees,
        -- Siècles
        COALESCE(array_agg(DISTINCT bs.siecle_list) FILTER (WHERE bs.siecle_list IS NOT NULL),
                 '{}')         AS siecles,
@@ -980,6 +1007,7 @@ FROM t_monuments_lieux m
          LEFT JOIN cor_monu_lieu_mob_img cmi ON m.id_monument_lieu = cmi.monument_lieu_id
          LEFT JOIN cor_monu_lieu_pers_mo cpm ON m.id_monument_lieu = cpm.monument_lieu_id
          LEFT JOIN cor_monu_lieu_pers_phy cpp ON m.id_monument_lieu = cpp.monu_lieu_id
+         LEFT JOIN cor_monu_lieu_monu_lieu cmlml ON m.id_monument_lieu = cmlml.monument_lieu_id_1 OR m.id_monument_lieu = cmlml.monument_lieu_id_2
          LEFT JOIN cor_siecles_monu_lieu csl ON m.id_monument_lieu = csl.monument_lieu_id
          LEFT JOIN bib_siecle bs ON csl.siecle_monu_lieu_id = bs.id_siecle
          LEFT JOIN cor_themes_monu_lieu ctml ON m.id_monument_lieu = ctml.monu_lieu_id
@@ -1023,6 +1051,7 @@ type GetPendingMonumentsLieuxRow struct {
 	MobiliersImagesLiees    interface{}
 	PersonnesMoralesLiees   interface{}
 	PersonnesPhysiquesLiees interface{}
+	MonumentsLieuxLiees     interface{}
 	Siecles                 interface{}
 	Themes                  interface{}
 }
@@ -1071,6 +1100,7 @@ func (q *Queries) GetPendingMonumentsLieux(ctx context.Context) ([]GetPendingMon
 			&i.MobiliersImagesLiees,
 			&i.PersonnesMoralesLiees,
 			&i.PersonnesPhysiquesLiees,
+			&i.MonumentsLieuxLiees,
 			&i.Siecles,
 			&i.Themes,
 		); err != nil {
@@ -1097,6 +1127,22 @@ type LinkMonuLieuToMobImgParams struct {
 
 func (q *Queries) LinkMonuLieuToMobImg(ctx context.Context, arg LinkMonuLieuToMobImgParams) error {
 	_, err := q.db.Exec(ctx, linkMonuLieuToMobImg, arg.ID, arg.MobImgIds)
+	return err
+}
+
+const linkMonuLieuToMonuLieu = `-- name: LinkMonuLieuToMonuLieu :exec
+INSERT INTO cor_monu_lieu_monu_lieu
+    (monument_lieu_id_1, monument_lieu_id_2)
+SELECT $1, unnest($2::int[])
+`
+
+type LinkMonuLieuToMonuLieuParams struct {
+	ID          int32
+	MonuLieuIds []int32
+}
+
+func (q *Queries) LinkMonuLieuToMonuLieu(ctx context.Context, arg LinkMonuLieuToMonuLieuParams) error {
+	_, err := q.db.Exec(ctx, linkMonuLieuToMonuLieu, arg.ID, arg.MonuLieuIds)
 	return err
 }
 
@@ -1152,6 +1198,18 @@ WHERE monument_lieu_id = $1
 
 func (q *Queries) UnlinkMonuLieuFromMobImg(ctx context.Context, id int32) error {
 	_, err := q.db.Exec(ctx, unlinkMonuLieuFromMobImg, id)
+	return err
+}
+
+const unlinkMonuLieuFromMonuLieu = `-- name: UnlinkMonuLieuFromMonuLieu :exec
+DELETE
+FROM cor_monu_lieu_monu_lieu
+WHERE monument_lieu_id_1 = $1
+   OR monument_lieu_id_2 = $1
+`
+
+func (q *Queries) UnlinkMonuLieuFromMonuLieu(ctx context.Context, id int32) error {
+	_, err := q.db.Exec(ctx, unlinkMonuLieuFromMonuLieu, id)
 	return err
 }
 

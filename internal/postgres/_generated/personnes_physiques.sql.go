@@ -416,6 +416,13 @@ SELECT p.id_pers_physique     AS id,
        -- Personnes morales (IDs uniquement)
        COALESCE(array_agg(DISTINCT cppmo.pers_morale_id) FILTER (WHERE cppmo.pers_morale_id IS NOT NULL),
                 '{}')         AS personnes_morales_liees,
+       -- Personnes physiques liées (self-link)
+       COALESCE(array_agg(DISTINCT
+           CASE WHEN cphph.pers_physique_id_1 = p.id_pers_physique
+                THEN cphph.pers_physique_id_2
+                ELSE cphph.pers_physique_id_1
+           END) FILTER (WHERE cphph.pers_physique_id_1 IS NOT NULL),
+                '{}')         AS personnes_physiques_liees,
        -- Siècles
        COALESCE(array_agg(DISTINCT bs.siecle_list) FILTER (WHERE bs.siecle_list IS NOT NULL),
                 '{}')         AS siecles,
@@ -440,6 +447,7 @@ FROM t_pers_physiques p
          LEFT JOIN cor_monu_lieu_pers_phy cml ON p.id_pers_physique = cml.pers_phy_id
          LEFT JOIN cor_mob_img_pers_phy cpm ON p.id_pers_physique = cpm.pers_physique_id
          LEFT JOIN cor_pers_phy_pers_mo cppmo ON p.id_pers_physique = cppmo.pers_physique_id
+         LEFT JOIN cor_pers_phy_pers_phy cphph ON p.id_pers_physique = cphph.pers_physique_id_1 OR p.id_pers_physique = cphph.pers_physique_id_2
          LEFT JOIN cor_siecles_pers_phy csp ON p.id_pers_physique = csp.pers_physique_id
          LEFT JOIN bib_siecle bs ON csp.siecle_pers_phy_id = bs.id_siecle
          LEFT JOIN cor_themes_pers_phy ctpp ON p.id_pers_physique = ctpp.pers_phy_id
@@ -450,46 +458,47 @@ GROUP BY p.id_pers_physique
 `
 
 type GetDraftPersonnesPhysiquesRow struct {
-	ID                    int32
-	Firstname             pgtype.Text
-	DateNaissance         pgtype.Text
-	DateDeces             pgtype.Text
-	Attestation           pgtype.Text
-	Historiographie       pgtype.Text
-	Evenements            pgtype.Text
-	Preparatifs           pgtype.Text
-	CheminSuivi           pgtype.Text
-	Arrivee               pgtype.Text
-	Retour                pgtype.Text
-	NonExecution          pgtype.Text
-	Age                   pgtype.Text
-	CompositionGroupe     pgtype.Text
-	HistoricalPeriod      interface{}
-	Bibliographie         pgtype.Text
-	ElementsBiographiques pgtype.Text
-	ElementsPelerinage    pgtype.Text
-	CommutationVoeu       pgtype.Text
-	Sources               pgtype.Text
-	DateCreation          pgtype.Date
-	DateMaj               pgtype.Date
-	Publie                pgtype.Bool
-	Contributeurs         pgtype.Text
-	Commentaires          pgtype.Text
-	ParentID              pgtype.Int4
-	Redacteurs            interface{}
-	Commune               interface{}
-	Departement           interface{}
-	Region                interface{}
-	Pays                  interface{}
-	Travels               interface{}
-	Professions           interface{}
-	NatureEvenement       pgtype.Text
-	Medias                interface{}
-	MonumentsLieuxLiees   interface{}
-	MobiliersImagesLiees  interface{}
-	PersonnesMoralesLiees interface{}
-	Siecles               interface{}
-	Themes                interface{}
+	ID                      int32
+	Firstname               pgtype.Text
+	DateNaissance           pgtype.Text
+	DateDeces               pgtype.Text
+	Attestation             pgtype.Text
+	Historiographie         pgtype.Text
+	Evenements              pgtype.Text
+	Preparatifs             pgtype.Text
+	CheminSuivi             pgtype.Text
+	Arrivee                 pgtype.Text
+	Retour                  pgtype.Text
+	NonExecution            pgtype.Text
+	Age                     pgtype.Text
+	CompositionGroupe       pgtype.Text
+	HistoricalPeriod        interface{}
+	Bibliographie           pgtype.Text
+	ElementsBiographiques   pgtype.Text
+	ElementsPelerinage      pgtype.Text
+	CommutationVoeu         pgtype.Text
+	Sources                 pgtype.Text
+	DateCreation            pgtype.Date
+	DateMaj                 pgtype.Date
+	Publie                  pgtype.Bool
+	Contributeurs           pgtype.Text
+	Commentaires            pgtype.Text
+	ParentID                pgtype.Int4
+	Redacteurs              interface{}
+	Commune                 interface{}
+	Departement             interface{}
+	Region                  interface{}
+	Pays                    interface{}
+	Travels                 interface{}
+	Professions             interface{}
+	NatureEvenement         pgtype.Text
+	Medias                  interface{}
+	MonumentsLieuxLiees     interface{}
+	MobiliersImagesLiees    interface{}
+	PersonnesMoralesLiees   interface{}
+	PersonnesPhysiquesLiees interface{}
+	Siecles                 interface{}
+	Themes                  interface{}
 }
 
 func (q *Queries) GetDraftPersonnesPhysiques(ctx context.Context, userID pgtype.Text) ([]GetDraftPersonnesPhysiquesRow, error) {
@@ -540,6 +549,7 @@ func (q *Queries) GetDraftPersonnesPhysiques(ctx context.Context, userID pgtype.
 			&i.MonumentsLieuxLiees,
 			&i.MobiliersImagesLiees,
 			&i.PersonnesMoralesLiees,
+			&i.PersonnesPhysiquesLiees,
 			&i.Siecles,
 			&i.Themes,
 		); err != nil {
@@ -731,6 +741,13 @@ SELECT p.id_pers_physique     AS id,
        -- Personnes morales (IDs uniquement)
        COALESCE(array_agg(DISTINCT cppmo.pers_morale_id) FILTER (WHERE cppmo.pers_morale_id IS NOT NULL),
                 '{}')         AS personnes_morales_liees,
+       -- Personnes physiques liées (self-link)
+       COALESCE(array_agg(DISTINCT
+           CASE WHEN cphph.pers_physique_id_1 = p.id_pers_physique
+                THEN cphph.pers_physique_id_2
+                ELSE cphph.pers_physique_id_1
+           END) FILTER (WHERE cphph.pers_physique_id_1 IS NOT NULL),
+                '{}')         AS personnes_physiques_liees,
        -- Siècles
        COALESCE(array_agg(DISTINCT bs.siecle_list) FILTER (WHERE bs.siecle_list IS NOT NULL),
                 '{}')         AS siecles,
@@ -755,6 +772,7 @@ FROM t_pers_physiques p
          LEFT JOIN cor_monu_lieu_pers_phy cml ON p.id_pers_physique = cml.pers_phy_id
          LEFT JOIN cor_mob_img_pers_phy cpm ON p.id_pers_physique = cpm.pers_physique_id
          LEFT JOIN cor_pers_phy_pers_mo cppmo ON p.id_pers_physique = cppmo.pers_physique_id
+         LEFT JOIN cor_pers_phy_pers_phy cphph ON p.id_pers_physique = cphph.pers_physique_id_1 OR p.id_pers_physique = cphph.pers_physique_id_2
          LEFT JOIN cor_siecles_pers_phy csp ON p.id_pers_physique = csp.pers_physique_id
          LEFT JOIN bib_siecle bs ON csp.siecle_pers_phy_id = bs.id_siecle
          LEFT JOIN cor_themes_pers_phy ctpp ON p.id_pers_physique = ctpp.pers_phy_id
@@ -764,46 +782,47 @@ GROUP BY p.id_pers_physique
 `
 
 type GetPendingPersonnesPhysiquesRow struct {
-	ID                    int32
-	Firstname             pgtype.Text
-	DateNaissance         pgtype.Text
-	DateDeces             pgtype.Text
-	Attestation           pgtype.Text
-	Historiographie       pgtype.Text
-	Evenements            pgtype.Text
-	Preparatifs           pgtype.Text
-	CheminSuivi           pgtype.Text
-	Arrivee               pgtype.Text
-	Retour                pgtype.Text
-	NonExecution          pgtype.Text
-	Age                   pgtype.Text
-	CompositionGroupe     pgtype.Text
-	HistoricalPeriod      interface{}
-	Bibliographie         pgtype.Text
-	ElementsBiographiques pgtype.Text
-	ElementsPelerinage    pgtype.Text
-	CommutationVoeu       pgtype.Text
-	Sources               pgtype.Text
-	DateCreation          pgtype.Date
-	DateMaj               pgtype.Date
-	Publie                pgtype.Bool
-	Contributeurs         pgtype.Text
-	Commentaires          pgtype.Text
-	ParentID              pgtype.Int4
-	Redacteurs            interface{}
-	Commune               interface{}
-	Departement           interface{}
-	Region                interface{}
-	Pays                  interface{}
-	Travels               interface{}
-	Professions           interface{}
-	NatureEvenement       pgtype.Text
-	Medias                interface{}
-	MonumentsLieuxLiees   interface{}
-	MobiliersImagesLiees  interface{}
-	PersonnesMoralesLiees interface{}
-	Siecles               interface{}
-	Themes                interface{}
+	ID                      int32
+	Firstname               pgtype.Text
+	DateNaissance           pgtype.Text
+	DateDeces               pgtype.Text
+	Attestation             pgtype.Text
+	Historiographie         pgtype.Text
+	Evenements              pgtype.Text
+	Preparatifs             pgtype.Text
+	CheminSuivi             pgtype.Text
+	Arrivee                 pgtype.Text
+	Retour                  pgtype.Text
+	NonExecution            pgtype.Text
+	Age                     pgtype.Text
+	CompositionGroupe       pgtype.Text
+	HistoricalPeriod        interface{}
+	Bibliographie           pgtype.Text
+	ElementsBiographiques   pgtype.Text
+	ElementsPelerinage      pgtype.Text
+	CommutationVoeu         pgtype.Text
+	Sources                 pgtype.Text
+	DateCreation            pgtype.Date
+	DateMaj                 pgtype.Date
+	Publie                  pgtype.Bool
+	Contributeurs           pgtype.Text
+	Commentaires            pgtype.Text
+	ParentID                pgtype.Int4
+	Redacteurs              interface{}
+	Commune                 interface{}
+	Departement             interface{}
+	Region                  interface{}
+	Pays                    interface{}
+	Travels                 interface{}
+	Professions             interface{}
+	NatureEvenement         pgtype.Text
+	Medias                  interface{}
+	MonumentsLieuxLiees     interface{}
+	MobiliersImagesLiees    interface{}
+	PersonnesMoralesLiees   interface{}
+	PersonnesPhysiquesLiees interface{}
+	Siecles                 interface{}
+	Themes                  interface{}
 }
 
 func (q *Queries) GetPendingPersonnesPhysiques(ctx context.Context) ([]GetPendingPersonnesPhysiquesRow, error) {
@@ -854,6 +873,7 @@ func (q *Queries) GetPendingPersonnesPhysiques(ctx context.Context) ([]GetPendin
 			&i.MonumentsLieuxLiees,
 			&i.MobiliersImagesLiees,
 			&i.PersonnesMoralesLiees,
+			&i.PersonnesPhysiquesLiees,
 			&i.Siecles,
 			&i.Themes,
 		); err != nil {
@@ -980,6 +1000,13 @@ SELECT p.id_pers_physique    AS id,
        -- Personnes morales (IDs uniquement)
        COALESCE(array_agg(DISTINCT cppmo.pers_morale_id) FILTER (WHERE cppmo.pers_morale_id IS NOT NULL),
                 '{}')        AS personnes_morales_liees,
+       -- Personnes physiques liées (self-link)
+       COALESCE(array_agg(DISTINCT
+           CASE WHEN cphph.pers_physique_id_1 = p.id_pers_physique
+                THEN cphph.pers_physique_id_2
+                ELSE cphph.pers_physique_id_1
+           END) FILTER (WHERE cphph.pers_physique_id_1 IS NOT NULL),
+                '{}')        AS personnes_physiques_liees,
        -- Siècles
        COALESCE(
                        jsonb_agg(
@@ -1020,6 +1047,7 @@ FROM t_pers_physiques p
          LEFT JOIN cor_monu_lieu_pers_phy cml ON p.id_pers_physique = cml.pers_phy_id
          LEFT JOIN cor_mob_img_pers_phy cpm ON p.id_pers_physique = cpm.pers_physique_id
          LEFT JOIN cor_pers_phy_pers_mo cppmo ON p.id_pers_physique = cppmo.pers_physique_id
+         LEFT JOIN cor_pers_phy_pers_phy cphph ON p.id_pers_physique = cphph.pers_physique_id_1 OR p.id_pers_physique = cphph.pers_physique_id_2
          LEFT JOIN cor_siecles_pers_phy csp ON p.id_pers_physique = csp.pers_physique_id
          LEFT JOIN bib_siecle bs ON csp.siecle_pers_phy_id = bs.id_siecle
          LEFT JOIN cor_themes_pers_phy ctpp ON p.id_pers_physique = ctpp.pers_phy_id
@@ -1033,48 +1061,49 @@ GROUP BY p.id_pers_physique,
 `
 
 type GetPersonnePhysiqueByIDRow struct {
-	ID                    int32
-	Firstname             pgtype.Text
-	DateNaissance         pgtype.Text
-	DateDeces             pgtype.Text
-	Attestation           pgtype.Text
-	Historiographie       pgtype.Text
-	Evenements            pgtype.Text
-	Preparatifs           pgtype.Text
-	CheminSuivi           pgtype.Text
-	Arrivee               pgtype.Text
-	Retour                pgtype.Text
-	NonExecution          pgtype.Text
-	Age                   pgtype.Text
-	CompositionGroupe     pgtype.Text
-	HistoricalPeriod      interface{}
-	Bibliographie         pgtype.Text
-	ElementsBiographiques pgtype.Text
-	ElementsPelerinage    pgtype.Text
-	CommutationVoeu       pgtype.Text
-	Sources               pgtype.Text
-	DateCreation          pgtype.Date
-	DateMaj               pgtype.Date
-	Publie                pgtype.Bool
-	Contributeurs         pgtype.Text
-	Commentaires          pgtype.Text
-	UserID                pgtype.Text
-	Authors               interface{}
-	City                  []byte
-	Department            []byte
-	Region                []byte
-	Country               []byte
-	Travels               interface{}
-	Professions           interface{}
-	NatureEvenement       pgtype.Text
-	Medias                interface{}
-	MonumentsLieuxLiees   interface{}
-	MobiliersImagesLiees  interface{}
-	PersonnesMoralesLiees interface{}
-	Centuries             interface{}
-	Themes                interface{}
-	PublicationStatus     PublicationStatus
-	ParentID              pgtype.Int4
+	ID                      int32
+	Firstname               pgtype.Text
+	DateNaissance           pgtype.Text
+	DateDeces               pgtype.Text
+	Attestation             pgtype.Text
+	Historiographie         pgtype.Text
+	Evenements              pgtype.Text
+	Preparatifs             pgtype.Text
+	CheminSuivi             pgtype.Text
+	Arrivee                 pgtype.Text
+	Retour                  pgtype.Text
+	NonExecution            pgtype.Text
+	Age                     pgtype.Text
+	CompositionGroupe       pgtype.Text
+	HistoricalPeriod        interface{}
+	Bibliographie           pgtype.Text
+	ElementsBiographiques   pgtype.Text
+	ElementsPelerinage      pgtype.Text
+	CommutationVoeu         pgtype.Text
+	Sources                 pgtype.Text
+	DateCreation            pgtype.Date
+	DateMaj                 pgtype.Date
+	Publie                  pgtype.Bool
+	Contributeurs           pgtype.Text
+	Commentaires            pgtype.Text
+	UserID                  pgtype.Text
+	Authors                 interface{}
+	City                    []byte
+	Department              []byte
+	Region                  []byte
+	Country                 []byte
+	Travels                 interface{}
+	Professions             interface{}
+	NatureEvenement         pgtype.Text
+	Medias                  interface{}
+	MonumentsLieuxLiees     interface{}
+	MobiliersImagesLiees    interface{}
+	PersonnesMoralesLiees   interface{}
+	PersonnesPhysiquesLiees interface{}
+	Centuries               interface{}
+	Themes                  interface{}
+	PublicationStatus       PublicationStatus
+	ParentID                pgtype.Int4
 }
 
 func (q *Queries) GetPersonnePhysiqueByID(ctx context.Context, idPersPhysique int32) (GetPersonnePhysiqueByIDRow, error) {
@@ -1119,6 +1148,7 @@ func (q *Queries) GetPersonnePhysiqueByID(ctx context.Context, idPersPhysique in
 		&i.MonumentsLieuxLiees,
 		&i.MobiliersImagesLiees,
 		&i.PersonnesMoralesLiees,
+		&i.PersonnesPhysiquesLiees,
 		&i.Centuries,
 		&i.Themes,
 		&i.PublicationStatus,
@@ -1175,6 +1205,22 @@ func (q *Queries) LinkPersPhyToPersMo(ctx context.Context, arg LinkPersPhyToPers
 	return err
 }
 
+const linkPersPhyToPersPhy = `-- name: LinkPersPhyToPersPhy :exec
+INSERT INTO cor_pers_phy_pers_phy
+    (pers_physique_id_1, pers_physique_id_2)
+SELECT $1, unnest($2::int[])
+`
+
+type LinkPersPhyToPersPhyParams struct {
+	ID         int32
+	PersPhyIds []int32
+}
+
+func (q *Queries) LinkPersPhyToPersPhy(ctx context.Context, arg LinkPersPhyToPersPhyParams) error {
+	_, err := q.db.Exec(ctx, linkPersPhyToPersPhy, arg.ID, arg.PersPhyIds)
+	return err
+}
+
 const submitDraftPersonnePhysique = `-- name: SubmitDraftPersonnePhysique :exec
 UPDATE t_pers_physiques
 SET publication_status = 'PENDING'
@@ -1217,6 +1263,18 @@ WHERE pers_physique_id = $1
 
 func (q *Queries) UnlinkPersPhyFromPersMo(ctx context.Context, id int32) error {
 	_, err := q.db.Exec(ctx, unlinkPersPhyFromPersMo, id)
+	return err
+}
+
+const unlinkPersPhyFromPersPhy = `-- name: UnlinkPersPhyFromPersPhy :exec
+DELETE
+FROM cor_pers_phy_pers_phy
+WHERE pers_physique_id_1 = $1
+   OR pers_physique_id_2 = $1
+`
+
+func (q *Queries) UnlinkPersPhyFromPersPhy(ctx context.Context, id int32) error {
+	_, err := q.db.Exec(ctx, unlinkPersPhyFromPersPhy, id)
 	return err
 }
 

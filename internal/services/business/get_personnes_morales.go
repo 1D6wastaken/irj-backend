@@ -259,6 +259,7 @@ func (b *BusinessService) GetPersonneMorale(w http.ResponseWriter, r *http.Reque
 		LinkedMonumentsPlaces: collections.InterfaceToInt32Slice(pmo.MonumentsLieuxLiees),
 		LinkedIndividuals:     collections.InterfaceToInt32Slice(pmo.PersonnesPhysiquesLiees),
 		LinkedFurnitureImages: collections.InterfaceToInt32Slice(pmo.MobiliersImagesLiees),
+		LinkedLegalEntities:   collections.InterfaceToInt32Slice(pmo.PersonnesMoralesLiees),
 		Themes:                interfaceSliceToBasicFilterSlice(pmo.Themes.([]any)),
 		ParentID:              pmo.ParentID.Int32,
 		Biens:                 pmo.Biens.String,

@@ -104,6 +104,9 @@ type MonumentsLieuxCreationBody struct {
 	// commanditaire
 	Commanditaire string `json:"commanditaire,omitempty"`
 
+	// linked monuments lieux
+	LinkedMonumentsLieux []int32 `json:"linkedMonumentsLieux"`
+
 	// linked mobiliers images
 	LinkedMobiliersImages []int32 `json:"linkedMobiliersImages"`
 

@@ -100,6 +100,11 @@ func deleteMonumentLieu(ctx context.Context, logger *zerolog.Logger, s *Business
 		logger.Error().Err(err).Int32("id", id).Msg("failed to unlink personnes physiques document from monument lieu")
 	}
 
+	err = s.postgresService.Queries.UnlinkMonuLieuFromMonuLieu(ctx, id)
+	if err != nil {
+		logger.Error().Err(err).Int32("id", id).Msg("failed to unlink monuments lieux document from monument lieu")
+	}
+
 	err = s.postgresService.Queries.DetachAuthorFromMonuLieu(ctx, id)
 	if err != nil {
 		logger.Error().Err(err).Int32("id", id).Msg("failed to detach author from monument lieu")

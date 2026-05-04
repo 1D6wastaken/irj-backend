@@ -169,6 +169,13 @@ SELECT m.id_mobilier_image AS id,
        -- Personnes physiques (IDs uniquement)
        COALESCE(array_agg(DISTINCT cpp.pers_physique_id) FILTER (WHERE cpp.pers_physique_id IS NOT NULL),
                 '{}')      AS personnes_physiques_liees,
+       -- Mobiliers images liés (même type, symétrique)
+       COALESCE(array_agg(DISTINCT
+           CASE WHEN cmimi.mobilier_image_id_1 = m.id_mobilier_image
+                THEN cmimi.mobilier_image_id_2
+                ELSE cmimi.mobilier_image_id_1
+           END) FILTER (WHERE cmimi.mobilier_image_id_1 IS NOT NULL),
+                '{}')      AS mobiliers_images_liees,
        -- Siècles
        COALESCE(
                        jsonb_agg(
@@ -211,6 +218,7 @@ FROM t_mobiliers_images m
          LEFT JOIN cor_monu_lieu_mob_img cmi ON m.id_mobilier_image = cmi.mobilier_image_id
          LEFT JOIN cor_mob_img_pers_mo cpm ON m.id_mobilier_image = cpm.mobilier_image_id
          LEFT JOIN cor_mob_img_pers_phy cpp ON m.id_mobilier_image = cpp.mobilier_image_id
+         LEFT JOIN cor_mob_img_mob_img cmimi ON m.id_mobilier_image = cmimi.mobilier_image_id_1 OR m.id_mobilier_image = cmimi.mobilier_image_id_2
          LEFT JOIN cor_siecles_mob_img csl ON m.id_mobilier_image = csl.mobilier_image_id
          LEFT JOIN bib_siecle bs ON csl.siecle_mob_img_id = bs.id_siecle
          LEFT JOIN cor_themes_mob_img ctmi ON m.id_mobilier_image = ctmi.mob_img_id
@@ -298,6 +306,13 @@ SELECT m.id_mobilier_image    AS id,
        -- Personnes physiques (IDs uniquement)
        COALESCE(array_agg(DISTINCT cpp.pers_physique_id) FILTER (WHERE cpp.pers_physique_id IS NOT NULL),
                 '{}')         AS personnes_physiques_liees,
+       -- Mobiliers images liées (self-link)
+       COALESCE(array_agg(DISTINCT
+           CASE WHEN cmimi.mobilier_image_id_1 = m.id_mobilier_image
+                THEN cmimi.mobilier_image_id_2
+                ELSE cmimi.mobilier_image_id_1
+           END) FILTER (WHERE cmimi.mobilier_image_id_1 IS NOT NULL),
+                '{}')         AS mobiliers_images_liees,
        -- Siècles
        COALESCE(array_agg(DISTINCT bs.siecle_list) FILTER (WHERE bs.siecle_list IS NOT NULL),
                 '{}')         AS siecles,
@@ -324,6 +339,7 @@ FROM t_mobiliers_images m
          LEFT JOIN cor_monu_lieu_mob_img cmi ON m.id_mobilier_image = cmi.mobilier_image_id
          LEFT JOIN cor_mob_img_pers_mo cpm ON m.id_mobilier_image = cpm.mobilier_image_id
          LEFT JOIN cor_mob_img_pers_phy cpp ON m.id_mobilier_image = cpp.mobilier_image_id
+         LEFT JOIN cor_mob_img_mob_img cmimi ON m.id_mobilier_image = cmimi.mobilier_image_id_1 OR m.id_mobilier_image = cmimi.mobilier_image_id_2
          LEFT JOIN cor_siecles_mob_img csl ON m.id_mobilier_image = csl.mobilier_image_id
          LEFT JOIN bib_siecle bs ON csl.siecle_mob_img_id = bs.id_siecle
          LEFT JOIN cor_themes_mob_img ctmi ON m.id_mobilier_image = ctmi.mob_img_id
@@ -407,6 +423,13 @@ SELECT m.id_mobilier_image    AS id,
        -- Personnes physiques (IDs uniquement)
        COALESCE(array_agg(DISTINCT cpp.pers_physique_id) FILTER (WHERE cpp.pers_physique_id IS NOT NULL),
                 '{}')         AS personnes_physiques_liees,
+       -- Mobiliers images liées (self-link)
+       COALESCE(array_agg(DISTINCT
+           CASE WHEN cmimi.mobilier_image_id_1 = m.id_mobilier_image
+                THEN cmimi.mobilier_image_id_2
+                ELSE cmimi.mobilier_image_id_1
+           END) FILTER (WHERE cmimi.mobilier_image_id_1 IS NOT NULL),
+                '{}')         AS mobiliers_images_liees,
        -- Siècles
        COALESCE(array_agg(DISTINCT bs.siecle_list) FILTER (WHERE bs.siecle_list IS NOT NULL),
                 '{}')         AS siecles,
@@ -433,6 +456,7 @@ FROM t_mobiliers_images m
          LEFT JOIN cor_monu_lieu_mob_img cmi ON m.id_mobilier_image = cmi.mobilier_image_id
          LEFT JOIN cor_mob_img_pers_mo cpm ON m.id_mobilier_image = cpm.mobilier_image_id
          LEFT JOIN cor_mob_img_pers_phy cpp ON m.id_mobilier_image = cpp.mobilier_image_id
+         LEFT JOIN cor_mob_img_mob_img cmimi ON m.id_mobilier_image = cmimi.mobilier_image_id_1 OR m.id_mobilier_image = cmimi.mobilier_image_id_2
          LEFT JOIN cor_siecles_mob_img csl ON m.id_mobilier_image = csl.mobilier_image_id
          LEFT JOIN bib_siecle bs ON csl.siecle_mob_img_id = bs.id_siecle
          LEFT JOIN cor_themes_mob_img ctmi ON m.id_mobilier_image = ctmi.mob_img_id
@@ -633,3 +657,14 @@ WHERE mobilier_image_id = sqlc.arg(id);
 DELETE
 FROM cor_mob_img_pers_phy
 WHERE mobilier_image_id = sqlc.arg(id);
+
+-- name: LinkMobImgToMobImg :exec
+INSERT INTO cor_mob_img_mob_img
+    (mobilier_image_id_1, mobilier_image_id_2)
+SELECT sqlc.arg(id), unnest(sqlc.arg(mob_img_ids)::int[]);
+
+-- name: UnlinkMobImgFromMobImg :exec
+DELETE
+FROM cor_mob_img_mob_img
+WHERE mobilier_image_id_1 = sqlc.arg(id)
+   OR mobilier_image_id_2 = sqlc.arg(id);

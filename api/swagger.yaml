@@ -2071,6 +2071,11 @@ definitions:
         items:
           type: integer
           format: int32
+      linked_individuals:
+        type: array
+        items:
+          type: integer
+          format: int32
       themes:
         type: array
         items:
@@ -2184,6 +2189,11 @@ definitions:
           type: integer
           format: int32
       linkedPersMorales:
+        type: array
+        items:
+          type: integer
+          format: int32
+      linkedPersPhysiques:
         type: array
         items:
           type: integer
@@ -2426,6 +2436,11 @@ definitions:
         items:
           type: integer
           format: int32
+      linked_legal_entities:
+        type: array
+        items:
+          type: integer
+          format: int32
       themes:
         type: array
         items:
@@ -2536,6 +2551,11 @@ definitions:
           type: integer
           format: int32
       linkedMobiliersImages:
+        type: array
+        items:
+          type: integer
+          format: int32
+      linkedPersMorales:
         type: array
         items:
           type: integer
@@ -2771,6 +2791,11 @@ definitions:
         items:
           type: integer
           format: int32
+      linked_furniture_images:
+        type: array
+        items:
+          type: integer
+          format: int32
       themes:
         type: array
         items:
@@ -2877,6 +2902,11 @@ definitions:
       dimensions_image:
         type: string
       linkedMonumentsLieux:
+        type: array
+        items:
+          type: integer
+          format: int32
+      linkedMobiliersImages:
         type: array
         items:
           type: integer
@@ -3125,6 +3155,11 @@ definitions:
         items:
           type: integer
           format: int32
+      linked_monuments_places:
+        type: array
+        items:
+          type: integer
+          format: int32
       themes:
         type: array
         items:
@@ -3272,6 +3307,11 @@ definitions:
         type: string
       commanditaire:
         type: string
+      linkedMonumentsLieux:
+        type: array
+        items:
+          type: integer
+          format: int32
       linkedMobiliersImages:
         type: array
         items:

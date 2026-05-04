@@ -448,6 +448,13 @@ SELECT m.id_mobilier_image    AS id,
        -- Personnes physiques (IDs uniquement)
        COALESCE(array_agg(DISTINCT cpp.pers_physique_id) FILTER (WHERE cpp.pers_physique_id IS NOT NULL),
                 '{}')         AS personnes_physiques_liees,
+       -- Mobiliers images liées (self-link)
+       COALESCE(array_agg(DISTINCT
+           CASE WHEN cmimi.mobilier_image_id_1 = m.id_mobilier_image
+                THEN cmimi.mobilier_image_id_2
+                ELSE cmimi.mobilier_image_id_1
+           END) FILTER (WHERE cmimi.mobilier_image_id_1 IS NOT NULL),
+                '{}')         AS mobiliers_images_liees,
        -- Siècles
        COALESCE(array_agg(DISTINCT bs.siecle_list) FILTER (WHERE bs.siecle_list IS NOT NULL),
                 '{}')         AS siecles,
@@ -474,6 +481,7 @@ FROM t_mobiliers_images m
          LEFT JOIN cor_monu_lieu_mob_img cmi ON m.id_mobilier_image = cmi.mobilier_image_id
          LEFT JOIN cor_mob_img_pers_mo cpm ON m.id_mobilier_image = cpm.mobilier_image_id
          LEFT JOIN cor_mob_img_pers_phy cpp ON m.id_mobilier_image = cpp.mobilier_image_id
+         LEFT JOIN cor_mob_img_mob_img cmimi ON m.id_mobilier_image = cmimi.mobilier_image_id_1 OR m.id_mobilier_image = cmimi.mobilier_image_id_2
          LEFT JOIN cor_siecles_mob_img csl ON m.id_mobilier_image = csl.mobilier_image_id
          LEFT JOIN bib_siecle bs ON csl.siecle_mob_img_id = bs.id_siecle
          LEFT JOIN cor_themes_mob_img ctmi ON m.id_mobilier_image = ctmi.mob_img_id
@@ -523,6 +531,7 @@ type GetDraftMobiliersImagesRow struct {
 	MonumentsLieuxLiees     interface{}
 	PersonnesMoralesLiees   interface{}
 	PersonnesPhysiquesLiees interface{}
+	MobiliersImagesLiees    interface{}
 	Siecles                 interface{}
 	Themes                  interface{}
 }
@@ -576,6 +585,7 @@ func (q *Queries) GetDraftMobiliersImages(ctx context.Context, userID pgtype.Tex
 			&i.MonumentsLieuxLiees,
 			&i.PersonnesMoralesLiees,
 			&i.PersonnesPhysiquesLiees,
+			&i.MobiliersImagesLiees,
 			&i.Siecles,
 			&i.Themes,
 		); err != nil {
@@ -829,6 +839,13 @@ SELECT m.id_mobilier_image AS id,
        -- Personnes physiques (IDs uniquement)
        COALESCE(array_agg(DISTINCT cpp.pers_physique_id) FILTER (WHERE cpp.pers_physique_id IS NOT NULL),
                 '{}')      AS personnes_physiques_liees,
+       -- Mobiliers images liés (même type, symétrique)
+       COALESCE(array_agg(DISTINCT
+           CASE WHEN cmimi.mobilier_image_id_1 = m.id_mobilier_image
+                THEN cmimi.mobilier_image_id_2
+                ELSE cmimi.mobilier_image_id_1
+           END) FILTER (WHERE cmimi.mobilier_image_id_1 IS NOT NULL),
+                '{}')      AS mobiliers_images_liees,
        -- Siècles
        COALESCE(
                        jsonb_agg(
@@ -871,6 +888,7 @@ FROM t_mobiliers_images m
          LEFT JOIN cor_monu_lieu_mob_img cmi ON m.id_mobilier_image = cmi.mobilier_image_id
          LEFT JOIN cor_mob_img_pers_mo cpm ON m.id_mobilier_image = cpm.mobilier_image_id
          LEFT JOIN cor_mob_img_pers_phy cpp ON m.id_mobilier_image = cpp.mobilier_image_id
+         LEFT JOIN cor_mob_img_mob_img cmimi ON m.id_mobilier_image = cmimi.mobilier_image_id_1 OR m.id_mobilier_image = cmimi.mobilier_image_id_2
          LEFT JOIN cor_siecles_mob_img csl ON m.id_mobilier_image = csl.mobilier_image_id
          LEFT JOIN bib_siecle bs ON csl.siecle_mob_img_id = bs.id_siecle
          LEFT JOIN cor_themes_mob_img ctmi ON m.id_mobilier_image = ctmi.mob_img_id
@@ -923,6 +941,7 @@ type GetMobilierImageByIDRow struct {
 	MonumentsLieuxLiees     interface{}
 	PersonnesMoralesLiees   interface{}
 	PersonnesPhysiquesLiees interface{}
+	MobiliersImagesLiees    interface{}
 	Centuries               interface{}
 	Themes                  interface{}
 	PublicationStatus       PublicationStatus
@@ -972,6 +991,7 @@ func (q *Queries) GetMobilierImageByID(ctx context.Context, idMobilierImage int3
 		&i.MonumentsLieuxLiees,
 		&i.PersonnesMoralesLiees,
 		&i.PersonnesPhysiquesLiees,
+		&i.MobiliersImagesLiees,
 		&i.Centuries,
 		&i.Themes,
 		&i.PublicationStatus,
@@ -1056,6 +1076,13 @@ SELECT m.id_mobilier_image    AS id,
        -- Personnes physiques (IDs uniquement)
        COALESCE(array_agg(DISTINCT cpp.pers_physique_id) FILTER (WHERE cpp.pers_physique_id IS NOT NULL),
                 '{}')         AS personnes_physiques_liees,
+       -- Mobiliers images liées (self-link)
+       COALESCE(array_agg(DISTINCT
+           CASE WHEN cmimi.mobilier_image_id_1 = m.id_mobilier_image
+                THEN cmimi.mobilier_image_id_2
+                ELSE cmimi.mobilier_image_id_1
+           END) FILTER (WHERE cmimi.mobilier_image_id_1 IS NOT NULL),
+                '{}')         AS mobiliers_images_liees,
        -- Siècles
        COALESCE(array_agg(DISTINCT bs.siecle_list) FILTER (WHERE bs.siecle_list IS NOT NULL),
                 '{}')         AS siecles,
@@ -1082,6 +1109,7 @@ FROM t_mobiliers_images m
          LEFT JOIN cor_monu_lieu_mob_img cmi ON m.id_mobilier_image = cmi.mobilier_image_id
          LEFT JOIN cor_mob_img_pers_mo cpm ON m.id_mobilier_image = cpm.mobilier_image_id
          LEFT JOIN cor_mob_img_pers_phy cpp ON m.id_mobilier_image = cpp.mobilier_image_id
+         LEFT JOIN cor_mob_img_mob_img cmimi ON m.id_mobilier_image = cmimi.mobilier_image_id_1 OR m.id_mobilier_image = cmimi.mobilier_image_id_2
          LEFT JOIN cor_siecles_mob_img csl ON m.id_mobilier_image = csl.mobilier_image_id
          LEFT JOIN bib_siecle bs ON csl.siecle_mob_img_id = bs.id_siecle
          LEFT JOIN cor_themes_mob_img ctmi ON m.id_mobilier_image = ctmi.mob_img_id
@@ -1130,6 +1158,7 @@ type GetPendingMobiliersImagesRow struct {
 	MonumentsLieuxLiees     interface{}
 	PersonnesMoralesLiees   interface{}
 	PersonnesPhysiquesLiees interface{}
+	MobiliersImagesLiees    interface{}
 	Siecles                 interface{}
 	Themes                  interface{}
 }
@@ -1183,6 +1212,7 @@ func (q *Queries) GetPendingMobiliersImages(ctx context.Context) ([]GetPendingMo
 			&i.MonumentsLieuxLiees,
 			&i.PersonnesMoralesLiees,
 			&i.PersonnesPhysiquesLiees,
+			&i.MobiliersImagesLiees,
 			&i.Siecles,
 			&i.Themes,
 		); err != nil {
@@ -1194,6 +1224,22 @@ func (q *Queries) GetPendingMobiliersImages(ctx context.Context) ([]GetPendingMo
 		return nil, err
 	}
 	return items, nil
+}
+
+const linkMobImgToMobImg = `-- name: LinkMobImgToMobImg :exec
+INSERT INTO cor_mob_img_mob_img
+    (mobilier_image_id_1, mobilier_image_id_2)
+SELECT $1, unnest($2::int[])
+`
+
+type LinkMobImgToMobImgParams struct {
+	ID        int32
+	MobImgIds []int32
+}
+
+func (q *Queries) LinkMobImgToMobImg(ctx context.Context, arg LinkMobImgToMobImgParams) error {
+	_, err := q.db.Exec(ctx, linkMobImgToMobImg, arg.ID, arg.MobImgIds)
+	return err
 }
 
 const linkMobImgToMonuLieu = `-- name: LinkMobImgToMonuLieu :exec
@@ -1253,6 +1299,18 @@ AND publication_status = 'DRAFT'
 
 func (q *Queries) SubmitDraftMobilierImage(ctx context.Context, idMobilierImage int32) error {
 	_, err := q.db.Exec(ctx, submitDraftMobilierImage, idMobilierImage)
+	return err
+}
+
+const unlinkMobImgFromMobImg = `-- name: UnlinkMobImgFromMobImg :exec
+DELETE
+FROM cor_mob_img_mob_img
+WHERE mobilier_image_id_1 = $1
+   OR mobilier_image_id_2 = $1
+`
+
+func (q *Queries) UnlinkMobImgFromMobImg(ctx context.Context, id int32) error {
+	_, err := q.db.Exec(ctx, unlinkMobImgFromMobImg, id)
 	return err
 }
 

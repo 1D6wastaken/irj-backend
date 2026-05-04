@@ -300,6 +300,14 @@ func linkUpdatedMonumentLieu(ctx context.Context, s *BusinessService, exData *up
 		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to link personnes physiques document to updated monument lieu")
 	}
 
+	err = s.postgresService.Queries.LinkMonuLieuToMonuLieu(ctx, queries.LinkMonuLieuToMonuLieuParams{
+		MonuLieuIds: exData.params.LinkedMonumentsLieux,
+		ID:          exData.id,
+	})
+	if err != nil {
+		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to link monuments lieux document to updated monument lieu")
+	}
+
 	return addAuteurToUpdatedMonumentLieu
 }
 

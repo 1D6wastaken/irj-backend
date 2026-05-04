@@ -262,6 +262,7 @@ func (b *BusinessService) GetPersonnePhysique(w http.ResponseWriter, r *http.Req
 		LinkedMonumentsPlaces: collections.InterfaceToInt32Slice(ppy.MonumentsLieuxLiees),
 		LinkedLegalEntities:   collections.InterfaceToInt32Slice(ppy.PersonnesMoralesLiees),
 		LinkedFurnitureImages: collections.InterfaceToInt32Slice(ppy.MobiliersImagesLiees),
+		LinkedIndividuals:     collections.InterfaceToInt32Slice(ppy.PersonnesPhysiquesLiees),
 		Themes:                interfaceSliceToBasicFilterSlice(ppy.Themes.([]any)),
 		ParentID:              ppy.ParentID.Int32,
 		Historiography:        ppy.Historiographie.String,

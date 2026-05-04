@@ -105,6 +105,11 @@ func deleteMobilierImage(ctx context.Context, logger *zerolog.Logger, s *Busines
 		logger.Error().Err(err).Int32("id", id).Msg("failed to unlink personnes physiques document from mobilier image")
 	}
 
+	err = s.postgresService.Queries.UnlinkMobImgFromMobImg(ctx, id)
+	if err != nil {
+		logger.Error().Err(err).Int32("id", id).Msg("failed to unlink mobiliers images document from mobilier image")
+	}
+
 	err = s.postgresService.Queries.DetachAuthorFromMobImg(ctx, id)
 	if err != nil {
 		logger.Error().Err(err).Int32("id", id).Msg("failed to detach author from mobilier image")

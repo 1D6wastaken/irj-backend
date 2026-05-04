@@ -271,6 +271,14 @@ func linkMonumentLieu(ctx context.Context, s *BusinessService, exData *createMon
 		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to link personnes physiques document to monument lieu")
 	}
 
+	err = s.postgresService.Queries.LinkMonuLieuToMonuLieu(ctx, queries.LinkMonuLieuToMonuLieuParams{
+		MonuLieuIds: exData.params.LinkedMonumentsLieux,
+		ID:          exData.id,
+	})
+	if err != nil {
+		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to link monuments lieux document to monument lieu")
+	}
+
 	return addAuteurToMonumentLieu
 }
 

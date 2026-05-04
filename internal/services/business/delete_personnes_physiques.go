@@ -100,6 +100,11 @@ func deletePersonnePhysique(ctx context.Context, logger *zerolog.Logger, s *Busi
 		logger.Error().Err(err).Int32("id", id).Msg("failed to unlink personnes morales document from personne physique")
 	}
 
+	err = s.postgresService.Queries.UnlinkPersPhyFromPersPhy(ctx, id)
+	if err != nil {
+		logger.Error().Err(err).Int32("id", id).Msg("failed to unlink personnes physiques document from personne physique")
+	}
+
 	err = s.postgresService.Queries.DetachAuthorFromPersPhy(ctx, id)
 	if err != nil {
 		logger.Error().Err(err).Int32("id", id).Msg("failed to detach author from personne physique")

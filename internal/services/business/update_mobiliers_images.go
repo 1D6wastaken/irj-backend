@@ -311,6 +311,14 @@ func linkUpdatedMobilierImage(ctx context.Context, s *BusinessService, exData *u
 		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to link personnes physiques document to mobilier image")
 	}
 
+	err = s.postgresService.Queries.LinkMobImgToMobImg(ctx, queries.LinkMobImgToMobImgParams{
+		MobImgIds: exData.params.LinkedMobiliersImages,
+		ID:        exData.id,
+	})
+	if err != nil {
+		exData.logger.Error().Err(err).Int32("id", exData.id).Msg("failed to link mobiliers images document to updated mobilier image")
+	}
+
 	return addAuteursToUpdatedMobilierImage
 }
 

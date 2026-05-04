@@ -143,6 +143,13 @@ SELECT p.id_pers_morale  AS id,
        -- Personnes physiques (IDs uniquement)
        COALESCE(array_agg(DISTINCT cpp.pers_physique_id) FILTER (WHERE cpp.pers_physique_id IS NOT NULL),
                 '{}')    AS personnes_physiques_liees,
+       -- Personnes morales liées (self-link)
+       COALESCE(array_agg(DISTINCT
+           CASE WHEN cpmpm.pers_morale_id_1 = p.id_pers_morale
+                THEN cpmpm.pers_morale_id_2
+                ELSE cpmpm.pers_morale_id_1
+           END) FILTER (WHERE cpmpm.pers_morale_id_1 IS NOT NULL),
+                '{}')    AS personnes_morales_liees,
        -- Siècles
        COALESCE(
                        jsonb_agg(
@@ -179,6 +186,7 @@ FROM t_pers_morales p
          LEFT JOIN cor_monu_lieu_pers_mo cml ON p.id_pers_morale = cml.pers_morale_id
          LEFT JOIN cor_mob_img_pers_mo cpm ON p.id_pers_morale = cpm.pers_morale_id
          LEFT JOIN cor_pers_phy_pers_mo cpp ON p.id_pers_morale = cpp.pers_morale_id
+         LEFT JOIN cor_pers_mo_pers_mo cpmpm ON p.id_pers_morale = cpmpm.pers_morale_id_1 OR p.id_pers_morale = cpmpm.pers_morale_id_2
          LEFT JOIN cor_siecles_pers_mo csp ON p.id_pers_morale = csp.pers_morale_id
          LEFT JOIN bib_siecle bs ON csp.siecle_pers_mo_id = bs.id_siecle
          LEFT JOIN cor_themes_pers_mo ctpm ON p.id_pers_morale = ctpm.pers_mo_id
@@ -263,6 +271,13 @@ SELECT p.id_pers_morale       AS id,
        -- Personnes physiques (IDs uniquement)
        COALESCE(array_agg(DISTINCT cpp.pers_physique_id) FILTER (WHERE cpp.pers_physique_id IS NOT NULL),
                 '{}')         AS personnes_physiques_liees,
+       -- Personnes morales liées (self-link)
+       COALESCE(array_agg(DISTINCT
+           CASE WHEN cpmpm.pers_morale_id_1 = p.id_pers_morale
+                THEN cpmpm.pers_morale_id_2
+                ELSE cpmpm.pers_morale_id_1
+           END) FILTER (WHERE cpmpm.pers_morale_id_1 IS NOT NULL),
+                '{}')         AS personnes_morales_liees,
        -- Siècles
        COALESCE(array_agg(DISTINCT bs.siecle_list) FILTER (WHERE bs.siecle_list IS NOT NULL),
                 '{}')         AS siecles,
@@ -283,6 +298,7 @@ FROM t_pers_morales p
          LEFT JOIN cor_monu_lieu_pers_mo cml ON p.id_pers_morale = cml.pers_morale_id
          LEFT JOIN cor_mob_img_pers_mo cpm ON p.id_pers_morale = cpm.pers_morale_id
          LEFT JOIN cor_pers_phy_pers_mo cpp ON p.id_pers_morale = cpp.pers_morale_id
+         LEFT JOIN cor_pers_mo_pers_mo cpmpm ON p.id_pers_morale = cpmpm.pers_morale_id_1 OR p.id_pers_morale = cpmpm.pers_morale_id_2
          LEFT JOIN cor_siecles_pers_mo csp ON p.id_pers_morale = csp.pers_morale_id
          LEFT JOIN bib_siecle bs ON csp.siecle_pers_mo_id = bs.id_siecle
          LEFT JOIN cor_themes_pers_mo ctpm ON p.id_pers_morale = ctpm.pers_mo_id
@@ -363,6 +379,13 @@ SELECT p.id_pers_morale       AS id,
        -- Personnes physiques (IDs uniquement)
        COALESCE(array_agg(DISTINCT cpp.pers_physique_id) FILTER (WHERE cpp.pers_physique_id IS NOT NULL),
                 '{}')         AS personnes_physiques_liees,
+       -- Personnes morales liées (self-link)
+       COALESCE(array_agg(DISTINCT
+           CASE WHEN cpmpm.pers_morale_id_1 = p.id_pers_morale
+                THEN cpmpm.pers_morale_id_2
+                ELSE cpmpm.pers_morale_id_1
+           END) FILTER (WHERE cpmpm.pers_morale_id_1 IS NOT NULL),
+                '{}')         AS personnes_morales_liees,
        -- Siècles
        COALESCE(array_agg(DISTINCT bs.siecle_list) FILTER (WHERE bs.siecle_list IS NOT NULL),
                 '{}')         AS siecles,
@@ -383,6 +406,7 @@ FROM t_pers_morales p
          LEFT JOIN cor_monu_lieu_pers_mo cml ON p.id_pers_morale = cml.pers_morale_id
          LEFT JOIN cor_mob_img_pers_mo cpm ON p.id_pers_morale = cpm.pers_morale_id
          LEFT JOIN cor_pers_phy_pers_mo cpp ON p.id_pers_morale = cpp.pers_morale_id
+         LEFT JOIN cor_pers_mo_pers_mo cpmpm ON p.id_pers_morale = cpmpm.pers_morale_id_1 OR p.id_pers_morale = cpmpm.pers_morale_id_2
          LEFT JOIN cor_siecles_pers_mo csp ON p.id_pers_morale = csp.pers_morale_id
          LEFT JOIN bib_siecle bs ON csp.siecle_pers_mo_id = bs.id_siecle
          LEFT JOIN cor_themes_pers_mo ctpm ON p.id_pers_morale = ctpm.pers_mo_id
@@ -565,3 +589,14 @@ WHERE pers_morale_id = sqlc.arg(id);
 DELETE
 FROM cor_pers_phy_pers_mo
 WHERE pers_morale_id = sqlc.arg(id);
+
+-- name: LinkPersMoToPersMo :exec
+INSERT INTO cor_pers_mo_pers_mo
+    (pers_morale_id_1, pers_morale_id_2)
+SELECT sqlc.arg(id), unnest(sqlc.arg(pers_mo_ids)::int[]);
+
+-- name: UnlinkPersMoFromPersMo :exec
+DELETE
+FROM cor_pers_mo_pers_mo
+WHERE pers_morale_id_1 = sqlc.arg(id)
+   OR pers_morale_id_2 = sqlc.arg(id);
