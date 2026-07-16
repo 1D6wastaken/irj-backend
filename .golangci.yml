@@ -1,8 +1,4 @@
 version: "2"
-sort-order:
-  - file
-  - linter
-  - severity
 linters:
   default: all
   disable:
@@ -20,6 +16,8 @@ linters:
     - wrapcheck
     - wsl
     - modernize
+    - goconst
+    - gomodguard
   settings:
     gosec:
       excludes:

@@ -123,7 +123,7 @@ func (b *BusinessService) UploadImage(w http.ResponseWriter, r *http.Request) *_
 
 	r.Body = http.MaxBytesReader(w, r.Body, MaxFileSize+1)
 
-	err := r.ParseMultipartForm(MaxFileSize + 1)
+	err := r.ParseMultipartForm(MaxFileSize + 1) //nolint:gosec // G120: Unbound form data is limited to MaxFileSize + 1 bytes, which is safe
 	if err != nil {
 		return _http.ErrBadRequest.Msg("Formulaire invalide ou fichier trop gros").Err(err)
 	}

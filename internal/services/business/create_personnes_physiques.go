@@ -198,6 +198,7 @@ func storePersPhyDocumentSubmissionEvent(_ context.Context, s *BusinessService, 
 	return linkPersonnePhysique
 }
 
+//nolint:cyclop
 func linkPersonnePhysique(ctx context.Context, s *BusinessService, exData *createPersonnePhysiqueExchangeData) createPersonnePhysiqueState {
 	err := s.postgresService.Queries.AttachSieclesToPersPhy(ctx, queries.AttachSieclesToPersPhyParams{
 		SiecleID: exData.params.Centuries,

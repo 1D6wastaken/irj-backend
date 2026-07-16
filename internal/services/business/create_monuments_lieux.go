@@ -198,6 +198,7 @@ func storeMonuLieuDocumentSubmissionEvent(_ context.Context, s *BusinessService,
 	return linkMonumentLieu
 }
 
+//nolint:cyclop
 func linkMonumentLieu(ctx context.Context, s *BusinessService, exData *createMonumentLieuExchangeData) createMonumentLieuState {
 	err := s.postgresService.Queries.AttachSieclesToMonuLieu(ctx, queries.AttachSieclesToMonuLieuParams{
 		SiecleID: exData.params.Centuries,
