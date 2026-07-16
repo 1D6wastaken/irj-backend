@@ -32,7 +32,7 @@ tasks:
     deps: [ directories ]
     internal: true
     cmds:
-      - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b .bin v{{.GOLANGCILINT_VERSION}}
+      - curl -sSfL https://golangci-lint.run/install.sh | sh -s -- -b $(go env GOPATH)/bin v{{.GOLANGCILINT_VERSION}}
       - mv .bin/golangci-lint {{.GOLANGCILINT}}
     status:
       - ls {{.GOLANGCILINT}}
