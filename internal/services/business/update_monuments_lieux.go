@@ -12,8 +12,8 @@ import (
 	"irj/internal/catalogs"
 	"irj/internal/jwt"
 	"irj/internal/postgres"
-	"irj/internal/smtp"
 	queries "irj/internal/postgres/_generated"
+	"irj/internal/smtp"
 	"irj/pkg/api"
 	_http "irj/pkg/http"
 
@@ -445,7 +445,6 @@ func storeMonuLieuxDocumentUpdateEvent(_ context.Context, s *BusinessService, ex
 	return sendMonuLieuUpdateNotifMail
 }
 
-//nolint:lll
 func sendMonuLieuUpdateNotifMail(_ context.Context, s *BusinessService, exData *updateMonumentLieuExchangeData) updateMonumentLieuState {
 	if exData.parentID == 0 {
 		return nil

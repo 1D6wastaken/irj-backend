@@ -11,8 +11,8 @@ import (
 	"irj/internal/catalogs"
 	"irj/internal/jwt"
 	"irj/internal/postgres"
-	"irj/internal/smtp"
 	queries "irj/internal/postgres/_generated"
+	"irj/internal/smtp"
 	"irj/pkg/api"
 	_http "irj/pkg/http"
 
@@ -442,7 +442,6 @@ func storePersMoDocumentUpdateEvent(_ context.Context, s *BusinessService, exDat
 	return sendPersMoUpdateNotifMail
 }
 
-//nolint:lll
 func sendPersMoUpdateNotifMail(_ context.Context, s *BusinessService, exData *updatePersonneMoraleExchangeData) updatePersonneMoraleState {
 	if exData.parentID == 0 {
 		return nil

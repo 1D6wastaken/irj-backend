@@ -11,8 +11,8 @@ import (
 	"irj/internal/catalogs"
 	"irj/internal/jwt"
 	"irj/internal/postgres"
-	"irj/internal/smtp"
 	queries "irj/internal/postgres/_generated"
+	"irj/internal/smtp"
 	"irj/pkg/api"
 	_http "irj/pkg/http"
 

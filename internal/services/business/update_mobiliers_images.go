@@ -481,7 +481,6 @@ func deleteOldDraftMobilierImageParent(_ context.Context, s *BusinessService, ex
 	return nil
 }
 
-//nolint:lll
 func sendMobImgUpdateNotifMail(_ context.Context, s *BusinessService, exData *updateMobilierImageExchangeData) updateMobilierImageState {
 	if exData.parentID == 0 {
 		return nil
