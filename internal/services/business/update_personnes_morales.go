@@ -11,6 +11,7 @@ import (
 	"irj/internal/catalogs"
 	"irj/internal/jwt"
 	"irj/internal/postgres"
+	"irj/internal/smtp"
 	queries "irj/internal/postgres/_generated"
 	"irj/pkg/api"
 	_http "irj/pkg/http"
@@ -437,6 +438,44 @@ func storePersMoDocumentUpdateEvent(_ context.Context, s *BusinessService, exDat
 	if exData.draftToDelete != 0 {
 		return deleteOldDraftPersonneMoraleParent
 	}
+
+	return sendPersMoUpdateNotifMail
+}
+
+//nolint:lll
+func sendPersMoUpdateNotifMail(_ context.Context, s *BusinessService, exData *updatePersonneMoraleExchangeData) updatePersonneMoraleState {
+	if exData.parentID == 0 {
+		return nil
+	}
+
+	s.stopper.Hold(1)
+
+	//nolint:contextcheck
+	go func(s *BusinessService, logger *zerolog.Logger, id, parentID int32) {
+		defer s.stopper.Release()
+
+		ctx, cancel := context.WithTimeout(context.Background(), defaultTimeOut)
+		defer cancel()
+
+		row, err := s.postgresService.Queries.GetUsersByGrade(ctx, queries.UserGradeADMIN)
+		if err != nil {
+			logger.Error().Err(err).Msg("failed to get admin users for update notification")
+
+			return
+		}
+
+		to := make([]smtp.EmailPerson, 0, len(row))
+
+		//nolint:gocritic
+		for _, user := range row {
+			to = append(to, smtp.EmailPerson{
+				Name:  user.Prenom + " " + user.Nom,
+				Email: user.Email,
+			})
+		}
+
+		_ = s.smtpService.SendDocumentUpdateMail(ctx, to, smtp.SourcePersonnesMorales, id, parentID)
+	}(s, exData.logger, exData.id, exData.parentID)
 
 	return nil
 }

@@ -315,7 +315,7 @@ func sendApprovalEmailPersMo(_ context.Context, s *BusinessService, exData *appr
 	s.stopper.Hold(1)
 
 	//nolint:contextcheck
-	go func(logger *zerolog.Logger, userID string, isUpdate bool) {
+	go func(logger *zerolog.Logger, userID string, id int32, isUpdate bool) {
 		defer s.stopper.Release()
 
 		ctx, cancel := context.WithTimeout(context.Background(), defaultTimeOut)
@@ -330,10 +330,10 @@ func sendApprovalEmailPersMo(_ context.Context, s *BusinessService, exData *appr
 
 		to := []smtp.EmailPerson{{Name: user.Prenom + " " + user.Nom, Email: user.Email}}
 
-		if err := s.smtpService.SendDocumentApprovedMail(ctx, to, isUpdate); err != nil {
+		if err := s.smtpService.SendDocumentApprovedMail(ctx, to, smtp.SourcePersonnesMorales, id, isUpdate); err != nil {
 			logger.Error().Err(err).Msg("failed to send approval email")
 		}
-	}(exData.logger, exData.documents.UserID.String, exData.documents.ParentID.Valid)
+	}(exData.logger, exData.documents.UserID.String, exData.id, exData.documents.ParentID.Valid)
 
 	return nil
 }

@@ -337,7 +337,7 @@ func sendNewMonumentLieuDocumentMail(_ context.Context, s *BusinessService, exDa
 	s.stopper.Hold(1)
 
 	//nolint:contextcheck
-	go func(s *BusinessService, logger *zerolog.Logger) {
+	go func(s *BusinessService, logger *zerolog.Logger, id int32) {
 		defer s.stopper.Release()
 
 		ctx, cancel := context.WithTimeout(context.Background(), defaultTimeOut)
@@ -360,8 +360,8 @@ func sendNewMonumentLieuDocumentMail(_ context.Context, s *BusinessService, exDa
 			})
 		}
 
-		_ = s.smtpService.SendNewDocumentMail(ctx, to)
-	}(s, exData.logger)
+		_ = s.smtpService.SendNewDocumentMail(ctx, to, smtp.SourceMonumentsLieux, id)
+	}(s, exData.logger, exData.id)
 
 	return nil
 }

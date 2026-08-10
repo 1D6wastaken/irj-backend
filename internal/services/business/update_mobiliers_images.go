@@ -12,6 +12,7 @@ import (
 	"irj/internal/jwt"
 	"irj/internal/postgres"
 	queries "irj/internal/postgres/_generated"
+	"irj/internal/smtp"
 	"irj/pkg/api"
 	_http "irj/pkg/http"
 
@@ -461,7 +462,7 @@ func storeMobImgDocumentUpdateEvent(_ context.Context, s *BusinessService, exDat
 		return deleteOldDraftMobilierImageParent
 	}
 
-	return nil
+	return sendMobImgUpdateNotifMail
 }
 
 //nolint:lll
@@ -476,6 +477,44 @@ func deleteOldDraftMobilierImageParent(_ context.Context, s *BusinessService, ex
 			logger.Error().Err(err).Int32("id", id).Msg("failed to delete old draft mobilier image parent")
 		}
 	}(exData.logger, exData.draftToDelete)
+
+	return nil
+}
+
+//nolint:lll
+func sendMobImgUpdateNotifMail(_ context.Context, s *BusinessService, exData *updateMobilierImageExchangeData) updateMobilierImageState {
+	if exData.parentID == 0 {
+		return nil
+	}
+
+	s.stopper.Hold(1)
+
+	//nolint:contextcheck
+	go func(s *BusinessService, logger *zerolog.Logger, id, parentID int32) {
+		defer s.stopper.Release()
+
+		ctx, cancel := context.WithTimeout(context.Background(), defaultTimeOut)
+		defer cancel()
+
+		row, err := s.postgresService.Queries.GetUsersByGrade(ctx, queries.UserGradeADMIN)
+		if err != nil {
+			logger.Error().Err(err).Msg("failed to get admin users for update notification")
+
+			return
+		}
+
+		to := make([]smtp.EmailPerson, 0, len(row))
+
+		//nolint:gocritic
+		for _, user := range row {
+			to = append(to, smtp.EmailPerson{
+				Name:  user.Prenom + " " + user.Nom,
+				Email: user.Email,
+			})
+		}
+
+		_ = s.smtpService.SendDocumentUpdateMail(ctx, to, smtp.SourceMobiliersImages, id, parentID)
+	}(s, exData.logger, exData.id, exData.parentID)
 
 	return nil
 }

@@ -335,7 +335,7 @@ func sendNewPersonneMoraleDocumentMail(_ context.Context, s *BusinessService, ex
 	s.stopper.Hold(1)
 
 	//nolint:contextcheck
-	go func(s *BusinessService, logger *zerolog.Logger) {
+	go func(s *BusinessService, logger *zerolog.Logger, id int32) {
 		defer s.stopper.Release()
 
 		ctx, cancel := context.WithTimeout(context.Background(), defaultTimeOut)
@@ -358,8 +358,8 @@ func sendNewPersonneMoraleDocumentMail(_ context.Context, s *BusinessService, ex
 			})
 		}
 
-		_ = s.smtpService.SendNewDocumentMail(ctx, to)
-	}(s, exData.logger)
+		_ = s.smtpService.SendNewDocumentMail(ctx, to, smtp.SourcePersonnesMorales, id)
+	}(s, exData.logger, exData.id)
 
 	return nil
 }
