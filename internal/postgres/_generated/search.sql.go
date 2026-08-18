@@ -524,7 +524,7 @@ FROM (
          GROUP BY pp.id_pers_physique) AS results
 
 
-ORDER BY lower(title) ASC
+ORDER BY title COLLATE french_ci ASC
 LIMIT $23 OFFSET $22
 `
 
@@ -1133,7 +1133,7 @@ FROM (
          GROUP BY pp.id_pers_physique) AS results
 
 
-ORDER BY title
+ORDER BY title COLLATE french_ci
 LIMIT $22 OFFSET $21
 `
 

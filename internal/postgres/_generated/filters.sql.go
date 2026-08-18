@@ -22,7 +22,7 @@ FROM loc_departements d
          JOIN loc_regions r ON d.id_region = r.id_region
          JOIN loc_pays p ON r.id_pays = p.id_pays
 WHERE d.nom_departement != '' AND d.nom_departement IS NOT NULL
-ORDER BY d.nom_departement ASC
+ORDER BY d.nom_departement COLLATE french_ci ASC
 `
 
 type GetDepartementsRow struct {
@@ -62,7 +62,7 @@ func (q *Queries) GetDepartements(ctx context.Context) ([]GetDepartementsRow, er
 }
 
 const getDeplacements = `-- name: GetDeplacements :many
-SELECT id_mode_deplacement AS id, mode_deplacement_type AS name FROM bib_pers_phy_modes_deplacements WHERE mode_deplacement_type != '' AND mode_deplacement_type IS NOT NULL ORDER BY mode_deplacement_type ASC
+SELECT id_mode_deplacement AS id, mode_deplacement_type AS name FROM bib_pers_phy_modes_deplacements WHERE mode_deplacement_type != '' AND mode_deplacement_type IS NOT NULL ORDER BY mode_deplacement_type COLLATE french_ci ASC
 `
 
 type GetDeplacementsRow struct {
@@ -91,7 +91,7 @@ func (q *Queries) GetDeplacements(ctx context.Context) ([]GetDeplacementsRow, er
 }
 
 const getEtatsConservation = `-- name: GetEtatsConservation :many
-SELECT id_etat_conservation AS id, etat_conservation_type AS name FROM bib_etats_conservation WHERE etat_conservation_type != '' AND etat_conservation_type IS NOT NULL ORDER BY etat_conservation_type ASC
+SELECT id_etat_conservation AS id, etat_conservation_type AS name FROM bib_etats_conservation WHERE etat_conservation_type != '' AND etat_conservation_type IS NOT NULL ORDER BY etat_conservation_type COLLATE french_ci ASC
 `
 
 type GetEtatsConservationRow struct {
@@ -120,7 +120,7 @@ func (q *Queries) GetEtatsConservation(ctx context.Context) ([]GetEtatsConservat
 }
 
 const getHistoricalPeriods = `-- name: GetHistoricalPeriods :many
-SELECT id_periode_historique AS id, periode_historique_type AS name FROM bib_pers_phy_periodes_historiques WHERE periode_historique_type != '' AND periode_historique_type IS NOT NULL ORDER BY periode_historique_type ASC
+SELECT id_periode_historique AS id, periode_historique_type AS name FROM bib_pers_phy_periodes_historiques WHERE periode_historique_type != '' AND periode_historique_type IS NOT NULL ORDER BY periode_historique_type COLLATE french_ci ASC
 `
 
 type GetHistoricalPeriodsRow struct {
@@ -149,7 +149,7 @@ func (q *Queries) GetHistoricalPeriods(ctx context.Context) ([]GetHistoricalPeri
 }
 
 const getMateriaux = `-- name: GetMateriaux :many
-SELECT id_materiau AS id, materiau_type AS name FROM bib_materiaux WHERE materiau_type != '' AND materiau_type IS NOT NULL ORDER BY materiau_type ASC
+SELECT id_materiau AS id, materiau_type AS name FROM bib_materiaux WHERE materiau_type != '' AND materiau_type IS NOT NULL ORDER BY materiau_type COLLATE french_ci ASC
 `
 
 type GetMateriauxRow struct {
@@ -178,7 +178,7 @@ func (q *Queries) GetMateriaux(ctx context.Context) ([]GetMateriauxRow, error) {
 }
 
 const getNaturesMob = `-- name: GetNaturesMob :many
-SELECT id_nature AS id, nature_type AS name FROM bib_mob_img_natures WHERE nature_type != '' AND nature_type IS NOT NULL ORDER BY nature_type ASC
+SELECT id_nature AS id, nature_type AS name FROM bib_mob_img_natures WHERE nature_type != '' AND nature_type IS NOT NULL ORDER BY nature_type COLLATE french_ci ASC
 `
 
 type GetNaturesMobRow struct {
@@ -207,7 +207,7 @@ func (q *Queries) GetNaturesMob(ctx context.Context) ([]GetNaturesMobRow, error)
 }
 
 const getNaturesMonu = `-- name: GetNaturesMonu :many
-SELECT id_monu_lieu_nature AS id, monu_lieu_nature_type AS name FROM bib_monu_lieu_natures WHERE monu_lieu_nature_type != '' AND monu_lieu_nature_type IS NOT NULL ORDER BY monu_lieu_nature_type ASC
+SELECT id_monu_lieu_nature AS id, monu_lieu_nature_type AS name FROM bib_monu_lieu_natures WHERE monu_lieu_nature_type != '' AND monu_lieu_nature_type IS NOT NULL ORDER BY monu_lieu_nature_type COLLATE french_ci ASC
 `
 
 type GetNaturesMonuRow struct {
@@ -236,7 +236,7 @@ func (q *Queries) GetNaturesMonu(ctx context.Context) ([]GetNaturesMonuRow, erro
 }
 
 const getNaturesPersonnesMorales = `-- name: GetNaturesPersonnesMorales :many
-SELECT id_pers_mo_nature AS id, pers_mo_nature_type AS name FROM bib_pers_mo_natures WHERE pers_mo_nature_type != '' AND pers_mo_nature_type IS NOT NULL ORDER BY pers_mo_nature_type ASC
+SELECT id_pers_mo_nature AS id, pers_mo_nature_type AS name FROM bib_pers_mo_natures WHERE pers_mo_nature_type != '' AND pers_mo_nature_type IS NOT NULL ORDER BY pers_mo_nature_type COLLATE french_ci ASC
 `
 
 type GetNaturesPersonnesMoralesRow struct {
@@ -265,7 +265,7 @@ func (q *Queries) GetNaturesPersonnesMorales(ctx context.Context) ([]GetNaturesP
 }
 
 const getPays = `-- name: GetPays :many
-SELECT id_pays AS id, nom_pays AS name FROM loc_pays WHERE nom_pays != '' AND nom_pays IS NOT NULL ORDER BY nom_pays ASC
+SELECT id_pays AS id, nom_pays AS name FROM loc_pays WHERE nom_pays != '' AND nom_pays IS NOT NULL ORDER BY nom_pays COLLATE french_ci ASC
 `
 
 type GetPaysRow struct {
@@ -294,7 +294,7 @@ func (q *Queries) GetPays(ctx context.Context) ([]GetPaysRow, error) {
 }
 
 const getProfessions = `-- name: GetProfessions :many
-SELECT id_profession AS id, profession_type AS name FROM bib_pers_phy_professions WHERE profession_type != '' AND profession_type IS NOT NULL ORDER BY profession_type ASC
+SELECT id_profession AS id, profession_type AS name FROM bib_pers_phy_professions WHERE profession_type != '' AND profession_type IS NOT NULL ORDER BY profession_type COLLATE french_ci ASC
 `
 
 type GetProfessionsRow struct {
@@ -330,7 +330,7 @@ SELECT r.id_region AS id,
 FROM loc_regions r
          JOIN loc_pays p ON r.id_pays = p.id_pays
 WHERE r.nom_region != '' AND r.nom_region IS NOT NULL
-ORDER BY r.nom_region ASC
+ORDER BY r.nom_region COLLATE french_ci ASC
 `
 
 type GetRegionsRow struct {
@@ -395,7 +395,7 @@ func (q *Queries) GetSiecles(ctx context.Context) ([]GetSieclesRow, error) {
 }
 
 const getTechniquesMob = `-- name: GetTechniquesMob :many
-SELECT id_technique AS id, technique_type AS name FROM bib_mob_img_techniques WHERE technique_type != '' AND technique_type IS NOT NULL ORDER BY technique_type ASC
+SELECT id_technique AS id, technique_type AS name FROM bib_mob_img_techniques WHERE technique_type != '' AND technique_type IS NOT NULL ORDER BY technique_type COLLATE french_ci ASC
 `
 
 type GetTechniquesMobRow struct {
@@ -424,7 +424,7 @@ func (q *Queries) GetTechniquesMob(ctx context.Context) ([]GetTechniquesMobRow, 
 }
 
 const getThemes = `-- name: GetThemes :many
-SELECT id_theme AS id, theme_type AS name FROM t_themes WHERE theme_type != '' AND theme_type IS NOT NULL ORDER BY theme_type ASC
+SELECT id_theme AS id, theme_type AS name FROM t_themes WHERE theme_type != '' AND theme_type IS NOT NULL ORDER BY theme_type COLLATE french_ci ASC
 `
 
 type GetThemesRow struct {
@@ -467,7 +467,7 @@ FROM loc_communes c
          JOIN loc_regions r ON d.id_region = r.id_region
          JOIN loc_pays p ON r.id_pays = p.id_pays
 WHERE c.nom_commune != '' AND c.nom_commune IS NOT NULL AND c.nom_commune ILIKE $1
-ORDER BY c.nom_commune ASC
+ORDER BY c.nom_commune COLLATE french_ci ASC
 LIMIT $2 OFFSET $3
 `
 

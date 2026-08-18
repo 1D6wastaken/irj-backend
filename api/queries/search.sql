@@ -520,7 +520,7 @@ FROM (
          GROUP BY pp.id_pers_physique) AS results
 
 
-ORDER BY lower(title) ASC
+ORDER BY title COLLATE french_ci ASC
 LIMIT sqlc.arg(limit_param) OFFSET sqlc.arg(offset_param);
 
 -- name: SearchGlobalNoText :many
@@ -1036,6 +1036,6 @@ FROM (
          GROUP BY pp.id_pers_physique) AS results
 
 
-ORDER BY title
+ORDER BY title COLLATE french_ci
 LIMIT sqlc.arg(limit_param) OFFSET sqlc.arg(offset_param);
 

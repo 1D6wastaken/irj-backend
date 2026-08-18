@@ -1,0 +1,5 @@
+BEGIN;
+
+DROP COLLATION IF EXISTS french_ci;
+
+COMMIT;
