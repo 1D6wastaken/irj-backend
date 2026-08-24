@@ -66,11 +66,11 @@ var errorMapping = map[error]_http.APIError{
 
 	ErrDocumentAlreadyProcessed: {HTTPCode: http.StatusConflict, Message: "Document already processed", Details: ErrDocumentAlreadyProcessed.Error()},
 
-	ErrUserNotActive:         {HTTPCode: http.StatusForbidden, Message: "Resource not found", Details: ErrUserNotActive.Error()},
-	ErrMailNotConfirmed:      {HTTPCode: http.StatusUnauthorized, Message: "Resource not found", Details: ErrUserNotActive.Error()},
-	ErrUserNotAdmin:          {HTTPCode: http.StatusForbidden, Message: "Resource not found", Details: "You are not able to perform this action"},
-	ErrWrongCredentials:      {HTTPCode: http.StatusNotFound, Message: "Resource not found", Details: ErrUserNotFound.Error()},
-	ErrInvalidOldPassword:    {HTTPCode: http.StatusForbidden, Message: "Invalid old password", Details: ErrInvalidOldPassword.Error()},
+	ErrUserNotActive:      {HTTPCode: http.StatusForbidden, Message: "Resource not found", Details: ErrUserNotActive.Error()},
+	ErrMailNotConfirmed:   {HTTPCode: http.StatusUnauthorized, Message: "Resource not found", Details: ErrUserNotActive.Error()},
+	ErrUserNotAdmin:       {HTTPCode: http.StatusForbidden, Message: "Resource not found", Details: "You are not able to perform this action"},
+	ErrWrongCredentials:   {HTTPCode: http.StatusNotFound, Message: "Resource not found", Details: ErrUserNotFound.Error()},
+	ErrInvalidOldPassword: {HTTPCode: http.StatusForbidden, Message: "Invalid old password", Details: ErrInvalidOldPassword.Error()},
 }
 
 func GetError(err error) (int, _http.APIError) {
