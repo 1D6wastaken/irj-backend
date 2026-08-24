@@ -7,6 +7,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	stderrors "errors"
 	"strconv"
 
@@ -146,6 +147,10 @@ type PersonnePhysique struct {
 	// parent id
 	ParentID int32 `json:"parent_id,omitempty"`
 
+	// publication status of the entry
+	// Enum: ["DRAFT","PENDING","PUBLISHED"]
+	PublicationStatus string `json:"publication_status,omitempty"`
+
 	// comment of the temoin
 	TemoinComment string `json:"temoinComment,omitempty"`
 }
@@ -203,6 +208,10 @@ func (m *PersonnePhysique) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateThemes(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validatePublicationStatus(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -533,6 +542,51 @@ func (m *PersonnePhysique) validateThemes(formats strfmt.Registry) error {
 			}
 		}
 
+	}
+
+	return nil
+}
+
+var personnePhysiqueTypePublicationStatusPropEnum []any
+
+func init() {
+	var res []string
+	if err := json.Unmarshal([]byte(`["DRAFT","PENDING","PUBLISHED"]`), &res); err != nil {
+		panic(err)
+	}
+	for _, v := range res {
+		personnePhysiqueTypePublicationStatusPropEnum = append(personnePhysiqueTypePublicationStatusPropEnum, v)
+	}
+}
+
+const (
+
+	// PersonnePhysiquePublicationStatusDRAFT captures enum value "DRAFT"
+	PersonnePhysiquePublicationStatusDRAFT string = "DRAFT"
+
+	// PersonnePhysiquePublicationStatusPENDING captures enum value "PENDING"
+	PersonnePhysiquePublicationStatusPENDING string = "PENDING"
+
+	// PersonnePhysiquePublicationStatusPUBLISHED captures enum value "PUBLISHED"
+	PersonnePhysiquePublicationStatusPUBLISHED string = "PUBLISHED"
+)
+
+// prop value enum
+func (m *PersonnePhysique) validatePublicationStatusEnum(path, location string, value string) error {
+	if err := validate.EnumCase(path, location, value, personnePhysiqueTypePublicationStatusPropEnum, true); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *PersonnePhysique) validatePublicationStatus(formats strfmt.Registry) error {
+	if swag.IsZero(m.PublicationStatus) { // not required
+		return nil
+	}
+
+	// value enum
+	if err := m.validatePublicationStatusEnum("publication_status", "body", m.PublicationStatus); err != nil {
+		return err
 	}
 
 	return nil

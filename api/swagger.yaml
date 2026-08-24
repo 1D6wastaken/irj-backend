@@ -2083,6 +2083,10 @@ definitions:
       parent_id:
         type: integer
         format: int32
+      publication_status:
+        type: string
+        enum: [DRAFT, PENDING, PUBLISHED]
+        description: publication status of the entry
       temoinComment:
         type: string
         description: comment of the temoin
@@ -2448,6 +2452,10 @@ definitions:
       parent_id:
         type: integer
         format: int32
+      publication_status:
+        type: string
+        enum: [DRAFT, PENDING, PUBLISHED]
+        description: publication status of the entry
       temoinComment:
         type: string
         description: comment of the temoin
@@ -2803,6 +2811,10 @@ definitions:
       parent_id:
         type: integer
         format: int32
+      publication_status:
+        type: string
+        enum: [DRAFT, PENDING, PUBLISHED]
+        description: publication status of the entry
       temoinComment:
         type: string
         description: comment of the temoin
@@ -3167,6 +3179,10 @@ definitions:
       parent_id:
         type: integer
         format: int32
+      publication_status:
+        type: string
+        enum: [DRAFT, PENDING, PUBLISHED]
+        description: publication status of the entry
       temoinComment:
         type: string
         description: comment of the temoin

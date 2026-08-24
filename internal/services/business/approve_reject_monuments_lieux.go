@@ -115,13 +115,21 @@ func approveRejectMonumentLieuIfAdmin(ctx context.Context, b *BusinessService, e
 	doc, err := b.postgresService.Queries.GetMonumentLieuByID(ctx, exData.id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			exData.logger.Info().Msg("personne physique not found")
+			exData.logger.Info().Msg("monument lieu not found")
+			exData.err = catalogs.ErrDBResourceNotFound
 
 			return nil
 		}
 
-		exData.logger.Error().Err(err).Msg("failed to get personne physique by id")
+		exData.logger.Error().Err(err).Msg("failed to get monument lieu by id")
 		exData.err = catalogs.ErrUnexpectedError
+
+		return nil
+	}
+
+	if doc.PublicationStatus != queries.PublicationStatusPENDING {
+		exData.logger.Info().Str("status", string(doc.PublicationStatus)).Msg("monument lieu already processed")
+		exData.err = catalogs.ErrDocumentAlreadyProcessed
 
 		return nil
 	}

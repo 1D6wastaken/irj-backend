@@ -262,6 +262,7 @@ func (b *BusinessService) GetPersonneMorale(w http.ResponseWriter, r *http.Reque
 		LinkedLegalEntities:   collections.InterfaceToInt32Slice(pmo.PersonnesMoralesLiees),
 		Themes:                interfaceSliceToBasicFilterSlice(pmo.Themes.([]any)),
 		ParentID:              pmo.ParentID.Int32,
+		PublicationStatus:     string(pmo.PublicationStatus),
 		Biens:                 pmo.Biens.String,
 		DatePremiereMention:   pmo.DatePremiereMention.String,
 		DateDerniereMention:   pmo.DateDerniereMention.String,

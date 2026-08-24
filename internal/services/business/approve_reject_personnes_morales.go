@@ -115,13 +115,21 @@ func approveRejectPersonneMoraleIfAdmin(ctx context.Context, b *BusinessService,
 	doc, err := b.postgresService.Queries.GetPersonneMoraleByID(ctx, exData.id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			exData.logger.Info().Msg("personne morale image not found")
+			exData.logger.Info().Msg("personne morale not found")
+			exData.err = catalogs.ErrDBResourceNotFound
 
 			return nil
 		}
 
 		exData.logger.Error().Err(err).Msg("failed to get personne morale by id")
 		exData.err = catalogs.ErrUnexpectedError
+
+		return nil
+	}
+
+	if doc.PublicationStatus != queries.PublicationStatusPENDING {
+		exData.logger.Info().Str("status", string(doc.PublicationStatus)).Msg("personne morale already processed")
+		exData.err = catalogs.ErrDocumentAlreadyProcessed
 
 		return nil
 	}

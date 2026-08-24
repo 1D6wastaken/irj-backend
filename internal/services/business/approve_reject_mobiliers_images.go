@@ -116,12 +116,20 @@ func approveRejectMobilierImageIfAdmin(ctx context.Context, s *BusinessService, 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			exData.logger.Info().Msg("mobilier image not found")
+			exData.err = catalogs.ErrDBResourceNotFound
 
 			return nil
 		}
 
 		exData.logger.Error().Err(err).Msg("failed to get mobilier image by id")
 		exData.err = catalogs.ErrUnexpectedError
+
+		return nil
+	}
+
+	if doc.PublicationStatus != queries.PublicationStatusPENDING {
+		exData.logger.Info().Str("status", string(doc.PublicationStatus)).Msg("mobilier image already processed")
+		exData.err = catalogs.ErrDocumentAlreadyProcessed
 
 		return nil
 	}

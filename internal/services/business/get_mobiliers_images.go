@@ -265,6 +265,7 @@ func (b *BusinessService) GetMobilierImage(w http.ResponseWriter, r *http.Reques
 		LinkedFurnitureImages: collections.InterfaceToInt32Slice(mobilier.MobiliersImagesLiees),
 		Themes:                interfaceSliceToBasicFilterSlice(mobilier.Themes.([]any)),
 		ParentID:              mobilier.ParentID.Int32,
+		PublicationStatus:     string(mobilier.PublicationStatus),
 		TemoinComment:         mobilier.TemoinCommentaires.String,
 		CoteReference:         mobilier.CoteReference.String,
 		DateFabrication:       mobilier.DateFabrication.String,

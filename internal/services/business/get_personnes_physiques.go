@@ -265,6 +265,7 @@ func (b *BusinessService) GetPersonnePhysique(w http.ResponseWriter, r *http.Req
 		LinkedIndividuals:     collections.InterfaceToInt32Slice(ppy.PersonnesPhysiquesLiees),
 		Themes:                interfaceSliceToBasicFilterSlice(ppy.Themes.([]any)),
 		ParentID:              ppy.ParentID.Int32,
+		PublicationStatus:     string(ppy.PublicationStatus),
 		Historiography:        ppy.Historiographie.String,
 		Evenements:            ppy.Evenements.String,
 		Preparatifs:           ppy.Preparatifs.String,

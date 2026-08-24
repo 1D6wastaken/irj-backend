@@ -7,6 +7,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	stderrors "errors"
 	"strconv"
 
@@ -146,6 +147,10 @@ type MobilierImage struct {
 	// parent id
 	ParentID int32 `json:"parent_id,omitempty"`
 
+	// publication status of the entry
+	// Enum: ["DRAFT","PENDING","PUBLISHED"]
+	PublicationStatus string `json:"publication_status,omitempty"`
+
 	// comment of the temoin
 	TemoinComment string `json:"temoinComment,omitempty"`
 }
@@ -207,6 +212,10 @@ func (m *MobilierImage) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateThemes(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validatePublicationStatus(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -567,6 +576,51 @@ func (m *MobilierImage) validateThemes(formats strfmt.Registry) error {
 			}
 		}
 
+	}
+
+	return nil
+}
+
+var mobilierImageTypePublicationStatusPropEnum []any
+
+func init() {
+	var res []string
+	if err := json.Unmarshal([]byte(`["DRAFT","PENDING","PUBLISHED"]`), &res); err != nil {
+		panic(err)
+	}
+	for _, v := range res {
+		mobilierImageTypePublicationStatusPropEnum = append(mobilierImageTypePublicationStatusPropEnum, v)
+	}
+}
+
+const (
+
+	// MobilierImagePublicationStatusDRAFT captures enum value "DRAFT"
+	MobilierImagePublicationStatusDRAFT string = "DRAFT"
+
+	// MobilierImagePublicationStatusPENDING captures enum value "PENDING"
+	MobilierImagePublicationStatusPENDING string = "PENDING"
+
+	// MobilierImagePublicationStatusPUBLISHED captures enum value "PUBLISHED"
+	MobilierImagePublicationStatusPUBLISHED string = "PUBLISHED"
+)
+
+// prop value enum
+func (m *MobilierImage) validatePublicationStatusEnum(path, location string, value string) error {
+	if err := validate.EnumCase(path, location, value, mobilierImageTypePublicationStatusPropEnum, true); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *MobilierImage) validatePublicationStatus(formats strfmt.Registry) error {
+	if swag.IsZero(m.PublicationStatus) { // not required
+		return nil
+	}
+
+	// value enum
+	if err := m.validatePublicationStatusEnum("publication_status", "body", m.PublicationStatus); err != nil {
+		return err
 	}
 
 	return nil
