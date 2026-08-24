@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 
 	"irj/internal/catalogs"
 	"irj/internal/jwt"
@@ -157,6 +158,7 @@ func createPersonneMorale(ctx context.Context, s *BusinessService, exData *creat
 		Fondateurs:          pgtype.Text{String: exData.params.Fondateurs, Valid: exData.params.Fondateurs != ""},
 		Statuts:             pgtype.Text{String: exData.params.Statuts, Valid: exData.params.Statuts != ""},
 		Autorisations:       pgtype.Text{String: exData.params.Autorisations, Valid: exData.params.Autorisations != ""},
+		DateCreation:        pgtype.Date{Time: time.Now(), Valid: true},
 		PublicationStatus:   publicationStatus,
 		ParentID:            pgtype.Int4{},
 		UserID: pgtype.Text{

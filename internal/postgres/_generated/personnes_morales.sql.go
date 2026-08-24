@@ -139,7 +139,7 @@ VALUES ($1,
         $9,
         $10,
         $11,
-        COALESCE($12, NOW()),
+        $12,
         NOW(),
         $13,
         $14,
@@ -180,7 +180,7 @@ type CreatePersMoraleParams struct {
 	Objets              pgtype.Text
 	Bibliographie       pgtype.Text
 	Sources             pgtype.Text
-	DateCreation        interface{}
+	DateCreation        pgtype.Date
 	Contributeurs       pgtype.Text
 	IDCommune           pgtype.Int4
 	IDDepartement       pgtype.Int4

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 
 	"irj/internal/catalogs"
 	"irj/internal/jwt"
@@ -133,6 +134,7 @@ func createMobilierImage(ctx context.Context, s *BusinessService, exData *create
 			Int32: exData.params.Country,
 			Valid: exData.params.Country != 0,
 		},
+		DateCrAtion:       pgtype.Date{Time: time.Now(), Valid: true},
 		PublicationStatus: publicationStatus,
 		ParentID:          pgtype.Int4{},
 		UserID: pgtype.Text{

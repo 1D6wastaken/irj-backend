@@ -158,7 +158,7 @@ VALUES ($1,
         $6,
         $7,
         $8,
-        COALESCE($9, NOW()),
+        $9,
         NOW(),
         $10,
         $11,
@@ -189,7 +189,7 @@ type CreateMonumentLieuParams struct {
 	Protection             pgtype.Bool
 	ProtectionCommentaires pgtype.Text
 	Source                 pgtype.Text
-	DateCreation           interface{}
+	DateCreation           pgtype.Date
 	Contributeurs          pgtype.Text
 	IDCommune              pgtype.Int4
 	IDDepartement          pgtype.Int4

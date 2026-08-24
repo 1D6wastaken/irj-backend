@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"irj/internal/catalogs"
 	"irj/internal/jwt"
@@ -143,6 +144,7 @@ func createMonumentLieu(ctx context.Context, s *BusinessService, exData *createM
 		ProprietaireActuel: pgtype.Text{String: exData.params.ProprietaireActuel, Valid: exData.params.ProprietaireActuel != ""},
 		Architecte:         pgtype.Text{String: exData.params.Architecte, Valid: exData.params.Architecte != ""},
 		Commanditaire:      pgtype.Text{String: exData.params.Commanditaire, Valid: exData.params.Commanditaire != ""},
+		DateCreation:       pgtype.Date{Time: time.Now(), Valid: true},
 		PublicationStatus:  publicationStatus,
 		ParentID:           pgtype.Int4{},
 		UserID: pgtype.Text{

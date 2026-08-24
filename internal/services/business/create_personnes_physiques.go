@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 
 	"irj/internal/catalogs"
 	"irj/internal/jwt"
@@ -143,6 +144,7 @@ func createPersonnePhysique(ctx context.Context, s *BusinessService, exData *cre
 		NonExecution:      pgtype.Text{String: exData.params.NonExecution, Valid: exData.params.NonExecution != ""},
 		Age:               pgtype.Text{String: exData.params.Age, Valid: exData.params.Age != ""},
 		CompositionGroupe: pgtype.Text{String: exData.params.CompositionGroupe, Valid: exData.params.CompositionGroupe != ""},
+		DateCreation:      pgtype.Date{Time: time.Now(), Valid: true},
 		PublicationStatus: publicationStatus,
 		ParentID:          pgtype.Int4{},
 		UserID: pgtype.Text{

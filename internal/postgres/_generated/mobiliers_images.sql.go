@@ -180,7 +180,7 @@ VALUES ($1,
         $8,
         $9,
         $10,
-        COALESCE($11, NOW()),
+        $11,
         NOW(),
         $12,
         $13,
@@ -215,7 +215,7 @@ type CreateMobilierImageParams struct {
 	Protection         pgtype.Bool
 	ProtectionComment  pgtype.Text
 	Source             pgtype.Text
-	DateCrAtion        interface{}
+	DateCrAtion        pgtype.Date
 	Contributors       pgtype.Text
 	IDCommune          pgtype.Int4
 	IDDepartement      pgtype.Int4
