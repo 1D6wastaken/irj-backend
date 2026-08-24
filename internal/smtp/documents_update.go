@@ -79,13 +79,18 @@ Lien direct : %s
 }
 
 //nolint:lll
-func (s *SMTPService) SendDocumentApprovedMail(ctx context.Context, to []EmailPerson, source FicheSource, id int32, isUpdate bool) error {
+func (s *SMTPService) SendDocumentApprovedMail(ctx context.Context, to []EmailPerson, source FicheSource, id int32, isUpdate bool, title string) error {
 	updateTxt := ""
 	if isUpdate {
-		updateTxt = "proposition de modification de"
+		updateTxt = "proposition de modification de "
 	}
 
-	subject := "Votre " + updateTxt + " fiche a été validée !"
+	ficheLabel := fmt.Sprintf("fiche (référence #%d)", id)
+	if title != "" {
+		ficheLabel = fmt.Sprintf("fiche « %s » (référence #%d)", title, id)
+	}
+
+	subject := fmt.Sprintf("Votre %s%s a été validée !", updateTxt, ficheLabel)
 
 	ficheURL := FicheURL(source, id)
 
@@ -118,7 +123,7 @@ func (s *SMTPService) SendDocumentApprovedMail(ctx context.Context, to []EmailPe
 		  <tr>
 			<td style="color:#333333; font-size:16px; line-height:1.5;">
 			  <p>Bonjour,</p>
-			  <p>Bonne nouvelle 🎉 ! Votre %s fiche (référence #%d) a été validée par un administrateur et est désormais visible sur <em>Le site du Patrimoine Saint-Jacques</em>.</p>
+			  <p>Bonne nouvelle 🎉 ! Votre %s%s a été validée par un administrateur et est désormais visible sur <em>Le site du Patrimoine Saint-Jacques</em>.</p>
 			  <p>Merci pour votre contribution à la valorisation du patrimoine Saint-Jacques !</p>
 			</td>
 		  </tr>
@@ -142,32 +147,37 @@ func (s *SMTPService) SendDocumentApprovedMail(ctx context.Context, to []EmailPe
 
 </body>
 </html>
-`, updateTxt, id, ficheURL)
+`, updateTxt, ficheLabel, ficheURL)
 
 	textContent := fmt.Sprintf(`Bonjour,
 
-Bonne nouvelle 🎉 ! Votre %s fiche (référence #%d) a été validée par un administrateur et est désormais visible sur "Le site du Patrimoine Saint-Jacques".
+Bonne nouvelle 🎉 ! Votre %s%s a été validée par un administrateur et est désormais visible sur "Le site du Patrimoine Saint-Jacques".
 
 Lien direct : %s
 
 Merci pour votre contribution à la valorisation du patrimoine Saint-Jacques !
 
 Cet email est généré automatiquement. Merci de ne pas y répondre directement.
-`, updateTxt, id, ficheURL)
+`, updateTxt, ficheLabel, ficheURL)
 
 	return s.send(ctx, to, subject, htmlEmail, textContent)
 }
 
 //nolint:lll
-func (s *SMTPService) SendDocumentRejectedMail(ctx context.Context, to []EmailPerson, isUpdate bool) error {
+func (s *SMTPService) SendDocumentRejectedMail(ctx context.Context, to []EmailPerson, isUpdate bool, title string, id int32) error {
 	updateTxt := ""
 	if isUpdate {
-		updateTxt = "proposition de modification de"
+		updateTxt = "proposition de modification de "
 	}
 
-	subject := "Votre " + updateTxt + " fiche n'a pas été approuvée"
+	ficheLabel := fmt.Sprintf("fiche (référence #%d)", id)
+	if title != "" {
+		ficheLabel = fmt.Sprintf("fiche « %s » (référence #%d)", title, id)
+	}
 
-	htmlEmail := `<!DOCTYPE html>
+	subject := fmt.Sprintf("Votre %s%s n'a pas été approuvée", updateTxt, ficheLabel)
+
+	htmlEmail := fmt.Sprintf(`<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
@@ -177,7 +187,7 @@ func (s *SMTPService) SendDocumentRejectedMail(ctx context.Context, to []EmailPe
 <body style="margin:0; padding:0; background-color:#fffcf8; font-family:Arial, sans-serif;">
 
   <!-- En-tête -->
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#802331;">
+  <table width="100%%" cellpadding="0" cellspacing="0" style="background-color:#802331;">
 	<tr>
 	  <td align="center" style="padding:20px;">
 		<a href="https://saintjacquesinfo.eu/#/" target="_blank" style="color:#ffffff; font-size:20px; font-weight:bold; text-decoration:none;">
@@ -188,14 +198,14 @@ func (s *SMTPService) SendDocumentRejectedMail(ctx context.Context, to []EmailPe
   </table>
 
   <!-- Contenu -->
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#fffcf8; padding:20px;">
+  <table width="100%%" cellpadding="0" cellspacing="0" style="background-color:#fffcf8; padding:20px;">
 	<tr>
 	  <td align="center">
 		<table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff; border-radius:8px; padding:20px; border:1px solid #e0e0e0;">
 		  <tr>
 			<td style="color:#333333; font-size:16px; line-height:1.5;">
 			  <p>Bonjour,</p>
-			  <p>Nous sommes désolés de vous informer que votre ` + updateTxt + ` fiche ne peut être approuvée dans l’état.</p>
+			  <p>Nous sommes désolés de vous informer que votre %s%s ne peut être approuvée dans l’état.</p>
               <p>Merci de prendre contact avec l’IRJ pour explications</p>
 			</td>
 		  </tr>
@@ -210,16 +220,16 @@ func (s *SMTPService) SendDocumentRejectedMail(ctx context.Context, to []EmailPe
   </table>
 
 </body>
-</html>`
+</html>`, updateTxt, ficheLabel)
 
-	textContent := `Bonjour,
+	textContent := fmt.Sprintf(`Bonjour,
 
-Nous sommes désolés de vous informer que votre ` + updateTxt + ` fiche ne peut être approuvée dans l’état.
+Nous sommes désolés de vous informer que votre %s%s ne peut être approuvée dans l’état.
 
 Merci de prendre contact avec l’IRJ pour explications
 
 Cet email est généré automatiquement. Merci de ne pas y répondre directement.
-`
+`, updateTxt, ficheLabel)
 
 	return s.send(ctx, to, subject, htmlEmail, textContent)
 }

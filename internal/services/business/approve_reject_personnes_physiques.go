@@ -315,7 +315,7 @@ func sendApprovalEmailPersPhy(_ context.Context, s *BusinessService, exData *app
 	s.stopper.Hold(1)
 
 	//nolint:contextcheck
-	go func(logger *zerolog.Logger, userID string, id int32, isUpdate bool) {
+	go func(logger *zerolog.Logger, userID string, id int32, title string, isUpdate bool) {
 		defer s.stopper.Release()
 
 		ctx, cancel := context.WithTimeout(context.Background(), defaultTimeOut)
@@ -330,10 +330,10 @@ func sendApprovalEmailPersPhy(_ context.Context, s *BusinessService, exData *app
 
 		to := []smtp.EmailPerson{{Name: user.Prenom + " " + user.Nom, Email: user.Email}}
 
-		if err := s.smtpService.SendDocumentApprovedMail(ctx, to, smtp.SourcePersonnesPhysiques, id, isUpdate); err != nil {
+		if err := s.smtpService.SendDocumentApprovedMail(ctx, to, smtp.SourcePersonnesPhysiques, id, isUpdate, title); err != nil {
 			logger.Error().Err(err).Msg("failed to send approval email")
 		}
-	}(exData.logger, exData.documents.UserID.String, exData.id, exData.documents.ParentID.Valid)
+	}(exData.logger, exData.documents.UserID.String, exData.id, exData.documents.Firstname.String, exData.documents.ParentID.Valid)
 
 	return nil
 }
@@ -347,7 +347,7 @@ func sendRejectionEmailPersPhy(_ context.Context, s *BusinessService, exData *ap
 	s.stopper.Hold(1)
 
 	//nolint:contextcheck
-	go func(logger *zerolog.Logger, userID string, isUpdate bool) {
+	go func(logger *zerolog.Logger, userID string, id int32, title string, isUpdate bool) {
 		defer s.stopper.Release()
 
 		ctx, cancel := context.WithTimeout(context.Background(), defaultTimeOut)
@@ -362,10 +362,10 @@ func sendRejectionEmailPersPhy(_ context.Context, s *BusinessService, exData *ap
 
 		to := []smtp.EmailPerson{{Name: user.Prenom + " " + user.Nom, Email: user.Email}}
 
-		if err := s.smtpService.SendDocumentRejectedMail(ctx, to, isUpdate); err != nil {
+		if err := s.smtpService.SendDocumentRejectedMail(ctx, to, isUpdate, title, id); err != nil {
 			logger.Error().Err(err).Msg("failed to send rejection email")
 		}
-	}(exData.logger, exData.documents.UserID.String, exData.documents.ParentID.Valid)
+	}(exData.logger, exData.documents.UserID.String, exData.id, exData.documents.Firstname.String, exData.documents.ParentID.Valid)
 
 	return nil
 }
