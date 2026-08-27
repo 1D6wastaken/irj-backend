@@ -15,9 +15,7 @@ import (
 	"irj/pkg/api"
 	"irj/pkg/collections"
 	_http "irj/pkg/http"
-	"irj/pkg/utils"
 
-	"github.com/go-openapi/strfmt"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/zerolog"
@@ -93,7 +91,7 @@ func (b *BusinessService) GetPendingMobiliersImages(w http.ResponseWriter, r *ht
 		items = append(items, &api.PendingDocuments{
 			ID:           &row.ID,
 			Title:        &row.Title,
-			CreationDate: utils.PtrTo(strfmt.Date(row.DateCrAtion.Time)),
+			CreationDate: effectiveCreationDate(row.DateCrAtion, row.DateMaj),
 			Authors:      collections.InterfaceToStringSlice(row.Redacteurs),
 			City:         commune,
 			Department:   departement,
@@ -174,7 +172,7 @@ func (b *BusinessService) GetDraftMobiliersImages(w http.ResponseWriter, r *http
 		items = append(items, &api.PendingDocuments{
 			ID:           &row.ID,
 			Title:        &row.Title,
-			CreationDate: utils.PtrTo(strfmt.Date(row.DateCrAtion.Time)),
+			CreationDate: effectiveCreationDate(row.DateCrAtion, row.DateMaj),
 			Authors:      collections.InterfaceToStringSlice(row.Redacteurs),
 			City:         commune,
 			Department:   departement,
@@ -239,8 +237,8 @@ func (b *BusinessService) GetMobilierImage(w http.ResponseWriter, r *http.Reques
 		History:               mobilier.Historique.String,
 		Bibliography:          mobilier.Bibliographie.String,
 		Inscriptions:          mobilier.Inscriptions.String,
-		CreationDate:          strfmt.Date(mobilier.DateCrAtion.Time),
-		UpdateDate:            strfmt.Date(mobilier.DateMaj.Time),
+		CreationDate:          effectiveCreationDate(mobilier.DateCrAtion, mobilier.DateMaj),
+		UpdateDate:            updateDate(mobilier.DateMaj),
 		Published:             mobilier.Publie.Bool,
 		Contributors:          mobilier.Contributeurs.String,
 		Sources:               mobilier.Source.String,

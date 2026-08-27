@@ -15,9 +15,7 @@ import (
 	"irj/pkg/api"
 	"irj/pkg/collections"
 	_http "irj/pkg/http"
-	"irj/pkg/utils"
 
-	"github.com/go-openapi/strfmt"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/zerolog"
@@ -98,7 +96,7 @@ func (b *BusinessService) GetPendingPersonnesMorales(w http.ResponseWriter, r *h
 		items = append(items, &api.PendingDocuments{
 			ID:           &row.ID,
 			Title:        &row.Title.String,
-			CreationDate: utils.PtrTo(strfmt.Date(row.DateCreation.Time)),
+			CreationDate: effectiveCreationDate(row.DateCreation, row.DateMaj),
 			Authors:      collections.InterfaceToStringSlice(row.Redacteurs),
 			City:         commune,
 			Department:   departement,
@@ -179,7 +177,7 @@ func (b *BusinessService) GetDraftPersonnesMorales(w http.ResponseWriter, r *htt
 		items = append(items, &api.PendingDocuments{
 			ID:           &row.ID,
 			Title:        &row.Title.String,
-			CreationDate: utils.PtrTo(strfmt.Date(row.DateCreation.Time)),
+			CreationDate: effectiveCreationDate(row.DateCreation, row.DateMaj),
 			Authors:      collections.InterfaceToStringSlice(row.Redacteurs),
 			City:         commune,
 			Department:   departement,
@@ -243,8 +241,8 @@ func (b *BusinessService) GetPersonneMorale(w http.ResponseWriter, r *http.Reque
 		SocialInvolvement:     pmo.ParticipationVieSoc.String,
 		Objects:               pmo.Objets.String,
 		Sources:               pmo.Sources.String,
-		CreationDate:          strfmt.Date(pmo.DateCreation.Time),
-		UpdateDate:            strfmt.Date(pmo.DateMaj.Time),
+		CreationDate:          effectiveCreationDate(pmo.DateCreation, pmo.DateMaj),
+		UpdateDate:            updateDate(pmo.DateMaj),
 		Published:             pmo.Publie.Bool,
 		Contributors:          pmo.Contributeurs.String,
 		Comment:               pmo.Commentaires.String,

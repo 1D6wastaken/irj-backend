@@ -15,9 +15,7 @@ import (
 	"irj/pkg/api"
 	"irj/pkg/collections"
 	_http "irj/pkg/http"
-	"irj/pkg/utils"
 
-	"github.com/go-openapi/strfmt"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/zerolog"
@@ -93,7 +91,7 @@ func (b *BusinessService) GetPendingMonumentsLieux(w http.ResponseWriter, r *htt
 		items = append(items, &api.PendingDocuments{
 			ID:           &row.ID,
 			Title:        &row.Title,
-			CreationDate: utils.PtrTo(strfmt.Date(row.DateCreation.Time)),
+			CreationDate: effectiveCreationDate(row.DateCreation, row.DateMaj),
 			Authors:      collections.InterfaceToStringSlice(row.Redacteurs),
 			City:         commune,
 			Department:   departement,
@@ -174,7 +172,7 @@ func (b *BusinessService) GetDraftMonumentsLieux(w http.ResponseWriter, r *http.
 		items = append(items, &api.PendingDocuments{
 			ID:           &row.ID,
 			Title:        &row.Title,
-			CreationDate: utils.PtrTo(strfmt.Date(row.DateCreation.Time)),
+			CreationDate: effectiveCreationDate(row.DateCreation, row.DateMaj),
 			Authors:      collections.InterfaceToStringSlice(row.Redacteurs),
 			City:         commune,
 			Department:   departement,
@@ -240,8 +238,8 @@ func (b *BusinessService) GetMonumentLieu(w http.ResponseWriter, r *http.Request
 		Geolocation:           monument.Geolocalisation.String,
 		Bibliography:          monument.Bibliographie.String,
 		Sources:               monument.Source.String,
-		CreationDate:          strfmt.Date(monument.DateCreation.Time),
-		UpdateDate:            strfmt.Date(monument.DateMaj.Time),
+		CreationDate:          effectiveCreationDate(monument.DateCreation, monument.DateMaj),
+		UpdateDate:            updateDate(monument.DateMaj),
 		Published:             monument.Publie.Bool,
 		Contributors:          monument.Contributeurs.String,
 		Protected:             monument.Protection.Bool,

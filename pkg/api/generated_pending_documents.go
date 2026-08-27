@@ -29,10 +29,9 @@ type PendingDocuments struct {
 	// Required: true
 	Title *string `json:"title"`
 
-	// creation date of the entry
-	// Required: true
+	// creation date of the entry (null when the record has no creation nor update date)
 	// Format: date
-	CreationDate *strfmt.Date `json:"creation_date"`
+	CreationDate *strfmt.Date `json:"creation_date,omitempty"`
 
 	// entry authors
 	// Required: true
@@ -115,9 +114,8 @@ func (m *PendingDocuments) validateTitle(formats strfmt.Registry) error {
 }
 
 func (m *PendingDocuments) validateCreationDate(formats strfmt.Registry) error {
-
-	if err := validate.Required("creation_date", "body", m.CreationDate); err != nil {
-		return err
+	if swag.IsZero(m.CreationDate) { // not required
+		return nil
 	}
 
 	if err := validate.FormatOf("creation_date", "body", "date", m.CreationDate.String(), formats); err != nil {

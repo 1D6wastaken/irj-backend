@@ -55,13 +55,13 @@ type PersonnePhysique struct {
 	// sources of the legal entity
 	Sources string `json:"sources,omitempty"`
 
-	// creation date of the entry
+	// creation date of the entry (null when the record has no creation nor update date)
 	// Format: date
-	CreationDate strfmt.Date `json:"creation_date,omitempty"`
+	CreationDate *strfmt.Date `json:"creation_date,omitempty"`
 
-	// update date of the entry
+	// update date of the entry (null when the record has no update date)
 	// Format: date
-	UpdateDate strfmt.Date `json:"update_date,omitempty"`
+	UpdateDate *strfmt.Date `json:"update_date,omitempty"`
 
 	// is entry published
 	Published bool `json:"published,omitempty"`

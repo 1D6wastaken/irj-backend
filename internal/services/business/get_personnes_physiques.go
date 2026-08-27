@@ -15,9 +15,7 @@ import (
 	"irj/pkg/api"
 	"irj/pkg/collections"
 	_http "irj/pkg/http"
-	"irj/pkg/utils"
 
-	"github.com/go-openapi/strfmt"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/zerolog"
@@ -98,7 +96,7 @@ func (b *BusinessService) GetPendingPersonnesPhysiques(w http.ResponseWriter, r 
 		items = append(items, &api.PendingDocuments{
 			ID:           &row.ID,
 			Title:        &row.Firstname.String,
-			CreationDate: utils.PtrTo(strfmt.Date(row.DateCreation.Time)),
+			CreationDate: effectiveCreationDate(row.DateCreation, row.DateMaj),
 			Authors:      collections.InterfaceToStringSlice(row.Redacteurs),
 			City:         commune,
 			Department:   departement,
@@ -179,7 +177,7 @@ func (b *BusinessService) GetDraftPersonnesPhysiques(w http.ResponseWriter, r *h
 		items = append(items, &api.PendingDocuments{
 			ID:           &row.ID,
 			Title:        &row.Firstname.String,
-			CreationDate: utils.PtrTo(strfmt.Date(row.DateCreation.Time)),
+			CreationDate: effectiveCreationDate(row.DateCreation, row.DateMaj),
 			Authors:      collections.InterfaceToStringSlice(row.Redacteurs),
 			City:         commune,
 			Department:   departement,
@@ -244,8 +242,8 @@ func (b *BusinessService) GetPersonnePhysique(w http.ResponseWriter, r *http.Req
 		PilgrimageElement:     ppy.ElementsPelerinage.String,
 		Commutation:           ppy.CommutationVoeu.String,
 		Sources:               ppy.Sources.String,
-		CreationDate:          strfmt.Date(ppy.DateCreation.Time),
-		UpdateDate:            strfmt.Date(ppy.DateMaj.Time),
+		CreationDate:          effectiveCreationDate(ppy.DateCreation, ppy.DateMaj),
+		UpdateDate:            updateDate(ppy.DateMaj),
 		Published:             ppy.Publie.Bool,
 		Contributors:          ppy.Contributeurs.String,
 		Comment:               ppy.Commentaires.String,

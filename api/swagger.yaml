@@ -1978,11 +1978,13 @@ definitions:
       creation_date:
         type: string
         format: date
-        description: creation date of the entry
+        x-nullable: true
+        description: creation date of the entry (null when the record has no creation nor update date)
       update_date:
         type: string
         format: date
-        description: update date of the entry
+        x-nullable: true
+        description: update date of the entry (null when the record has no update date)
       published:
         type: boolean
         description: is entry published
@@ -2379,11 +2381,13 @@ definitions:
       creation_date:
         type: string
         format: date
-        description: creation date of the entry
+        x-nullable: true
+        description: creation date of the entry (null when the record has no creation nor update date)
       update_date:
         type: string
         format: date
-        description: update date of the entry
+        x-nullable: true
+        description: update date of the entry (null when the record has no update date)
       published:
         type: boolean
         description: is entry published
@@ -2686,11 +2690,13 @@ definitions:
       creation_date:
         type: string
         format: date
-        description: creation date of the entry
+        x-nullable: true
+        description: creation date of the entry (null when the record has no creation nor update date)
       update_date:
         type: string
         format: date
-        description: update date of the entry
+        x-nullable: true
+        description: update date of the entry (null when the record has no update date)
       published:
         type: boolean
         description: is entry published
@@ -3066,11 +3072,13 @@ definitions:
       creation_date:
         type: string
         format: date
-        description: creation date of the entry
+        x-nullable: true
+        description: creation date of the entry (null when the record has no creation nor update date)
       update_date:
         type: string
         format: date
-        description: update date of the entry
+        x-nullable: true
+        description: update date of the entry (null when the record has no update date)
       published:
         type: boolean
         description: is entry published
@@ -3191,7 +3199,6 @@ definitions:
     required:
       - id
       - title
-      - creation_date
       - authors
     properties:
       id:
@@ -3202,7 +3209,8 @@ definitions:
       creation_date:
         type: string
         format: date
-        description: creation date of the entry
+        x-nullable: true
+        description: creation date of the entry (null when the record has no creation nor update date)
       authors:
         type: array
         items:
