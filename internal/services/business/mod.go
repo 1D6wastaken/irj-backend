@@ -80,9 +80,11 @@ func effectiveCreationDate(creation, maj pgtype.Date) *strfmt.Date {
 	switch {
 	case creation.Valid:
 		d := strfmt.Date(creation.Time)
+
 		return &d
 	case maj.Valid:
 		d := strfmt.Date(maj.Time)
+
 		return &d
 	default:
 		return nil
